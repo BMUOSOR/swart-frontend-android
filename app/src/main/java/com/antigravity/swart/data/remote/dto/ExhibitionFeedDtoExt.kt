@@ -11,6 +11,7 @@ fun ExhibitionFeedDto.toDomain(): Exhibition {
         artistAvatarUrl = artistaAvatar,
         isNew = isNew,
         artworksCount = obrasCount,
-        artworkImagesUrls = obrasImages
+        artworkImagesUrls = obrasImages,
+        exhibitionImgUrl = exposicionImgUrl
     )
 }

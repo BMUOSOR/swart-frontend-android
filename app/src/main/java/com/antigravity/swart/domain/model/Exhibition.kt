@@ -8,5 +8,6 @@ data class Exhibition(
     val artistAvatarUrl: String,
     val isNew: Boolean,
     val artworksCount: Int,
-    val artworkImagesUrls: List<String>
+    val artworkImagesUrls: List<String>,
+    val exhibitionImgUrl: String?
 )

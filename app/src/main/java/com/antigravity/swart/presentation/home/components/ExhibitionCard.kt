@@ -29,14 +29,23 @@ fun ExhibitionCard(
     exhibition: Exhibition,
     modifier: Modifier = Modifier
 ) {
+    val allImages = remember(exhibition) {
+        val list = mutableListOf<String>()
+        exhibition.exhibitionImgUrl?.let { list.add(it) }
+        list.addAll(exhibition.artworkImagesUrls)
+        list
+    }
+
     var currentImageIndex by remember { mutableStateOf(0) }
 
-    // Lógica del Slideshow
-    LaunchedEffect(exhibition.artworkImagesUrls) {
-        if (exhibition.artworkImagesUrls.isNotEmpty()) {
+    // Lógica del Slideshow (5s para la portada, 3s para las obras)
+    LaunchedEffect(allImages) {
+        if (allImages.isNotEmpty() && allImages.size > 1) {
             while (true) {
-                delay(3000L) // Cambiar cada 3 segundos
-                currentImageIndex = (currentImageIndex + 1) % exhibition.artworkImagesUrls.size
+                // Si estamos en la imagen de portada (índice 0 y existe), esperamos 5s, si no 3s
+                val delayTime = if (currentImageIndex == 0 && exhibition.exhibitionImgUrl != null) 5000L else 3000L
+                delay(delayTime)
+                currentImageIndex = (currentImageIndex + 1) % allImages.size
             }
         }
     }
@@ -47,7 +56,7 @@ fun ExhibitionCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Imagen de fondo con Crossfade para transición suave
-            if (exhibition.artworkImagesUrls.isNotEmpty()) {
+            if (allImages.isNotEmpty()) {
                 Crossfade(
                     targetState = currentImageIndex,
                     animationSpec = tween(1000),
@@ -55,7 +64,7 @@ fun ExhibitionCard(
                 ) { index ->
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(exhibition.artworkImagesUrls[index])
+                            .data(allImages[index])
                             .crossfade(true)
                             .build(),
                         contentDescription = "Artwork image",
