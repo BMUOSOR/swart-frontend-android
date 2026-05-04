@@ -7,7 +7,9 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
+        android:name=".SwartApplication"
         android:allowBackup="true"
+        android:usesCleartextTraffic="true"
         android:icon="@android:drawable/ic_menu_gallery"
         android:label="Swart"
         android:supportsRtl="true"
