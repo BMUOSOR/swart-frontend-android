@@ -78,29 +78,11 @@ fun HomeScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
-                    // Layout Principal Jerárquico: Destacada + Mosaico
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        // 1. Exposición Destacada (La primera)
-                        val featuredExhibition = uiState.exhibitions.first()
-                        ExhibitionCard(
-                            exhibition = featuredExhibition,
-                            isFeatured = true,
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .height(250.dp)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // 2. El Mosaico (El resto de exposiciones)
-                        val mosaicExhibitions = uiState.exhibitions.drop(1)
-                        if (mosaicExhibitions.isNotEmpty()) {
-                            ExhibitionMasonryGrid(
-                                exhibitions = mosaicExhibitions,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
+                    // Delegamos todo el layout jerárquico al Grid para que haga scroll en conjunto
+                    ExhibitionMasonryGrid(
+                        exhibitions = uiState.exhibitions,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         }
