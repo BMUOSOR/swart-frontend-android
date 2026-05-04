@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.antigravity.swart.domain.model.Exhibition
-import kotlin.random.Random
 
 @Composable
 fun ExhibitionMasonryGrid(
@@ -18,9 +17,10 @@ fun ExhibitionMasonryGrid(
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalItemSpacing = 16.dp
+        // Quitamos el spacing y padding para crear un mosaico perfecto
+        contentPadding = PaddingValues(0.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
+        verticalItemSpacing = 0.dp
     ) {
         itemsIndexed(exhibitions) { index, exhibition ->
             // Generamos alturas aleatorias deterministas (basadas en el índice) para el efecto Masonry
@@ -28,6 +28,7 @@ fun ExhibitionMasonryGrid(
             
             ExhibitionCard(
                 exhibition = exhibition,
+                isFeatured = false, // Las tarjetas del mosaico nunca son destacadas
                 modifier = Modifier.height(height.dp)
             )
         }

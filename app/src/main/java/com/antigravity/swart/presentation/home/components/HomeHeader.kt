@@ -19,7 +19,7 @@ import coil.compose.AsyncImage
 import com.antigravity.swart.presentation.theme.NeonViolet
 
 @Composable
-fun HomeTopBar() {
+fun HomeTopBar(avatarUrl: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -40,12 +40,13 @@ fun HomeTopBar() {
         
         Box {
             AsyncImage(
-                model = "https://ui-avatars.com/api/?name=Usuario&background=random", // Avatar de prueba
+                model = avatarUrl, // Usar el avatar del usuario visitante o por defecto
                 contentDescription = "User Profile",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
+                    .background(Color.DarkGray)
             )
             // Punto de notificación rojo
             Box(
@@ -61,7 +62,10 @@ fun HomeTopBar() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBarComponent() {
+fun SearchBarComponent(
+    query: String,
+    onQueryChange: (String) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -69,8 +73,8 @@ fun SearchBarComponent() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         OutlinedTextField(
-            value = "",
-            onValueChange = {},
+            value = query,
+            onValueChange = onQueryChange,
             placeholder = { Text("Buscar artistas u obras", color = Color.Gray) },
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.Gray)

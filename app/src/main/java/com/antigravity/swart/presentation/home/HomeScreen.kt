@@ -1,7 +1,7 @@
 package com.antigravity.swart.presentation.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antigravity.swart.presentation.components.SwartBottomNav
 import com.antigravity.swart.presentation.components.UserType
+import com.antigravity.swart.presentation.home.components.ExhibitionCard
 import com.antigravity.swart.presentation.home.components.ExhibitionMasonryGrid
 import com.antigravity.swart.presentation.home.components.HomeTopBar
 import com.antigravity.swart.presentation.home.components.SearchBarComponent
@@ -24,19 +25,21 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
     
     // Solo para pruebas: estado local para alternar entre Artista y Usuario
     var currentUserType by remember { mutableStateOf(UserType.ARTIST) }
 
+    // Foto hardcodeada para probar que carga desde Supabase (Usuario Interesado)
+    val visitorAvatar = "https://bkrmqkpxidmemzxhefoc.supabase.co/storage/v1/object/public/Imagenes/usuario_chica_3.jpg"
+
     Scaffold(
         containerColor = DarkBackground,
         bottomBar = {
-            // El BottomBar personalizado
             SwartBottomNav(
                 userType = currentUserType,
                 currentRoute = "descubrir",
                 onNavigate = {
-                    // Para depurar, si tocan el perfil cambiamos el tipo de usuario para ver ambas barras
                     if (it == "perfil") {
                         currentUserType = if (currentUserType == UserType.ARTIST) UserType.GENERAL else UserType.ARTIST
                     }
@@ -50,8 +53,11 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            HomeTopBar()
-            SearchBarComponent()
+            HomeTopBar(avatarUrl = visitorAvatar)
+            SearchBarComponent(
+                query = searchQuery,
+                onQueryChange = { viewModel.onSearchQueryChanged(it) }
+            )
             
             Box(modifier = Modifier.fillMaxSize()) {
                 if (uiState.isLoading) {
@@ -65,11 +71,36 @@ fun HomeScreen(
                         color = Color.Red,
                         modifier = Modifier.align(Alignment.Center)
                     )
-                } else {
-                    ExhibitionMasonryGrid(
-                        exhibitions = uiState.exhibitions,
-                        modifier = Modifier.fillMaxSize()
+                } else if (uiState.exhibitions.isEmpty()) {
+                    Text(
+                        text = "No se encontraron exposiciones",
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.Center)
                     )
+                } else {
+                    // Layout Principal Jerárquico: Destacada + Mosaico
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // 1. Exposición Destacada (La primera)
+                        val featuredExhibition = uiState.exhibitions.first()
+                        ExhibitionCard(
+                            exhibition = featuredExhibition,
+                            isFeatured = true,
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .height(250.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // 2. El Mosaico (El resto de exposiciones)
+                        val mosaicExhibitions = uiState.exhibitions.drop(1)
+                        if (mosaicExhibitions.isNotEmpty()) {
+                            ExhibitionMasonryGrid(
+                                exhibitions = mosaicExhibitions,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -27,6 +27,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun ExhibitionCard(
     exhibition: Exhibition,
+    isFeatured: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val allImages = remember(exhibition) {
@@ -42,7 +43,6 @@ fun ExhibitionCard(
     LaunchedEffect(allImages) {
         if (allImages.isNotEmpty() && allImages.size > 1) {
             while (true) {
-                // Si estamos en la imagen de portada (índice 0 y existe), esperamos 5s, si no 3s
                 val delayTime = if (currentImageIndex == 0 && exhibition.exhibitionImgUrl != null) 5000L else 3000L
                 delay(delayTime)
                 currentImageIndex = (currentImageIndex + 1) % allImages.size
@@ -50,12 +50,15 @@ fun ExhibitionCard(
         }
     }
 
+    // La destacada tiene bordes redondeados, las del mosaico encajan perfectas sin bordes
+    val cardShape = if (isFeatured) RoundedCornerShape(24.dp) else RoundedCornerShape(0.dp)
+
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = cardShape,
         modifier = modifier.fillMaxWidth()
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Imagen de fondo con Crossfade para transición suave
+            // Imagen de fondo
             if (allImages.isNotEmpty()) {
                 Crossfade(
                     targetState = currentImageIndex,
@@ -93,13 +96,29 @@ fun ExhibitionCard(
                     )
             )
 
-            // Contenido de la tarjeta (Textos y Avatar)
+            // Badge "NUEVO" solo si es destacada (esquina superior derecha)
+            if (isFeatured && exhibition.isNew) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .background(BadgeGreen, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "NUEVO",
+                        color = Color.White,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+
+            // Contenido inferior (Avatar, textos y badge de conteo)
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(16.dp)
             ) {
-                // Fila con Avatar y Badge "NUEVO"
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -121,19 +140,8 @@ fun ExhibitionCard(
                         )
                     }
 
-                    if (exhibition.isNew) {
-                        Box(
-                            modifier = Modifier
-                                .background(BadgeGreen, RoundedCornerShape(12.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "NUEVO",
-                                color = Color.White,
-                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    } else if (exhibition.artworksCount > 0) {
+                    // Badge de Obras
+                    if (exhibition.artworksCount > 0) {
                         Box(
                             modifier = Modifier
                                 .background(Color.White.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
