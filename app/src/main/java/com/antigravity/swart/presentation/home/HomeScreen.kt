@@ -18,7 +18,7 @@ import com.antigravity.swart.presentation.home.components.ExhibitionMasonryGrid
 import com.antigravity.swart.presentation.home.components.HomeTopBar
 import com.antigravity.swart.presentation.home.components.SearchBarComponent
 import com.antigravity.swart.presentation.theme.DarkBackground
-import com.antigravity.swart.presentation.theme.NeonViolet
+import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
 @Composable
 fun HomeScreen(
@@ -76,7 +76,7 @@ fun HomeScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
-                        color = NeonViolet,
+                        color = InteresadoGradientStart,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else if (uiState.error != null) {

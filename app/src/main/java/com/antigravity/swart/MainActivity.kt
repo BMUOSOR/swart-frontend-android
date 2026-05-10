@@ -8,7 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.antigravity.swart.presentation.navigation.AppNavigation
-import com.antigravity.swart.presentation.home.HomeScreen
 import com.antigravity.swart.presentation.theme.SwartTheme
 import dagger.hilt.android.AndroidEntryPoint
 

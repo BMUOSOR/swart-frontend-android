@@ -65,6 +65,9 @@ dependencies {
     
     // Coil
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Material Icons Extended (for icons like Explore, Whatshot, etc.)
+    implementation("androidx.compose.material:material-icons-extended")
     
     // Hilt
     implementation("com.google.dagger:hilt-android:2.50")

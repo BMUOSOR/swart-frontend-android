@@ -14,8 +14,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.antigravity.swart.presentation.theme.DarkSurface
-import com.antigravity.swart.presentation.theme.NeonViolet
+import com.antigravity.swart.presentation.theme.CardBackground
+import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
 enum class UserType {
     ARTIST, GENERAL
@@ -35,7 +35,7 @@ fun SwartBottomNav(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .shadow(16.dp),
-            containerColor = DarkSurface,
+            containerColor = CardBackground,
             contentColor = Color.White
         ) {
             if (userType == UserType.ARTIST) {
@@ -82,7 +82,7 @@ fun SwartBottomNav(
                     modifier = Modifier.weight(1f)
                 )
                 BottomNavItem(
-                    icon = Icons.Filled.Menu,
+                    icon = Icons.Filled.LocalFireDepartment,
                     label = "Descubrir",
                     selected = currentRoute == "descubrir",
                     onClick = { onNavigate("descubrir") },
@@ -122,7 +122,7 @@ fun SwartBottomNav(
                     .offset(y = (-24).dp) // Lo subimos un poco
                     .size(56.dp),
                 shape = CircleShape,
-                containerColor = NeonViolet,
+                containerColor = InteresadoGradientStart,
                 contentColor = Color.White
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Artwork")
@@ -138,7 +138,7 @@ fun BottomNavItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tint: Color = if (selected) NeonViolet else Color.Gray
+    tint: Color = if (selected) InteresadoGradientStart else Color.Gray
 ) {
     Column(
         modifier = modifier.padding(vertical = 4.dp),

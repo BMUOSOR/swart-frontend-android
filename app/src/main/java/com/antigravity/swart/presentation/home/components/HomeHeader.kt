@@ -16,7 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.antigravity.swart.presentation.theme.NeonViolet
+import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
 @Composable
 fun HomeTopBar(avatarUrl: String) {
@@ -81,10 +81,11 @@ fun SearchBarComponent(
                 Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.Gray)
             },
             shape = RoundedCornerShape(24.dp),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = Color.White.copy(alpha = 0.05f),
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = NeonViolet
+            colors = TextFieldDefaults.colors(
+                unfocusedContainerColor = Color.White.copy(alpha = 0.05f),
+                focusedContainerColor = Color.White.copy(alpha = 0.05f),
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = InteresadoGradientStart
             ),
             modifier = Modifier
                 .weight(1f)
@@ -98,7 +99,7 @@ fun SearchBarComponent(
             onClick = onFilterClick,
             modifier = Modifier
                 .size(56.dp)
-                .background(NeonViolet, RoundedCornerShape(16.dp))
+                .background(InteresadoGradientStart, RoundedCornerShape(16.dp))
         ) {
             // Un icono que simule filtros (podemos usar uno de material)
             Icon(
