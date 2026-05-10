@@ -38,8 +38,8 @@ class HomeViewModel @Inject constructor(
         } else {
             allExhibitions.filter {
                 it.title.contains(query, ignoreCase = true) ||
-                it.artistName.contains(query, ignoreCase = true) ||
-                (it.description?.contains(query, ignoreCase = true) == true)
+                it.artistName.contains(query, ignoreCase = true)
+                //(it.description?.contains(query, ignoreCase = true) == true)
             }
         }
         HomeUiState(isLoading, filtered, error)

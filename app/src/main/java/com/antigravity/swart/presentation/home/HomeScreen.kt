@@ -22,6 +22,8 @@ import com.antigravity.swart.presentation.theme.NeonViolet
 
 @Composable
 fun HomeScreen(
+    onNavigateToDetail: (Long) -> Unit = {},
+    onNavigateToSwap: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -38,10 +40,12 @@ fun HomeScreen(
         bottomBar = {
             SwartBottomNav(
                 userType = currentUserType,
-                currentRoute = "descubrir",
+                currentRoute = "inicio",
                 onNavigate = {
                     if (it == "perfil") {
                         currentUserType = if (currentUserType == UserType.ARTIST) UserType.GENERAL else UserType.ARTIST
+                    } else if (it == "descubrir") {
+                        onNavigateToSwap()
                     }
                 },
                 onFabClick = { /* Abrir modal de añadir obra */ }
@@ -53,11 +57,21 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            var showFilterSheet by remember { mutableStateOf(false) }
+
             HomeTopBar(avatarUrl = visitorAvatar)
             SearchBarComponent(
                 query = searchQuery,
-                onQueryChange = { viewModel.onSearchQueryChanged(it) }
+                onQueryChange = { viewModel.onSearchQueryChanged(it) },
+                onFilterClick = { showFilterSheet = true }
             )
+            
+            if (showFilterSheet) {
+                com.antigravity.swart.presentation.home.components.FilterBottomSheet(
+                    onDismissRequest = { showFilterSheet = false },
+                    onApplyFilters = { showFilterSheet = false }
+                )
+            }
             
             Box(modifier = Modifier.fillMaxSize()) {
                 if (uiState.isLoading) {
@@ -81,6 +95,7 @@ fun HomeScreen(
                     // Delegamos todo el layout jerárquico al Grid para que haga scroll en conjunto
                     ExhibitionMasonryGrid(
                         exhibitions = uiState.exhibitions,
+                        onExhibitionClick = onNavigateToDetail,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

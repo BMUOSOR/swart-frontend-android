@@ -12,6 +12,13 @@ fun ExhibitionFeedDto.toDomain(): Exhibition {
         isNew = isNew,
         artworksCount = obrasCount,
         artworkImagesUrls = obrasImages,
-        exhibitionImgUrl = exposicionImgUrl
+        exhibitionImgUrl = exposicionImgUrl,
+        fechaInicio = fechaInicio,
+        fechaFin = fechaFin,
+        nombreLugar = nombreLugar,
+        ubicacion = ubicacion,
+        precio = precio,
+        score = score,
+        tags = tags
     )
 }

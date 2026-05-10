@@ -24,10 +24,13 @@ import com.antigravity.swart.domain.model.Exhibition
 import com.antigravity.swart.presentation.theme.BadgeGreen
 import kotlinx.coroutines.delay
 
+import androidx.compose.foundation.clickable
+
 @Composable
 fun ExhibitionCard(
     exhibition: Exhibition,
     isFeatured: Boolean = false,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val allImages = remember(exhibition) {
@@ -43,7 +46,7 @@ fun ExhibitionCard(
     LaunchedEffect(allImages) {
         if (allImages.isNotEmpty() && allImages.size > 1) {
             while (true) {
-                val delayTime = if (currentImageIndex == 0 && exhibition.exhibitionImgUrl != null) 5000L else 3000L
+                val delayTime = if (currentImageIndex == 0 && exhibition.exhibitionImgUrl != null) 8000L else 3000L
                 delay(delayTime)
                 currentImageIndex = (currentImageIndex + 1) % allImages.size
             }
@@ -51,11 +54,13 @@ fun ExhibitionCard(
     }
 
     // La destacada tiene bordes redondeados, las del mosaico encajan perfectas sin bordes
-    val cardShape = if (isFeatured) RoundedCornerShape(24.dp) else RoundedCornerShape(0.dp)
+    val cardShape = if (isFeatured) RoundedCornerShape(0.dp) else RoundedCornerShape(0.dp)
 
     Card(
         shape = cardShape,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Imagen de fondo

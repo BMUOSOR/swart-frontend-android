@@ -64,7 +64,8 @@ fun HomeTopBar(avatarUrl: String) {
 @Composable
 fun SearchBarComponent(
     query: String,
-    onQueryChange: (String) -> Unit
+    onQueryChange: (String) -> Unit,
+    onFilterClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -94,7 +95,7 @@ fun SearchBarComponent(
         
         // Botón de filtros lila
         IconButton(
-            onClick = { },
+            onClick = onFilterClick,
             modifier = Modifier
                 .size(56.dp)
                 .background(NeonViolet, RoundedCornerShape(16.dp))

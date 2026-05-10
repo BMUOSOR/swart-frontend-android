@@ -9,5 +9,12 @@ data class ExhibitionFeedDto(
     val isNew: Boolean,
     val obrasCount: Int,
     val obrasImages: List<String>,
-    val exposicionImgUrl: String?
+    val exposicionImgUrl: String?,
+    val tags: List<String>,
+    val fechaInicio: String?,
+    val fechaFin: String?,
+    val nombreLugar: String?,
+    val ubicacion: String?,
+    val precio: Double?,
+    val score: Double?
 )

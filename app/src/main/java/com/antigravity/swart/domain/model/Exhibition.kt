@@ -9,5 +9,12 @@ data class Exhibition(
     val isNew: Boolean,
     val artworksCount: Int,
     val artworkImagesUrls: List<String>,
-    val exhibitionImgUrl: String?
+    val exhibitionImgUrl: String?,
+    val fechaInicio: String?,
+    val fechaFin: String?,
+    val nombreLugar: String?,
+    val ubicacion: String?,
+    val precio: Double?,
+    val score: Double?,
+    val tags: List<String>
 )
