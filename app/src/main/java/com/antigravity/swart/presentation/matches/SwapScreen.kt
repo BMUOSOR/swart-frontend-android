@@ -36,7 +36,7 @@ import com.antigravity.swart.presentation.components.SwartBottomNav
 import com.antigravity.swart.presentation.components.UserType
 import com.antigravity.swart.presentation.home.HomeViewModel
 import com.antigravity.swart.presentation.theme.DarkBackground
-import com.antigravity.swart.presentation.theme.NeonViolet
+import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 import kotlinx.coroutines.launch
 
 @Composable
@@ -181,7 +181,7 @@ fun SwapScreen(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(CircleShape)
-                                .border(2.dp, NeonViolet, CircleShape),
+                                .border(2.dp, ArtistaGradientStart, CircleShape),
                             contentScale = ContentScale.Crop
                         )
                         Spacer(modifier = Modifier.width(12.dp))
@@ -216,7 +216,7 @@ fun SwapScreen(
 
                         // Metadatos (Fila)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.LocationOn, contentDescription = "Ubicación", tint = NeonViolet, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.LocationOn, contentDescription = "Ubicación", tint = ArtistaGradientStart, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             // Lugar de la exposición
                             Text(
@@ -277,7 +277,7 @@ fun SwapScreen(
                         onClick = { swipeCard(isRight = true) },
                         modifier = Modifier
                             .size(64.dp)
-                            .background(NeonViolet, CircleShape) // Rosa/Magenta vibrante
+                            .background(ArtistaGradientStart, CircleShape) // Rosa/Magenta vibrante
                     ) {
                         // Color cambia de White a Rojo al hacer swipe derecha
                         Icon(Icons.Default.Favorite, contentDescription = "Me Gusta", tint = animatedHeartColor, modifier = Modifier.size(32.dp))

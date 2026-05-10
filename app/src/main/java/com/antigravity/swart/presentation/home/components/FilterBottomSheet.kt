@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.antigravity.swart.presentation.theme.NeonViolet
+import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +60,7 @@ fun FilterBottomSheet(
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         containerColor = Color.White.copy(alpha = 0.05f),
                         unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = NeonViolet,
+                        focusedBorderColor = ArtistaGradientStart,
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     )
@@ -74,7 +74,7 @@ fun FilterBottomSheet(
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         containerColor = Color.White.copy(alpha = 0.05f),
                         unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = NeonViolet,
+                        focusedBorderColor = ArtistaGradientStart,
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     )
@@ -95,7 +95,7 @@ fun FilterBottomSheet(
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     containerColor = Color.White.copy(alpha = 0.05f),
                     unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = NeonViolet,
+                    focusedBorderColor = ArtistaGradientStart,
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White
                 )
@@ -117,7 +117,7 @@ fun FilterBottomSheet(
                         onClick = { selectedTag = tag },
                         label = { Text(tag) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = NeonViolet,
+                            selectedContainerColor = ArtistaGradientStart,
                             selectedLabelColor = Color.White,
                             labelColor = Color.Gray
                         )
@@ -136,7 +136,7 @@ fun FilterBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NeonViolet),
+                colors = ButtonDefaults.buttonColors(containerColor = ArtistaGradientStart),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Aplicar Filtros", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)

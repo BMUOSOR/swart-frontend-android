@@ -33,7 +33,7 @@ import com.antigravity.swart.presentation.components.SwartBottomNav
 import com.antigravity.swart.presentation.components.UserType
 import com.antigravity.swart.presentation.home.HomeViewModel
 import com.antigravity.swart.presentation.theme.DarkBackground
-import com.antigravity.swart.presentation.theme.NeonViolet
+import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +60,7 @@ fun DetailScreen(
     ) { paddingValues ->
         if (exhibition == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = NeonViolet)
+                CircularProgressIndicator(color = ArtistaGradientStart)
             }
             return@Scaffold
         }
@@ -161,7 +161,7 @@ fun DetailScreen(
                     ) {
                         Text(
                             text = "En curso",
-                            color = NeonViolet,
+                            color = ArtistaGradientStart,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         )
@@ -233,7 +233,7 @@ fun DetailScreen(
                         // Ubicación
                         Text(text = "Ubicación", color = Color.White, fontWeight = FontWeight.Bold)
                         Text(text = exhibition.ubicacion ?: "N/A", color = Color.LightGray, fontSize = 14.sp)
-                        Text(text = "Ver en mapa →", color = NeonViolet, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+                        Text(text = "Ver en mapa →", color = ArtistaGradientStart, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -279,7 +279,7 @@ fun DetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NeonViolet),
+                    colors = ButtonDefaults.buttonColors(containerColor = ArtistaGradientStart),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Conseguir Entradas", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)

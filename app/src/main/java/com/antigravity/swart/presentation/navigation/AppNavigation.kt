@@ -7,34 +7,12 @@ import androidx.navigation.compose.rememberNavController
 import com.antigravity.swart.presentation.home.HomeScreen
 import com.antigravity.swart.presentation.detail.DetailScreen
 import com.antigravity.swart.presentation.matches.SwapScreen
-import com.antigravity.swart.presentation.auth.LoginScreen
-import com.antigravity.swart.presentation.auth.RegisterScreen
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") {
-            LoginScreen(
-                onNavigateToRegister = { navController.navigate("register") },
-                onLoginSuccess = { 
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-            )
-        }
-        composable("register") {
-            RegisterScreen(
-                onNavigateToLogin = { navController.popBackStack() },
-                onRegisterSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-            )
-        }
+    NavHost(navController = navController, startDestination = "home") {
         composable("home") {
             HomeScreen(
                 onNavigateToDetail = { exhibitionId ->
