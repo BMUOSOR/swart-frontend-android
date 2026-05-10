@@ -19,8 +19,8 @@ object AppModule {
     @Singleton
     fun provideSwartApi(): SwartApi {
         return Retrofit.Builder()
-            // IP apuntando al propio móvil (redirigido al PC por cable USB gracias a adb reverse)
-            .baseUrl("http://127.0.0.1:8080/")
+            // IP para el emulador de Android (10.0.2.2 apunta al localhost del PC host)
+            .baseUrl("http://10.0.2.2:8080/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(SwartApi::class.java)
