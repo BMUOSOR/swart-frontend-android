@@ -82,7 +82,7 @@ fun SwartBottomNav(
                     modifier = Modifier.weight(1f)
                 )
                 BottomNavItem(
-                    icon = Icons.Filled.Star,
+                    icon = Icons.Filled.Menu,
                     label = "Descubrir",
                     selected = currentRoute == "descubrir",
                     onClick = { onNavigate("descubrir") },

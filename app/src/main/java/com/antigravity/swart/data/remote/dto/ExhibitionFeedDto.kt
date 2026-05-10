@@ -8,7 +8,7 @@ data class ExhibitionFeedDto(
     val artistaAvatar: String,
     val isNew: Boolean,
     val obrasCount: Int,
-    val obrasImages: List<String>,
+    val obras: List<ArtworkDto>,
     val exposicionImgUrl: String?,
     val tags: List<String>,
     val fechaInicio: String?,

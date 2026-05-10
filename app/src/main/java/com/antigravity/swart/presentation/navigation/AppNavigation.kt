@@ -19,7 +19,11 @@ fun AppNavigation() {
                     navController.navigate("detail/$exhibitionId")
                 },
                 onNavigateToSwap = {
-                    navController.navigate("swap")
+                    navController.navigate("swap") {
+                        popUpTo("home") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             )
         }
@@ -35,7 +39,12 @@ fun AppNavigation() {
                 onNavigateToDetail = { exhibitionId ->
                     navController.navigate("detail/$exhibitionId")
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { 
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
     }

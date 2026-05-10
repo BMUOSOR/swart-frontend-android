@@ -8,7 +8,7 @@ data class Exhibition(
     val artistAvatarUrl: String,
     val isNew: Boolean,
     val artworksCount: Int,
-    val artworkImagesUrls: List<String>,
+    val artworks: List<Artwork>,
     val exhibitionImgUrl: String?,
     val fechaInicio: String?,
     val fechaFin: String?,
@@ -17,4 +17,10 @@ data class Exhibition(
     val precio: Double?,
     val score: Double?,
     val tags: List<String>
+)
+
+data class Artwork(
+    val id: Long,
+    val title: String,
+    val imageUrl: String
 )

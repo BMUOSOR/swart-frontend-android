@@ -40,7 +40,7 @@ fun HomeScreen(
         bottomBar = {
             SwartBottomNav(
                 userType = currentUserType,
-                currentRoute = "inicio",
+                currentRoute = "home",
                 onNavigate = {
                     if (it == "perfil") {
                         currentUserType = if (currentUserType == UserType.ARTIST) UserType.GENERAL else UserType.ARTIST

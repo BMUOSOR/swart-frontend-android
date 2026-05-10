@@ -79,7 +79,7 @@ fun DetailScreen(
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(exhibition.exhibitionImgUrl ?: exhibition.artworkImagesUrls.firstOrNull())
+                        .data(exhibition.exhibitionImgUrl ?: exhibition.artworks.firstOrNull()?.imageUrl)
                         .crossfade(true)
                         .build(),
                     contentDescription = "Exhibition Cover",
@@ -248,7 +248,7 @@ fun DetailScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Gallery Carousel
-                if (exhibition.artworkImagesUrls.isNotEmpty()) {
+                if (exhibition.artworks.isNotEmpty()) {
                     Text(
                         text = "Galería de Obras",
                         color = Color.White,
@@ -259,10 +259,10 @@ fun DetailScreen(
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(exhibition.artworkImagesUrls) { imageUrl ->
+                        items(exhibition.artworks) { artwork ->
                             AsyncImage(
-                                model = imageUrl,
-                                contentDescription = "Artwork",
+                                model = artwork.imageUrl,
+                                contentDescription = artwork.title,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(150.dp)

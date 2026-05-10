@@ -36,7 +36,7 @@ fun ExhibitionCard(
     val allImages = remember(exhibition) {
         val list = mutableListOf<String>()
         exhibition.exhibitionImgUrl?.let { list.add(it) }
-        list.addAll(exhibition.artworkImagesUrls)
+        list.addAll(exhibition.artworks.map { it.imageUrl })
         list
     }
 

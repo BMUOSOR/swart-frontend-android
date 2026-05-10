@@ -1,6 +1,7 @@
 package com.antigravity.swart.data.remote.dto
 
 import com.antigravity.swart.domain.model.Exhibition
+import com.antigravity.swart.domain.model.Artwork
 
 fun ExhibitionFeedDto.toDomain(): Exhibition {
     return Exhibition(
@@ -11,7 +12,7 @@ fun ExhibitionFeedDto.toDomain(): Exhibition {
         artistAvatarUrl = artistaAvatar,
         isNew = isNew,
         artworksCount = obrasCount,
-        artworkImagesUrls = obrasImages,
+        artworks = obras.map { Artwork(it.idObra, it.titulo, it.imgUrl) },
         exhibitionImgUrl = exposicionImgUrl,
         fechaInicio = fechaInicio,
         fechaFin = fechaFin,
