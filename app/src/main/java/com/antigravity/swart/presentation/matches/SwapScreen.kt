@@ -13,7 +13,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -228,7 +228,7 @@ fun SwapScreen(
                             
                             Spacer(modifier = Modifier.width(16.dp))
                             
-                            Icon(Icons.Default.DirectionsWalk, contentDescription = "Distancia", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Distancia", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             // Distancia mockeada determinista en base al string de ubicación (se calcularía con el backend real y GPS)
                             val distanceMock = ((exhibition.ubicacion?.length ?: 12) / 10.0)
