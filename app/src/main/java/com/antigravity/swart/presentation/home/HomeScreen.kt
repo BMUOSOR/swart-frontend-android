@@ -22,15 +22,19 @@ import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
 @Composable
 fun HomeScreen(
+    userType: UserType = UserType.GENERAL,
+    role: String = "interesado",
     onNavigateToDetail: (Long) -> Unit = {},
     onNavigateToSwap: () -> Unit = {},
+    onNavigateToMap: (String) -> Unit = {},
+    onLogout: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     
-    // Solo para pruebas: estado local para alternar entre Artista y Usuario
-    var currentUserType by remember { mutableStateOf(UserType.ARTIST) }
+    // Remove currentUserType local test state
+
 
     // Foto hardcodeada para probar que carga desde Supabase (Usuario Interesado)
     val visitorAvatar = "https://bkrmqkpxidmemzxhefoc.supabase.co/storage/v1/object/public/Imagenes/usuario_chica_3.jpg"
@@ -39,13 +43,15 @@ fun HomeScreen(
         containerColor = DarkBackground,
         bottomBar = {
             SwartBottomNav(
-                userType = currentUserType,
+                userType = userType,
                 currentRoute = "home",
                 onNavigate = {
-                    if (it == "perfil") {
-                        currentUserType = if (currentUserType == UserType.ARTIST) UserType.GENERAL else UserType.ARTIST
-                    } else if (it == "descubrir") {
+                    if (it == "descubrir") {
                         onNavigateToSwap()
+                    } else if (it == "mapa") {
+                        onNavigateToMap(role)
+                    } else if (it == "perfil") {
+                        onLogout()
                     }
                 },
                 onFabClick = { /* Abrir modal de añadir obra */ }

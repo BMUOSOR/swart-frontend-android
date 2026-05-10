@@ -41,10 +41,14 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SwapScreen(
+    role: String = "interesado",
     onNavigateToDetail: (Long) -> Unit,
-    onBack: () -> Unit,
+    onNavigateHome: () -> Unit,
+    onNavigateToMap: () -> Unit,
+    onLogout: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
+    val userType = if (role == "artista") UserType.ARTIST else UserType.GENERAL
     val uiState by viewModel.uiState.collectAsState()
     val exhibitions = uiState.exhibitions
     
@@ -63,10 +67,14 @@ fun SwapScreen(
         containerColor = DarkBackground,
         bottomBar = {
             SwartBottomNav(
-                userType = UserType.GENERAL,
+                userType = userType,
                 currentRoute = "descubrir",
                 onNavigate = {
-                    if (it == "home") onBack()
+                    when (it) {
+                        "home" -> onNavigateHome()
+                        "mapa" -> onNavigateToMap()
+                        "perfil" -> onLogout()
+                    }
                 },
                 onFabClick = {}
             )
