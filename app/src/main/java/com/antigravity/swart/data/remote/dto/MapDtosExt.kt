@@ -12,6 +12,8 @@ fun MapPinDto.toDomain(): MapPin {
         imagen = imagen,
         distancia = distancia,
         match = match,
-        mainTag = mainTag
+        mainTag = mainTag,
+        startDate = startDate,
+        endDate = endDate
     )
 }

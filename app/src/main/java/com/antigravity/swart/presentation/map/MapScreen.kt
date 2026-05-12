@@ -19,8 +19,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -39,10 +43,20 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.LinearGradient
 import android.graphics.Shader
+import java.text.SimpleDateFormat
+import java.util.*
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.content.ContextCompat
 
 fun createMarkerBitmap(context: Context, tag: String): Bitmap {
-    val size = 120
+    val size = 200 // Increased resolution for sharper icons
     val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     
@@ -70,57 +84,85 @@ fun createMarkerBitmap(context: Context, tag: String): Bitmap {
     paint.shader = gradient
     canvas.drawCircle(size / 2f, size / 2f, size / 3.2f, paint)
     
-    // Draw Icon
-    val isPainting = tag.lowercase() != "fotografía" && tag.lowercase() != "escultura"
+    // Draw Manual Vector Icon (Visual transparency using the same gradient)
+    paint.shader = null
+    paint.color = 0xFFFFFFFF.toInt()
+    paint.style = Paint.Style.FILL
     
-    if (isPainting) {
-        // Draw the EXACT Material Design Palette icon shape manually
-        paint.shader = null
-        paint.color = Color.White.toArgb()
-        paint.style = Paint.Style.FILL
-        
-        val centerX = size / 2f
-        val centerY = size / 2f
-        val s = size / 42f // Scaled down to leave more padding (approx 55% smaller)
-        
-        // Translate to center and scale
-        val path = android.graphics.Path().apply {
-            // This is a simplified version of the official Material Palette Path
-            moveTo(centerX + 0f * s, centerY - 9f * s)
-            cubicTo(centerX - 4.97f * s, centerY - 9f * s, centerX - 9f * s, centerY - 4.97f * s, centerX - 9f * s, centerY + 0f * s)
-            cubicTo(centerX - 9f * s, centerY + 4.97f * s, centerX - 4.97f * s, centerY + 9f * s, centerX + 0f * s, centerY + 9f * s)
-            cubicTo(centerX + 0.83f * s, centerY + 9f * s, centerX + 1.5f * s, centerY + 8.33f * s, centerX + 1.5f * s, centerY + 7.5f * s)
-            cubicTo(centerX + 1.5f * s, centerY + 7.11f * s, centerX + 1.35f * s, centerY + 6.76f * s, centerX + 1.11f * s, centerY + 6.5f * s)
-            cubicTo(centerX + 0.88f * s, centerY + 6.23f * s, centerX + 0.73f * s, centerY + 5.88f * s, centerX + 0.73f * s, centerY + 5.5f * s)
-            cubicTo(centerX + 0.73f * s, centerY + 4.67f * s, centerX + 1.4f * s, centerY + 4f * s, centerX + 2.23f * s, centerY + 4f * s)
-            lineTo(centerX + 4f * s, centerY + 4f * s)
-            cubicTo(centerX + 6.76f * s, centerY + 4f * s, centerX + 9f * s, centerY + 1.76f * s, centerX + 9f * s, centerY - 1f * s)
-            cubicTo(centerX + 9f * s, centerY - 5.42f * s, centerX + 4.97f * s, centerY - 9f * s, centerX + 0f * s, centerY - 9f * s)
-            close()
+    val centerX = size / 2f
+    val centerY = size / 2f
+    val s = size / 55f
+    val offset = 12f
+    
+    val mainPath = android.graphics.Path()
+    val holePath = android.graphics.Path()
+    
+    when (tag.lowercase()) {
+        "fotografía" -> {
+            // Frame
+            mainPath.moveTo(centerX + (21f - offset) * s, centerY + (19f - offset) * s)
+            mainPath.lineTo(centerX + (21f - offset) * s, centerY + (5f - offset) * s)
+            mainPath.cubicTo(centerX + (21f - offset) * s, centerY + (3.9f - offset) * s, centerX + (20.1f - offset) * s, centerY + (3f - offset) * s, centerX + (19f - offset) * s, centerY + (3f - offset) * s)
+            mainPath.lineTo(centerX + (5f - offset) * s, centerY + (3f - offset) * s)
+            mainPath.cubicTo(centerX + (3.9f - offset) * s, centerY + (3f - offset) * s, centerX + (3f - offset) * s, centerY + (3.9f - offset) * s, centerX + (3f - offset) * s, centerY + (5f - offset) * s)
+            mainPath.lineTo(centerX + (3f - offset) * s, centerY + (19f - offset) * s)
+            mainPath.cubicTo(centerX + (3f - offset) * s, centerY + (20.1f - offset) * s, centerX + (3.9f - offset) * s, centerY + (21f - offset) * s, centerX + (5f - offset) * s, centerY + (21f - offset) * s)
+            mainPath.lineTo(centerX + (19f - offset) * s, centerY + (21f - offset) * s)
+            mainPath.cubicTo(centerX + (20.1f - offset) * s, centerY + (21f - offset) * s, centerX + (21f - offset) * s, centerY + (20.1f - offset) * s, centerX + (21f - offset) * s, centerY + (19f - offset) * s)
+            mainPath.close()
             
-            // Add dots as CCW circles to "cut" them out of the path (making them transparent)
-            addCircle(centerX - 5.5f * s, centerY - 1.5f * s, 1.5f * s, android.graphics.Path.Direction.CCW)
-            addCircle(centerX - 2.5f * s, centerY - 5.5f * s, 1.5f * s, android.graphics.Path.Direction.CCW)
-            addCircle(centerX + 2.5f * s, centerY - 5.5f * s, 1.5f * s, android.graphics.Path.Direction.CCW)
-            addCircle(centerX + 5.5f * s, centerY - 1.5f * s, 1.5f * s, android.graphics.Path.Direction.CCW)
+            // Mountain hole
+            holePath.moveTo(centerX + (8.5f - offset) * s, centerY + (13.5f - offset) * s)
+            holePath.lineTo(centerX + (5f - offset) * s, centerY + (18f - offset) * s)
+            holePath.lineTo(centerX + (19f - offset) * s, centerY + (18f - offset) * s)
+            holePath.lineTo(centerX + (14.5f - offset) * s, centerY + (12f - offset) * s)
+            holePath.lineTo(centerX + (11f - offset) * s, centerY + (16.51f - offset) * s)
+            holePath.close()
         }
-        canvas.drawPath(path, paint)
-    } else {
-        val iconRes = when (tag.lowercase()) {
-            "fotografía" -> android.R.drawable.ic_menu_camera
-            "escultura" -> android.R.drawable.ic_menu_gallery
-            else -> android.R.drawable.ic_menu_gallery
+        "escultura" -> {
+            // Museum
+            mainPath.addRect(centerX + (2f - offset) * s, centerY + (19f - offset) * s, centerX + (21f - offset) * s, centerY + (22f - offset) * s, android.graphics.Path.Direction.CW)
+            mainPath.addRect(centerX + (4f - offset) * s, centerY + (10f - offset) * s, centerX + (7f - offset) * s, centerY + (17f - offset) * s, android.graphics.Path.Direction.CW)
+            mainPath.addRect(centerX + (10f - offset) * s, centerY + (10f - offset) * s, centerX + (13f - offset) * s, centerY + (17f - offset) * s, android.graphics.Path.Direction.CW)
+            mainPath.addRect(centerX + (16f - offset) * s, centerY + (10f - offset) * s, centerX + (19f - offset) * s, centerY + (17f - offset) * s, android.graphics.Path.Direction.CW)
+            mainPath.moveTo(centerX + (11.5f - offset) * s, centerY + (2f - offset) * s)
+            mainPath.lineTo(centerX + (2f - offset) * s, centerY + (6f - offset) * s)
+            mainPath.lineTo(centerX + (2f - offset) * s, centerY + (8f - offset) * s)
+            mainPath.lineTo(centerX + (21f - offset) * s, centerY + (8f - offset) * s)
+            mainPath.lineTo(centerX + (21f - offset) * s, centerY + (6f - offset) * s)
+            mainPath.close()
         }
-        
-        val drawable = ContextCompat.getDrawable(context, iconRes)
-        drawable?.let {
-            it.setTint(0xFFFFFFFF.toInt())
-            val iconSize = (size / 2.5).toInt()
-            val left = (size - iconSize) / 2
-            val top = (size - iconSize) / 2
-            it.setBounds(left, top, left + iconSize, top + iconSize)
-            it.draw(canvas)
+        else -> {
+            // Palette
+            mainPath.moveTo(centerX + (12f - offset) * s, centerY + (2f - offset) * s)
+            mainPath.cubicTo(centerX + (6.48f - offset) * s, centerY + (2f - offset) * s, centerX + (2f - offset) * s, centerY + (6.48f - offset) * s, centerX + (2f - offset) * s, centerY + (12f - offset) * s)
+            mainPath.cubicTo(centerX + (2f - offset) * s, centerY + (17.52f - offset) * s, centerX + (6.48f - offset) * s, centerY + (22f - offset) * s, centerX + (12f - offset) * s, centerY + (22f - offset) * s)
+            mainPath.cubicTo(centerX + (12.83f - offset) * s, centerY + (22f - offset) * s, centerX + (13.5f - offset) * s, centerY + (21.33f - offset) * s, centerX + (13.5f - offset) * s, centerY + (20.5f - offset) * s)
+            mainPath.cubicTo(centerX + (13.5f - offset) * s, centerY + (20.11f - offset) * s, centerX + (13.35f - offset) * s, centerY + (19.76f - offset) * s, centerX + (13.11f - offset) * s, centerY + (19.49f - offset) * s)
+            mainPath.cubicTo(centerX + (12.88f - offset) * s, centerY + (19.23f - offset) * s, centerX + (12.73f - offset) * s, centerY + (18.88f - offset) * s, centerX + (12.73f - offset) * s, centerY + (18.5f - offset) * s)
+            mainPath.cubicTo(centerX + (12.73f - offset) * s, centerY + (17.67f - offset) * s, centerX + (13.4f - offset) * s, centerY + (17f - offset) * s, centerX + (14.23f - offset) * s, centerY + (17f - offset) * s)
+            mainPath.lineTo(centerX + (16f - offset) * s, centerY + (17f - offset) * s)
+            mainPath.cubicTo(centerX + (18.76f - offset) * s, centerY + (17f - offset) * s, centerX + (21f - offset) * s, centerY + (14.76f - offset) * s, centerX + (21f - offset) * s, centerY + (12f - offset) * s)
+            mainPath.cubicTo(centerX + (21f - offset) * s, centerY + (6.48f - offset) * s, centerX + (16.52f - offset) * s, centerY + (2f - offset) * s, centerX + (12f - offset) * s, centerY + (2f - offset) * s)
+            mainPath.close()
+            
+            // Dots
+            holePath.addCircle(centerX + (6.5f - offset) * s, centerY + (10.5f - offset) * s, 1.8f * s, android.graphics.Path.Direction.CW)
+            holePath.addCircle(centerX + (9.5f - offset) * s, centerY + (6.5f - offset) * s, 1.8f * s, android.graphics.Path.Direction.CW)
+            holePath.addCircle(centerX + (14.5f - offset) * s, centerY + (6.5f - offset) * s, 1.8f * s, android.graphics.Path.Direction.CW)
+            holePath.addCircle(centerX + (17.5f - offset) * s, centerY + (10.5f - offset) * s, 1.8f * s, android.graphics.Path.Direction.CW)
         }
+    }
+    
+    // 1. Draw the main shape in White
+    paint.shader = null
+    paint.color = 0xFFFFFFFF.toInt()
+    canvas.drawPath(mainPath, paint)
+    
+    // 2. Draw the "holes" using the SAME gradient as the background
+    if (!holePath.isEmpty) {
+        paint.shader = gradient
+        canvas.drawPath(holePath, paint)
     }
     
     return bitmap
@@ -137,6 +179,12 @@ fun MapScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    
+    // Prepare official Painters
+    val palettePainter = rememberVectorPainter(Icons.Default.Palette)
+    val photoPainter = rememberVectorPainter(Icons.Default.Image)
+    val sculpturePainter = rememberVectorPainter(Icons.Default.AccountBalance)
     
     // Initialize osmdroid configuration
     LaunchedEffect(Unit) {
@@ -194,18 +242,12 @@ fun MapScreen(
                 },
                 update = { mapView ->
                     mapView.overlays.clear()
-                    uiState.pins.forEach { pin ->
+                    uiState.filteredPins.forEach { pin ->
                         val marker = Marker(mapView)
                         marker.position = GeoPoint(pin.lat, pin.lon)
                         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         
-                        // Create custom premium icon
-                        val iconRes = when (pin.mainTag.lowercase()) {
-                            "fotografía" -> android.R.drawable.ic_menu_camera
-                            "escultura" -> android.R.drawable.ic_menu_gallery
-                            else -> android.R.drawable.ic_menu_edit
-                        }
-                        
+                        // Create custom premium marker
                         val markerBitmap = createMarkerBitmap(context, pin.mainTag)
                         marker.icon = android.graphics.drawable.BitmapDrawable(context.resources, markerBitmap)
                         
@@ -227,7 +269,11 @@ fun MapScreen(
                     .align(Alignment.TopCenter)
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                SearchBarMock()
+                FunctionalSearchBar(
+                    query = uiState.searchQuery,
+                    onQueryChange = viewModel::onSearchQueryChange,
+                    onFilterClick = { viewModel.toggleFilterSheet(true) }
+                )
             }
 
             // Selected Exhibition Card Overlay
@@ -251,18 +297,33 @@ fun MapScreen(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+            
+            // Filter Bottom Sheet
+            if (uiState.isFilterSheetVisible) {
+                FilterBottomSheet(
+                    uiState = uiState,
+                    onDismiss = { viewModel.toggleFilterSheet(false) },
+                    onToggleTag = viewModel::onToggleTag,
+                    onPriceChange = viewModel::onPriceChange,
+                    onDateRangeChange = viewModel::onDateRangeChange
+                )
+            }
         }
     }
 }
 
 @Composable
-fun SearchBarMock() {
+fun FunctionalSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onFilterClick: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = CardBackground.copy(alpha = 0.9f),
+        shape = RoundedCornerShape(28.dp),
+        color = CardBackground.copy(alpha = 0.95f),
         tonalElevation = 8.dp
     ) {
         Row(
@@ -272,21 +333,295 @@ fun SearchBarMock() {
         ) {
             Icon(Icons.Default.Search, contentDescription = null, tint = TextGray)
             Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = "Galerías, obras o artistas",
-                color = TextGray,
-                fontSize = 14.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Box(modifier = Modifier.weight(1f)) {
+                if (query.isEmpty()) {
+                    Text(
+                        text = "Galerías, obras o artistas",
+                        color = TextGray,
+                        fontSize = 15.sp
+                    )
+                }
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    textStyle = TextStyle(
+                        color = TextWhite,
+                        fontSize = 15.sp
+                    ),
+                    cursorBrush = SolidColor(InteresadoGradientStart),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Default.Close, contentDescription = null, tint = TextGray, modifier = Modifier.size(20.dp))
+                }
+            }
             Box(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Brush.horizontalGradient(listOf(InteresadoGradientStart, InteresadoGradientEnd))),
+                    .background(Brush.horizontalGradient(listOf(InteresadoGradientStart, InteresadoGradientEnd)))
+                    .clickable { onFilterClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Tune, contentDescription = null, tint = TextWhite, modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Tune, contentDescription = null, tint = TextWhite, modifier = Modifier.size(18.dp))
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FilterBottomSheet(
+    uiState: MapUiState,
+    onDismiss: () -> Unit,
+    onToggleTag: (String) -> Unit,
+    onPriceChange: (Float) -> Unit,
+    onDateRangeChange: (Long?, Long?) -> Unit
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = uiState.startDate,
+        initialSelectedEndDateMillis = uiState.endDate
+    )
+    
+    // Sync state when uiState changes (e.g. cleared)
+    LaunchedEffect(uiState.startDate, uiState.endDate) {
+        if (uiState.startDate != datePickerState.selectedStartDateMillis || 
+            uiState.endDate != datePickerState.selectedEndDateMillis) {
+            datePickerState.setSelection(uiState.startDate, uiState.endDate)
+        }
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDateRangeChange(
+                        datePickerState.selectedStartDateMillis,
+                        datePickerState.selectedEndDateMillis
+                    )
+                    showDatePicker = false
+                }) {
+                    Text("OK", color = InteresadoGradientStart)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar", color = TextGray)
+                }
+            },
+            colors = DatePickerDefaults.colors(
+                containerColor = CardBackground
+            )
+        ) {
+            DateRangePicker(
+                state = datePickerState,
+                title = {
+                    Text(
+                        text = "Selecciona el periodo",
+                        modifier = Modifier.padding(start = 24.dp, top = 16.dp),
+                        color = TextGray,
+                        fontSize = 14.sp
+                    )
+                },
+                headline = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, bottom = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val sdf = SimpleDateFormat("d MMM", Locale.getDefault())
+                        val startText = datePickerState.selectedStartDateMillis?.let { sdf.format(Date(it)) } ?: "Inicio"
+                        val endText = datePickerState.selectedEndDateMillis?.let { sdf.format(Date(it)) } ?: "Fin"
+                        
+                        Text(
+                            text = "$startText — $endText",
+                            color = TextWhite,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                showModeToggle = false,
+                colors = DatePickerDefaults.colors(
+                    containerColor = CardBackground,
+                    titleContentColor = TextWhite,
+                    headlineContentColor = TextWhite,
+                    weekdayContentColor = TextGray,
+                    dayContentColor = TextWhite,
+                    selectedDayContainerColor = InteresadoGradientStart,
+                    selectedDayContentColor = TextWhite,
+                    todayContentColor = InteresadoGradientStart,
+                    todayDateBorderColor = InteresadoGradientStart,
+                    dayInSelectionRangeContainerColor = InteresadoGradientStart.copy(alpha = 0.2f),
+                    dayInSelectionRangeContentColor = TextWhite
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            )
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = CardBackground,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = TextGray.copy(alpha = 0.5f)) }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 40.dp)
+        ) {
+            Text(
+                text = "Filtros",
+                color = TextWhite,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            // Discipline Section
+            FilterSectionTitle("Disciplina")
+            val tags = listOf("Pintura", "Escultura", "Fotografía")
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                tags.forEach { tag ->
+                    FilterChipItem(
+                        text = tag,
+                        isSelected = uiState.selectedTags.contains(tag),
+                        onClick = { onToggleTag(tag) }
+                    )
+                }
+            }
+
+            // Price Section
+            FilterSectionTitle("Precio Máximo: ${if (uiState.maxPrice >= 100f) "Cualquiera" else "${uiState.maxPrice.toInt()}€"}")
+            Slider(
+                value = uiState.maxPrice,
+                onValueChange = onPriceChange,
+                valueRange = 0f..100f,
+                colors = SliderDefaults.colors(
+                    thumbColor = InteresadoGradientStart,
+                    activeTrackColor = InteresadoGradientStart,
+                    inactiveTrackColor = TextGray.copy(alpha = 0.2f)
+                ),
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            // Date Section
+            FilterSectionTitle("Rango de Fechas")
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { showDatePicker = true },
+                color = CardBackground.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, TextGray.copy(alpha = 0.2f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.DateRange, contentDescription = null, tint = InteresadoGradientStart)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
+                    val dateText = when {
+                        uiState.startDate != null && uiState.endDate != null -> {
+                            "${sdf.format(Date(uiState.startDate))} - ${sdf.format(Date(uiState.endDate))}"
+                        }
+                        uiState.startDate != null -> {
+                            "Desde ${sdf.format(Date(uiState.startDate))}"
+                        }
+                        else -> "Seleccionar rango"
+                    }
+                    Text(
+                        text = dateText,
+                        color = if (uiState.startDate != null) TextWhite else TextGray,
+                        fontSize = 15.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (uiState.startDate != null) {
+                        IconButton(onClick = { onDateRangeChange(null, null) }) {
+                            Icon(Icons.Default.Close, contentDescription = null, tint = TextGray, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Brush.horizontalGradient(listOf(InteresadoGradientStart, InteresadoGradientEnd))),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Aplicar Filtros", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FilterSectionTitle(title: String) {
+    Text(
+        text = title,
+        color = TextWhite,
+        fontSize = 16.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(bottom = 12.dp)
+    )
+}
+
+@Composable
+fun FilterChipItem(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .clickable { onClick() }
+            .height(36.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = if (isSelected) Color.Transparent else CardBackground.copy(alpha = 0.8f),
+        border = if (isSelected) null else BorderStroke(1.dp, TextGray.copy(alpha = 0.3f))
+    ) {
+        Box(
+            modifier = Modifier
+                .then(
+                    if (isSelected) Modifier.background(Brush.horizontalGradient(listOf(InteresadoGradientStart, InteresadoGradientEnd)))
+                    else Modifier
+                )
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                color = if (isSelected) TextWhite else TextGray,
+                fontSize = 13.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
         }
     }
 }

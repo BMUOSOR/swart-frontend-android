@@ -9,5 +9,7 @@ data class MapPinDto(
     val imagen: String?,
     val distancia: String,
     val match: Int,
-    val mainTag: String
+    val mainTag: String,
+    val startDate: Long? = null,
+    val endDate: Long? = null
 )
