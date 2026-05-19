@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.antigravity.swart.presentation.home.HomeScreen
 import com.antigravity.swart.presentation.detail.DetailScreen
+import com.antigravity.swart.presentation.artist.ArtistProfileScreen
 import com.antigravity.swart.presentation.matches.SwapScreen
 import com.antigravity.swart.presentation.map.MapScreen
 import com.antigravity.swart.presentation.auth.LoginScreen
@@ -67,6 +68,9 @@ fun AppNavigation() {
                 onNavigateToDetail = { exhibitionId ->
                     navController.navigate("detail/$exhibitionId")
                 },
+                onNavigateToArtistProfile = { artistId ->
+                    navController.navigate("artist_profile/$artistId")
+                },
                 onNavigateToSwap = {
                     navController.navigate("swap/$role") {
                         popUpTo("home/$role") { saveState = true }
@@ -88,6 +92,14 @@ fun AppNavigation() {
             val exhibitionId = backStackEntry.arguments?.getString("exhibitionId")?.toLongOrNull() ?: 0L
             DetailScreen(
                 exhibitionId = exhibitionId,
+                onBack = { navController.popBackStack() },
+                onNavigateToArtistProfile = { artistId ->
+                    navController.navigate("artist_profile/$artistId")
+                }
+            )
+        }
+        composable("artist_profile/{artistId}") { backStackEntry ->
+            ArtistProfileScreen(
                 onBack = { navController.popBackStack() }
             )
         }
@@ -98,6 +110,9 @@ fun AppNavigation() {
                 role = role,
                 onNavigateToDetail = { exhibitionId ->
                     navController.navigate("detail/$exhibitionId")
+                },
+                onNavigateToArtistProfile = { artistId ->
+                    navController.navigate("artist_profile/$artistId")
                 },
                 onNavigateHome = {
                     navController.navigate("home/$role") {

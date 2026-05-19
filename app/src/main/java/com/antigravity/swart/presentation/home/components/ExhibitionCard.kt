@@ -24,6 +24,7 @@ import com.antigravity.swart.domain.model.Exhibition
 import com.antigravity.swart.presentation.theme.BadgeGreen
 import kotlinx.coroutines.delay
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 
 @Composable
@@ -31,6 +32,7 @@ fun ExhibitionCard(
     exhibition: Exhibition,
     isFeatured: Boolean = false,
     onClick: () -> Unit = {},
+    onArtistClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val allImages = remember(exhibition) {
@@ -129,19 +131,46 @@ fun ExhibitionCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AsyncImage(
-                            model = exhibition.artistAvatarUrl,
-                            contentDescription = "Artist Avatar",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                    val artistsList = exhibition.artists
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onArtistClick(artistsList.firstOrNull()?.id ?: exhibition.artistId) }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            artistsList.take(3).forEachIndexed { index, artist ->
+                                val offset = if (index > 0) (-8 * index).dp else 0.dp
+                                AsyncImage(
+                                    model = artist.avatarUrl,
+                                    contentDescription = "Artist Avatar",
+                                    modifier = Modifier
+                                        .offset(x = offset)
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Black)
+                                        .border(1.dp, Color.White.copy(alpha = 0.8f), CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                        
+                        val overlapOffset = if (artistsList.take(3).size > 1) {
+                            (-8 * (artistsList.take(3).size - 1)).dp
+                        } else {
+                            0.dp
+                        }
+                        
+                        Spacer(modifier = Modifier.width(8.dp).offset(x = overlapOffset))
+                        
                         Text(
-                            text = exhibition.artistName,
+                            text = if (artistsList.isNotEmpty()) artistsList.joinToString(", ") { it.name } else exhibition.artistName,
                             color = Color.White,
-                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.offset(x = overlapOffset)
                         )
                     }
 

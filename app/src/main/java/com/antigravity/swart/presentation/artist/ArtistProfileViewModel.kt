@@ -1,0 +1,82 @@
+package com.antigravity.swart.presentation.artist
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.antigravity.swart.domain.model.ArtistProfile
+import com.antigravity.swart.domain.repository.ExhibitionRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class ArtistProfileViewModel @Inject constructor(
+    private val repository: ExhibitionRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    // Recuperamos el artistId de los argumentos de navegación.
+    // Soporta tanto "artistId" como argumento string (que convertiremos) o long
+    private val artistId: Long = try {
+        val arg = savedStateHandle.get<String>("artistId")
+        arg?.toLongOrNull() ?: savedStateHandle.get<Long>("artistId") ?: 1L
+    } catch (e: Exception) {
+        1L
+    }
+
+    private val _uiState = MutableStateFlow<ArtistProfileUiState>(ArtistProfileUiState.Loading)
+    val uiState: StateFlow<ArtistProfileUiState> = _uiState.asStateFlow()
+
+    private val _isFollowing = MutableStateFlow(false)
+    val isFollowing: StateFlow<Boolean> = _isFollowing.asStateFlow()
+
+    init {
+        loadArtistProfile()
+    }
+
+    fun loadArtistProfile() {
+        viewModelScope.launch {
+            _uiState.value = ArtistProfileUiState.Loading
+            repository.getArtistProfile(artistId).fold(
+                onSuccess = { profile ->
+                    _uiState.value = ArtistProfileUiState.Success(profile)
+                    // Simulamos que el usuario Clara Ríos (ID 3) ya lo sigue si el total de seguidores es impar para que se vea activo
+                    _isFollowing.value = profile.seguidores % 2 != 0
+                },
+                onFailure = { error ->
+                    _uiState.value = ArtistProfileUiState.Error(error.message ?: "Error de conexión")
+                }
+            )
+        }
+    }
+
+    fun toggleFollow() {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            if (currentState is ArtistProfileUiState.Success) {
+                val currentProfile = currentState.profile
+                repository.followArtist(artistId, userId = 3L).fold(
+                    onSuccess = { following ->
+                        _isFollowing.value = following
+                        val updatedProfile = currentProfile.copy(
+                            seguidores = if (following) currentProfile.seguidores + 1 else maxOf(0, currentProfile.seguidores - 1)
+                        )
+                        _uiState.value = ArtistProfileUiState.Success(updatedProfile)
+                    },
+                    onFailure = {
+                        // Feedback silencioso para conservar estabilidad
+                    }
+                )
+            }
+        }
+    }
+}
+
+sealed interface ArtistProfileUiState {
+    object Loading : ArtistProfileUiState
+    data class Success(val profile: ArtistProfile) : ArtistProfileUiState
+    data class Error(val message: String) : ArtistProfileUiState
+}

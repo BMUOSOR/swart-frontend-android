@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -43,6 +44,7 @@ import kotlinx.coroutines.launch
 fun SwapScreen(
     role: String = "interesado",
     onNavigateToDetail: (Long) -> Unit,
+    onNavigateToArtistProfile: (Long) -> Unit = {},
     onNavigateHome: () -> Unit,
     onNavigateToMap: () -> Unit,
     onLogout: () -> Unit,
@@ -51,7 +53,7 @@ fun SwapScreen(
     val userType = if (role == "artista") UserType.ARTIST else UserType.GENERAL
     val uiState by viewModel.uiState.collectAsState()
     val exhibitions = uiState.exhibitions
-    
+
     // Flatten artworks for swiping
     val artworks = remember(exhibitions) {
         exhibitions.flatMap { expo ->
@@ -60,7 +62,7 @@ fun SwapScreen(
             }
         }
     }
-    
+
     var currentIndex by remember { mutableStateOf(0) }
 
     Scaffold(
@@ -92,7 +94,7 @@ fun SwapScreen(
                 val offsetY = remember { Animatable(0f) }
                 val rotation = remember { Animatable(0f) }
                 val scope = rememberCoroutineScope()
-                
+
                 // Animación de opacidad para el nombre del artista
                 val alpha = remember(currentIndex) { Animatable(0f) }
                 LaunchedEffect(currentIndex) {
@@ -180,7 +182,8 @@ fun SwapScreen(
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .padding(16.dp),
+                            .padding(16.dp)
+                            .clickable { onNavigateToArtistProfile(exhibition.artistId) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
@@ -200,7 +203,7 @@ fun SwapScreen(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.background(
-                                Color.Black.copy(alpha = alpha.value * 0.5f), 
+                                Color.Black.copy(alpha = alpha.value * 0.5f),
                                 RoundedCornerShape(8.dp)
                             ).padding(horizontal = 8.dp, vertical = 4.dp)
                         )
@@ -233,9 +236,9 @@ fun SwapScreen(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
                             )
-                            
+
                             Spacer(modifier = Modifier.width(16.dp))
-                            
+
                             Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Distancia", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             // Distancia mockeada determinista en base al string de ubicación (se calcularía con el backend real y GPS)
@@ -249,6 +252,7 @@ fun SwapScreen(
                         }
                     }
                 }
+
 
                 // 3. Fila de Botones de Acción (Action Area)
                 Row(

@@ -25,6 +25,7 @@ fun HomeScreen(
     userType: UserType = UserType.GENERAL,
     role: String = "interesado",
     onNavigateToDetail: (Long) -> Unit = {},
+    onNavigateToArtistProfile: (Long) -> Unit = {},
     onNavigateToSwap: () -> Unit = {},
     onNavigateToMap: (String) -> Unit = {},
     onLogout: () -> Unit = {},
@@ -102,6 +103,7 @@ fun HomeScreen(
                     ExhibitionMasonryGrid(
                         exhibitions = uiState.exhibitions,
                         onExhibitionClick = onNavigateToDetail,
+                        onArtistClick = onNavigateToArtistProfile,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

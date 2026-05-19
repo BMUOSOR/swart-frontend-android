@@ -14,6 +14,7 @@ import com.antigravity.swart.domain.model.Exhibition
 fun ExhibitionMasonryGrid(
     exhibitions: List<Exhibition>,
     onExhibitionClick: (Long) -> Unit = {},
+    onArtistClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyVerticalStaggeredGrid(
@@ -33,6 +34,7 @@ fun ExhibitionMasonryGrid(
                         exhibition = featuredExhibition,
                         isFeatured = true,
                         onClick = { onExhibitionClick(featuredExhibition.id) },
+                        onArtistClick = onArtistClick,
                         modifier = Modifier
                             .padding(horizontal = 0.dp)
                             .height(180.dp) // Más pequeña como pidió el usuario
@@ -52,6 +54,7 @@ fun ExhibitionMasonryGrid(
                     exhibition = exhibition,
                     isFeatured = false, // Las tarjetas del mosaico nunca son destacadas
                     onClick = { onExhibitionClick(exhibition.id) },
+                    onArtistClick = onArtistClick,
                     modifier = Modifier.height(height.dp)
                 )
             }

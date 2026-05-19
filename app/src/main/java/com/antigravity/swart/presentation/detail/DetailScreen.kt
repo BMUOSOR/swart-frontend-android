@@ -1,9 +1,11 @@
 package com.antigravity.swart.presentation.detail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +42,7 @@ import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 fun DetailScreen(
     exhibitionId: Long,
     onBack: () -> Unit,
+    onNavigateToArtistProfile: (Long) -> Unit,
     viewModel: HomeViewModel = hiltViewModel() // Reuse home VM for simplicity if it has data
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -168,15 +171,70 @@ fun DetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
 
-                // Artist
-                Text(
-                    text = exhibition.artistName,
-                    color = Color.LightGray,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Artists (Soporte multi-artista con clicks individuales)
+                val artistsList = exhibition.artists
+                if (artistsList.size > 1) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Artistas Creadores",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        artistsList.forEach { artist ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .clickable { onNavigateToArtistProfile(artist.id) }
+                                    .background(Color(0xFF231B30))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                AsyncImage(
+                                    model = artist.avatarUrl,
+                                    contentDescription = artist.name,
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .border(1.dp, ArtistaGradientStart, CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = artist.name,
+                                    color = ArtistaGradientStart,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onNavigateToArtistProfile(exhibition.artistId) }
+                    ) {
+                        AsyncImage(
+                            model = exhibition.artistAvatarUrl,
+                            contentDescription = "Artist Avatar",
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, ArtistaGradientStart, CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = exhibition.artistName,
+                            color = ArtistaGradientStart, // Color de acento rosa neón para indicar que es clickable
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 // Place Name

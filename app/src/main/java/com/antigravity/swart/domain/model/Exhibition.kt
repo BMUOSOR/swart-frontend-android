@@ -1,11 +1,19 @@
 package com.antigravity.swart.domain.model
 
+data class ArtistBasic(
+    val id: Long,
+    val name: String,
+    val avatarUrl: String
+)
+
 data class Exhibition(
     val id: Long,
+    val artistId: Long,
     val title: String,
     val description: String?,
     val artistName: String,
     val artistAvatarUrl: String,
+    val artists: List<ArtistBasic> = emptyList(),
     val isNew: Boolean,
     val artworksCount: Int,
     val artworks: List<Artwork>,
