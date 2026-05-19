@@ -9,6 +9,7 @@ import com.antigravity.swart.presentation.detail.DetailScreen
 import com.antigravity.swart.presentation.artist.ArtistProfileScreen
 import com.antigravity.swart.presentation.matches.SwapScreen
 import com.antigravity.swart.presentation.map.MapScreen
+import com.antigravity.swart.presentation.profile.UserProfileScreen
 import com.antigravity.swart.presentation.auth.LoginScreen
 import com.antigravity.swart.presentation.auth.RegisterScreen
 import com.antigravity.swart.presentation.auth.AuthViewModel
@@ -84,9 +85,7 @@ fun AppNavigation() {
                     navController.navigate("mapa/$roleStr")
                 },
                 onLogout = {
-                    navController.navigate("auth") {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.navigate("perfil/$role")
                 }
             )
         }
@@ -142,9 +141,7 @@ fun AppNavigation() {
                     }
                 },
                 onLogout = {
-                    navController.navigate("auth") {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.navigate("perfil/$role")
                 }
             )
         }
@@ -180,11 +177,39 @@ fun AppNavigation() {
                     navController.navigate("detail/$id?role=$role")
                 },
                 onLogout = {
+                    navController.navigate("perfil/$role")
+                },
+                exhibitionIdToSelect = exhibitionId
+            )
+        }
+        composable("perfil/{role}") { backStackEntry ->
+            val role = backStackEntry.arguments?.getString("role") ?: "interesado"
+            UserProfileScreen(
+                role = role,
+                onNavigateHome = {
+                    navController.navigate("home/$role") {
+                        popUpTo("home/$role") { inclusive = true }
+                    }
+                },
+                onNavigateToSwap = {
+                    navController.navigate("swap/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToMap = {
+                    navController.navigate("mapa/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onLogout = {
                     navController.navigate("auth") {
                         popUpTo(0) { inclusive = true }
                     }
-                },
-                exhibitionIdToSelect = exhibitionId
+                }
             )
         }
     }
