@@ -175,11 +175,14 @@ fun MapScreen(
     onNavigateToSwap: () -> Unit = {},
     onNavigateToDetail: (Long) -> Unit = {},
     onLogout: () -> Unit = {},
+    exhibitionIdToSelect: Long = -1L,
     viewModel: MapViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val density = androidx.compose.ui.platform.LocalDensity.current
+    
+    var lastCenteredPinId by remember { mutableStateOf<Long?>(null) }
     
     // Prepare official Painters
     val palettePainter = rememberVectorPainter(Icons.Default.Palette)
@@ -189,6 +192,12 @@ fun MapScreen(
     // Initialize osmdroid configuration
     LaunchedEffect(Unit) {
         Configuration.getInstance().userAgentValue = context.packageName
+    }
+
+    LaunchedEffect(exhibitionIdToSelect) {
+        if (exhibitionIdToSelect != -1L) {
+            viewModel.selectExhibition(exhibitionIdToSelect)
+        }
     }
 
     Scaffold(
@@ -257,6 +266,19 @@ fun MapScreen(
                         }
                         mapView.overlays.add(marker)
                     }
+                    
+                    // Center and zoom if selectedPin changes
+                    uiState.selectedPin?.let { pin ->
+                        if (lastCenteredPinId != pin.idExposicion) {
+                            lastCenteredPinId = pin.idExposicion
+                            val point = GeoPoint(pin.lat, pin.lon)
+                            mapView.controller.animateTo(point)
+                            mapView.controller.setZoom(15.0)
+                        }
+                    } ?: run {
+                        lastCenteredPinId = null
+                    }
+                    
                     mapView.invalidate()
                 }
             )

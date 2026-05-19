@@ -43,12 +43,14 @@ fun DetailScreen(
     exhibitionId: Long,
     onBack: () -> Unit,
     onNavigateToArtistProfile: (Long) -> Unit,
+    onNavigateToMap: (Long) -> Unit,
     viewModel: HomeViewModel = hiltViewModel() // Reuse home VM for simplicity if it has data
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val exhibition = uiState.exhibitions.find { it.id == exhibitionId }
     
     var isLiked by remember { mutableStateOf(false) }
+    var showTicketsSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = DarkBackground,
@@ -291,7 +293,14 @@ fun DetailScreen(
                         // Ubicación
                         Text(text = "Ubicación", color = Color.White, fontWeight = FontWeight.Bold)
                         Text(text = exhibition.ubicacion ?: "N/A", color = Color.LightGray, fontSize = 14.sp)
-                        Text(text = "Ver en mapa →", color = ArtistaGradientStart, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+                        Text(
+                            text = "Ver en mapa →",
+                            color = ArtistaGradientStart,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .clickable { onNavigateToMap(exhibition.id) }
+                        )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -333,7 +342,7 @@ fun DetailScreen(
 
                 // Buy Tickets Button
                 Button(
-                    onClick = { /* TODO */ },
+                    onClick = { showTicketsSheet = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -344,6 +353,145 @@ fun DetailScreen(
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+
+    if (showTicketsSheet && exhibition != null) {
+        val safeExhibition = exhibition
+        ModalBottomSheet(
+            onDismissRequest = { showTicketsSheet = false },
+            containerColor = Color(0xFF1E152A),
+            dragHandle = { BottomSheetDefaults.DragHandle(color = Color.Gray.copy(alpha = 0.5f)) }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Tu Entrada para Swart",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                QrCodePlaceholder(
+                    modifier = Modifier
+                        .size(200.dp)
+                        .padding(8.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2E223F)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            text = safeExhibition.title,
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Lugar: ${safeExhibition.nombreLugar ?: "N/A"}",
+                            color = Color.LightGray,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Fecha: ${safeExhibition.fechaInicio ?: ""} - ${safeExhibition.fechaFin ?: ""}",
+                            color = Color.LightGray,
+                            fontSize = 14.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Divider(color = Color.Gray.copy(alpha = 0.3f))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Asistente:",
+                            color = ArtistaGradientStart,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Clara Ríos",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun QrCodePlaceholder(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .background(Color.White, RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            val sizePx = size.width
+            val cellSize = sizePx / 15f
+            
+            // Draw Finder Patterns (Corners)
+            fun drawFinderPattern(x: Float, y: Float) {
+                // Outer square
+                drawRect(
+                    color = Color.Black,
+                    topLeft = androidx.compose.ui.geometry.Offset(x, y),
+                    size = androidx.compose.ui.geometry.Size(cellSize * 5, cellSize * 5)
+                )
+                // Inner white area
+                drawRect(
+                    color = Color.White,
+                    topLeft = androidx.compose.ui.geometry.Offset(x + cellSize, y + cellSize),
+                    size = androidx.compose.ui.geometry.Size(cellSize * 3, cellSize * 3)
+                )
+                // Center black block
+                drawRect(
+                    color = Color.Black,
+                    topLeft = androidx.compose.ui.geometry.Offset(x + cellSize * 1.5f, y + cellSize * 1.5f),
+                    size = androidx.compose.ui.geometry.Size(cellSize * 2, cellSize * 2)
+                )
+            }
+            
+            // Top Left
+            drawFinderPattern(0f, 0f)
+            // Top Right
+            drawFinderPattern(sizePx - cellSize * 5, 0f)
+            // Bottom Left
+            drawFinderPattern(0f, sizePx - cellSize * 5)
+            
+            // Draw some random blocks to simulate QR data
+            val random = java.util.Random(42) // deterministic seed
+            for (row in 0 until 15) {
+                for (col in 0 until 15) {
+                    // Skip finder pattern zones
+                    if ((row < 6 && col < 6) || (row < 6 && col >= 9) || (row >= 9 && col < 6)) {
+                        continue
+                    }
+                    if (random.nextBoolean()) {
+                        drawRect(
+                            color = Color.Black,
+                            topLeft = androidx.compose.ui.geometry.Offset(col * cellSize, row * cellSize),
+                            size = androidx.compose.ui.geometry.Size(cellSize, cellSize)
+                        )
+                    }
+                }
             }
         }
     }

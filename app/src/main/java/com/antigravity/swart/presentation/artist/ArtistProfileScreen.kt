@@ -31,6 +31,8 @@ import coil.request.ImageRequest
 import com.antigravity.swart.domain.model.ArtistProfile
 import com.antigravity.swart.domain.model.ArtworkForSale
 import com.antigravity.swart.domain.model.Exhibition
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 // Colores premium del tema
 val NavyBackground = Color(0xFF0B0D17)
@@ -486,6 +488,33 @@ fun ExhibitionCardSpanish(
     exhibition: Exhibition,
     context: android.content.Context
 ) {
+    val today = LocalDate.now()
+    var badgeText: String? = null
+    var badgeColor = Color(0xFFEF4444)
+
+    val endDate = exhibition.fechaFin?.let {
+        try { LocalDate.parse(it) } catch (e: Exception) { null }
+    }
+    val startDate = exhibition.fechaInicio?.let {
+        try { LocalDate.parse(it) } catch (e: Exception) { null }
+    }
+
+    if (endDate != null) {
+        val daysToClose = ChronoUnit.DAYS.between(today, endDate)
+        if (daysToClose in 0L..3L) {
+            badgeText = "CIERRA PRONTO"
+            badgeColor = Color(0xFFEF4444)
+        }
+    }
+
+    if (badgeText == null && startDate != null) {
+        val daysSinceOpen = ChronoUnit.DAYS.between(startDate, today)
+        if (daysSinceOpen in 0L..3L) {
+            badgeText = "NUEVO"
+            badgeColor = Color(0xFF10B981)
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -509,20 +538,21 @@ fun ExhibitionCardSpanish(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Badge "CLOSING SOON" flotante si cierra pronto (la lógica ya viene o se asume)
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(16.dp)
-                        .background(Color(0xFFEF4444), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "CIERRA PRONTO",
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Black
-                    )
+                if (badgeText != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(16.dp)
+                            .background(badgeColor, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                    }
                 }
             }
 

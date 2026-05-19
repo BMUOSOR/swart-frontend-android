@@ -31,6 +31,8 @@ class MapViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState = _uiState.asStateFlow()
+    
+    private var pendingExhibitionId: Long? = null
 
     init {
         getMapPins()
@@ -42,10 +44,16 @@ class MapViewModel @Inject constructor(
             repository.getMapPins().fold(
                 onSuccess = { pins ->
                     println("MAP_DEBUG: Loaded ${pins.size} pins")
+                    var selected = _uiState.value.selectedPin
+                    pendingExhibitionId?.let { pendingId ->
+                        selected = pins.find { it.idExposicion == pendingId }
+                        pendingExhibitionId = null
+                    }
                     _uiState.value = _uiState.value.copy(
                         pins = pins,
                         filteredPins = pins,
-                        isLoading = false
+                        isLoading = false,
+                        selectedPin = selected
                     )
                     applyFilters() // Apply filters to initial data
                 },
@@ -54,6 +62,19 @@ class MapViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(error = error.message, isLoading = false)
                 }
             )
+        }
+    }
+
+    fun selectExhibition(exhibitionId: Long) {
+        if (exhibitionId == -1L) return
+        val currentPins = _uiState.value.pins
+        if (currentPins.isNotEmpty()) {
+            val pin = currentPins.find { it.idExposicion == exhibitionId }
+            if (pin != null) {
+                _uiState.value = _uiState.value.copy(selectedPin = pin)
+            }
+        } else {
+            pendingExhibitionId = exhibitionId
         }
     }
 

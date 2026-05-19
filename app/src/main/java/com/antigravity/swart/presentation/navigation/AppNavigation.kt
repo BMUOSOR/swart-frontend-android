@@ -18,6 +18,8 @@ import com.antigravity.swart.presentation.components.UserType
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 @Composable
 fun AppNavigation() {
@@ -66,7 +68,7 @@ fun AppNavigation() {
                 userType = userType,
                 role = role,
                 onNavigateToDetail = { exhibitionId ->
-                    navController.navigate("detail/$exhibitionId")
+                    navController.navigate("detail/$exhibitionId?role=$role")
                 },
                 onNavigateToArtistProfile = { artistId ->
                     navController.navigate("artist_profile/$artistId")
@@ -88,13 +90,26 @@ fun AppNavigation() {
                 }
             )
         }
-        composable("detail/{exhibitionId}") { backStackEntry ->
-            val exhibitionId = backStackEntry.arguments?.getString("exhibitionId")?.toLongOrNull() ?: 0L
+        composable(
+            route = "detail/{exhibitionId}?role={role}",
+            arguments = listOf(
+                navArgument("exhibitionId") { type = NavType.LongType },
+                navArgument("role") {
+                    type = NavType.StringType
+                    defaultValue = "interesado"
+                }
+            )
+        ) { backStackEntry ->
+            val exhibitionId = backStackEntry.arguments?.getLong("exhibitionId") ?: 0L
+            val role = backStackEntry.arguments?.getString("role") ?: "interesado"
             DetailScreen(
                 exhibitionId = exhibitionId,
                 onBack = { navController.popBackStack() },
                 onNavigateToArtistProfile = { artistId ->
                     navController.navigate("artist_profile/$artistId")
+                },
+                onNavigateToMap = { id ->
+                    navController.navigate("mapa/$role?exhibitionId=$id")
                 }
             )
         }
@@ -109,7 +124,7 @@ fun AppNavigation() {
             SwapScreen(
                 role = role,
                 onNavigateToDetail = { exhibitionId ->
-                    navController.navigate("detail/$exhibitionId")
+                    navController.navigate("detail/$exhibitionId?role=$role")
                 },
                 onNavigateToArtistProfile = { artistId ->
                     navController.navigate("artist_profile/$artistId")
@@ -133,8 +148,18 @@ fun AppNavigation() {
                 }
             )
         }
-        composable("mapa/{role}") { backStackEntry ->
+        composable(
+            route = "mapa/{role}?exhibitionId={exhibitionId}",
+            arguments = listOf(
+                navArgument("role") { type = NavType.StringType },
+                navArgument("exhibitionId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "interesado"
+            val exhibitionId = backStackEntry.arguments?.getLong("exhibitionId") ?: -1L
             val userType = if (role == "artista") UserType.ARTIST else UserType.GENERAL
             
             MapScreen(
@@ -151,14 +176,15 @@ fun AppNavigation() {
                         restoreState = true
                     }
                 },
-                onNavigateToDetail = { exhibitionId ->
-                    navController.navigate("detail/$exhibitionId")
+                onNavigateToDetail = { id ->
+                    navController.navigate("detail/$id?role=$role")
                 },
                 onLogout = {
                     navController.navigate("auth") {
                         popUpTo(0) { inclusive = true }
                     }
-                }
+                },
+                exhibitionIdToSelect = exhibitionId
             )
         }
     }
