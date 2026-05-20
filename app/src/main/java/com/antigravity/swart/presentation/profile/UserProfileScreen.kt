@@ -36,6 +36,7 @@ fun UserProfileScreen(
     onNavigateHome: () -> Unit,
     onNavigateToSwap: () -> Unit,
     onNavigateToMap: () -> Unit,
+    onNavigateToObras: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val userType = if (role == "artista") UserType.ARTIST else UserType.GENERAL
@@ -68,6 +69,7 @@ fun UserProfileScreen(
                         "home" -> onNavigateHome()
                         "descubrir" -> onNavigateToSwap()
                         "mapa" -> onNavigateToMap()
+                        "obras" -> onNavigateToObras()
                     }
                 }
             )

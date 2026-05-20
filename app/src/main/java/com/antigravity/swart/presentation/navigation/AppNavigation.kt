@@ -84,6 +84,13 @@ fun AppNavigation() {
                 onNavigateToMap = { roleStr ->
                     navController.navigate("mapa/$roleStr")
                 },
+                onNavigateToObras = {
+                    navController.navigate("obras/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onLogout = {
                     navController.navigate("perfil/$role")
                 }
@@ -140,6 +147,13 @@ fun AppNavigation() {
                         restoreState = true
                     }
                 },
+                onNavigateToObras = {
+                    navController.navigate("obras/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onLogout = {
                     navController.navigate("perfil/$role")
                 }
@@ -176,6 +190,13 @@ fun AppNavigation() {
                 onNavigateToDetail = { id ->
                     navController.navigate("detail/$id?role=$role")
                 },
+                onNavigateToObras = {
+                    navController.navigate("obras/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onLogout = {
                     navController.navigate("perfil/$role")
                 },
@@ -205,10 +226,51 @@ fun AppNavigation() {
                         restoreState = true
                     }
                 },
+                onNavigateToObras = {
+                    navController.navigate("obras/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onLogout = {
                     navController.navigate("auth") {
                         popUpTo(0) { inclusive = true }
                     }
+                }
+            )
+        }
+        composable("obras/{role}") { backStackEntry ->
+            val role = backStackEntry.arguments?.getString("role") ?: "artista"
+            com.antigravity.swart.presentation.exhibitions.MyExhibitionsScreen(
+                onNavigateHome = {
+                    navController.navigate("home/$role") {
+                        popUpTo("home/$role") { inclusive = true }
+                    }
+                },
+                onNavigateToSwap = {
+                    navController.navigate("swap/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToMap = {
+                    navController.navigate("mapa/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("perfil/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToDetail = { exhibitionId ->
+                    navController.navigate("detail/$exhibitionId?role=$role")
                 }
             )
         }

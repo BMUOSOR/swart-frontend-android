@@ -174,6 +174,7 @@ fun MapScreen(
     onNavigateHome: () -> Unit = {},
     onNavigateToSwap: () -> Unit = {},
     onNavigateToDetail: (Long) -> Unit = {},
+    onNavigateToObras: () -> Unit = {},
     onLogout: () -> Unit = {},
     exhibitionIdToSelect: Long = -1L,
     viewModel: MapViewModel = hiltViewModel()
@@ -210,6 +211,7 @@ fun MapScreen(
                     when (it) {
                         "home" -> onNavigateHome()
                         "descubrir" -> onNavigateToSwap()
+                        "obras" -> onNavigateToObras()
                         "perfil" -> onLogout()
                     }
                 }

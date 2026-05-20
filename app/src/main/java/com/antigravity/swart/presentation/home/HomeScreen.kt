@@ -28,6 +28,7 @@ fun HomeScreen(
     onNavigateToArtistProfile: (Long) -> Unit = {},
     onNavigateToSwap: () -> Unit = {},
     onNavigateToMap: (String) -> Unit = {},
+    onNavigateToObras: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -51,6 +52,8 @@ fun HomeScreen(
                         onNavigateToSwap()
                     } else if (it == "mapa") {
                         onNavigateToMap(role)
+                    } else if (it == "obras") {
+                        onNavigateToObras()
                     } else if (it == "perfil") {
                         onLogout()
                     }

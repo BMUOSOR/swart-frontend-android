@@ -368,7 +368,15 @@ fun ArtistProfileContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 6. Exposiciones activas
-        if (profile.activeExhibitions.isNotEmpty()) {
+        val activeExpos = remember(profile.activeExhibitions) {
+            profile.activeExhibitions.filter { exhibition ->
+                val endDate = exhibition.fechaFin?.let {
+                    try { java.time.LocalDate.parse(it) } catch (e: Exception) { null }
+                }
+                endDate == null || !endDate.isBefore(java.time.LocalDate.now())
+            }
+        }
+        if (activeExpos.isNotEmpty()) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
@@ -394,7 +402,7 @@ fun ArtistProfileContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                profile.activeExhibitions.forEach { exhibition ->
+                activeExpos.forEach { exhibition ->
                     ExhibitionCardSpanish(exhibition = exhibition, context = context)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
