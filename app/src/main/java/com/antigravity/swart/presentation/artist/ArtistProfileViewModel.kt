@@ -3,6 +3,7 @@ package com.antigravity.swart.presentation.artist
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.model.ArtistProfile
 import com.antigravity.swart.domain.repository.ExhibitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,17 +16,20 @@ import javax.inject.Inject
 @HiltViewModel
 class ArtistProfileViewModel @Inject constructor(
     private val repository: ExhibitionRepository,
+    private val sessionManager: SessionManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // Recuperamos el artistId de los argumentos de navegación.
-    // Soporta tanto "artistId" como argumento string (que convertiremos) o long
+    // Recuperamos el artistId de los argumentos de navegación (el artista que se está viendo)
     private val artistId: Long = try {
         val arg = savedStateHandle.get<String>("artistId")
         arg?.toLongOrNull() ?: savedStateHandle.get<Long>("artistId") ?: 1L
     } catch (e: Exception) {
         1L
     }
+
+    // El userId del usuario autenticado (el que hace follow)
+    private val currentUserId: Long = sessionManager.getUserId()
 
     private val _uiState = MutableStateFlow<ArtistProfileUiState>(ArtistProfileUiState.Loading)
     val uiState: StateFlow<ArtistProfileUiState> = _uiState.asStateFlow()
@@ -43,8 +47,13 @@ class ArtistProfileViewModel @Inject constructor(
             repository.getArtistProfile(artistId).fold(
                 onSuccess = { profile ->
                     _uiState.value = ArtistProfileUiState.Success(profile)
-                    // Simulamos que el usuario Clara Ríos (ID 3) ya lo sigue si el total de seguidores es impar para que se vea activo
-                    _isFollowing.value = profile.seguidores % 2 != 0
+                    // Carga el estado real de follow si hay sesión activa
+                    if (currentUserId != -1L) {
+                        repository.getFollowStatus(artistId, currentUserId).fold(
+                            onSuccess = { isFollowing -> _isFollowing.value = isFollowing },
+                            onFailure = { _isFollowing.value = profile.seguidores % 2 != 0 }
+                        )
+                    }
                 },
                 onFailure = { error ->
                     _uiState.value = ArtistProfileUiState.Error(error.message ?: "Error de conexión")
@@ -58,7 +67,8 @@ class ArtistProfileViewModel @Inject constructor(
             val currentState = _uiState.value
             if (currentState is ArtistProfileUiState.Success) {
                 val currentProfile = currentState.profile
-                repository.followArtist(artistId, userId = 3L).fold(
+                val userId = if (currentUserId != -1L) currentUserId else 1L
+                repository.followArtist(artistId, userId).fold(
                     onSuccess = { following ->
                         _isFollowing.value = following
                         val updatedProfile = currentProfile.copy(

@@ -23,4 +23,10 @@ interface SwartApi {
         @Path("id") artistId: Long,
         @Query("userId") userId: Long
     ): Map<String, Boolean>
+
+    @GET("api/artists/{id}/follow")
+    suspend fun getFollowStatus(
+        @Path("id") artistId: Long,
+        @Query("userId") userId: Long
+    ): Map<String, Boolean>
 }

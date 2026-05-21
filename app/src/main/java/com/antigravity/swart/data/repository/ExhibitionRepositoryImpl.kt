@@ -46,4 +46,13 @@ class ExhibitionRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    override suspend fun getFollowStatus(artistId: Long, userId: Long): Result<Boolean> {
+        return try {
+            val response = api.getFollowStatus(artistId, userId)
+            Result.success(response["following"] ?: false)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

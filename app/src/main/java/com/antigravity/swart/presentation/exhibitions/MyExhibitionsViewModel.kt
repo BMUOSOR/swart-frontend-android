@@ -2,6 +2,7 @@ package com.antigravity.swart.presentation.exhibitions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.model.ArtistProfile
 import com.antigravity.swart.domain.repository.ExhibitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MyExhibitionsViewModel @Inject constructor(
-    private val repository: ExhibitionRepository
+    private val repository: ExhibitionRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MyExhibitionsUiState>(MyExhibitionsUiState.Loading)
@@ -26,8 +28,13 @@ class MyExhibitionsViewModel @Inject constructor(
     fun loadExhibitions() {
         viewModelScope.launch {
             _uiState.value = MyExhibitionsUiState.Loading
-            // Usamos por defecto el artista con ID 1 (Elena Valle), que es el artista principal de pruebas.
-            repository.getArtistProfile(1L).fold(
+            // Obtiene el ID del artista autenticado desde la sesión
+            val artistId = sessionManager.getUserId()
+            if (artistId == -1L) {
+                _uiState.value = MyExhibitionsUiState.Error("No hay sesión activa")
+                return@launch
+            }
+            repository.getArtistProfile(artistId).fold(
                 onSuccess = { profile ->
                     _uiState.value = MyExhibitionsUiState.Success(profile)
                 },

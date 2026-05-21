@@ -9,4 +9,5 @@ interface ExhibitionRepository {
     suspend fun getMapPins(): Result<List<MapPin>>
     suspend fun getArtistProfile(id: Long): Result<ArtistProfile>
     suspend fun followArtist(artistId: Long, userId: Long): Result<Boolean>
+    suspend fun getFollowStatus(artistId: Long, userId: Long): Result<Boolean>
 }
