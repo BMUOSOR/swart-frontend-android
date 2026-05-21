@@ -24,3 +24,17 @@ data class Artwork(
     val title: String,
     val imageUrl: String
 )
+
+data class DiscoverArtwork(
+    val id: Long,
+    val title: String,
+    val imageUrl: String,
+    val matchScore: Double,
+    val isExploration: Boolean,
+    val exhibitionId: Long,
+    val exhibitionTitle: String,
+    val locationName: String?,
+    val locationAddress: String?,
+    val artistName: String,
+    val artistAvatarUrl: String
+)

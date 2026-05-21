@@ -27,4 +27,25 @@ class ExhibitionRepositoryImpl(
             Result.failure(e)
         }
     }
+    override suspend fun getDiscoverFeed(userId: Long): Result<List<com.antigravity.swart.domain.model.DiscoverArtwork>> {
+        return try {
+            val response = api.getDiscoverFeed(userId)
+            Result.success(response.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun recordSwipe(userId: Long, artworkId: Long, liked: Boolean, matchScore: Double): Result<Unit> {
+        return try {
+            val response = api.recordSwipe(com.antigravity.swart.data.remote.dto.SwipeRequestDto(userId, artworkId, liked, matchScore))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Error recording swipe: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

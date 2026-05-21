@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,7 +35,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.antigravity.swart.presentation.components.SwartBottomNav
 import com.antigravity.swart.presentation.components.UserType
-import com.antigravity.swart.presentation.home.HomeViewModel
 import com.antigravity.swart.presentation.theme.DarkBackground
 import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 import kotlinx.coroutines.launch
@@ -46,20 +46,11 @@ fun SwapScreen(
     onNavigateHome: () -> Unit,
     onNavigateToMap: () -> Unit,
     onLogout: () -> Unit,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: DiscoverViewModel = hiltViewModel()
 ) {
     val userType = if (role == "artista") UserType.ARTIST else UserType.GENERAL
     val uiState by viewModel.uiState.collectAsState()
-    val exhibitions = uiState.exhibitions
-    
-    // Flatten artworks for swiping
-    val artworks = remember(exhibitions) {
-        exhibitions.flatMap { expo ->
-            expo.artworks.map { artwork ->
-                Pair(expo, artwork)
-            }
-        }
-    }
+    val artworks = uiState.artworks
     
     var currentIndex by remember { mutableStateOf(0) }
 
@@ -85,8 +76,12 @@ fun SwapScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (currentIndex < artworks.size) {
-                val (exhibition, artwork) = artworks[currentIndex]
+            if (uiState.isLoading && artworks.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = ArtistaGradientStart)
+                }
+            } else if (currentIndex < artworks.size) {
+                val artwork = artworks[currentIndex]
 
                 val offsetX = remember { Animatable(0f) }
                 val offsetY = remember { Animatable(0f) }
@@ -107,6 +102,7 @@ fun SwapScreen(
 
                 // Función de helper para avanzar la carta
                 fun swipeCard(isRight: Boolean) {
+                    viewModel.recordSwipe(artwork, isRight)
                     scope.launch {
                         val targetX = if (isRight) 1000f else -1000f
                         offsetX.animateTo(targetX)
@@ -176,34 +172,77 @@ fun SwapScreen(
                             )
                     )
 
-                    // Avatar y Nombre de Artista (Arriba-Izquierda)
+                    // Top Bar (Avatar y Match Badge)
                     Row(
                         modifier = Modifier
-                            .align(Alignment.TopStart)
+                            .fillMaxWidth()
                             .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        AsyncImage(
-                            model = exhibition.artistAvatarUrl,
-                            contentDescription = "Artist",
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, ArtistaGradientStart, CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        // El nombre de la artista aparece en animación al lado de la foto
-                        Text(
-                            text = exhibition.artistName,
-                            color = Color.White.copy(alpha = alpha.value),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.background(
-                                Color.Black.copy(alpha = alpha.value * 0.5f), 
-                                RoundedCornerShape(8.dp)
-                            ).padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(
+                                model = artwork.artistAvatarUrl,
+                                contentDescription = "Artist",
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, ArtistaGradientStart, CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = artwork.artistName,
+                                color = Color.White.copy(alpha = alpha.value),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.background(
+                                    Color.Black.copy(alpha = alpha.value * 0.5f), 
+                                    RoundedCornerShape(8.dp)
+                                ).padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+
+                        // Badge de Exploración o Match
+                        if (artwork.isExploration) {
+                            Row(
+                                modifier = Modifier
+                                    .background(
+                                        brush = Brush.horizontalGradient(
+                                            colors = listOf(Color(0xFFFFD700), Color(0xFF9C27B0))
+                                        ),
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Nuevo Estilo ✨",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .background(
+                                        Color(0xFF22C55E).copy(alpha = 0.9f),
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Match ${artwork.matchScore.toInt()}%",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
 
                     // Información de la obra (Abajo-Izquierda)
@@ -228,7 +267,7 @@ fun SwapScreen(
                             Spacer(modifier = Modifier.width(4.dp))
                             // Lugar de la exposición
                             Text(
-                                text = exhibition.nombreLugar ?: "Lugar desconocido",
+                                text = artwork.locationName ?: "Lugar desconocido",
                                 color = Color.LightGray,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
@@ -239,7 +278,7 @@ fun SwapScreen(
                             Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Distancia", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             // Distancia mockeada determinista en base al string de ubicación (se calcularía con el backend real y GPS)
-                            val distanceMock = ((exhibition.ubicacion?.length ?: 12) / 10.0)
+                            val distanceMock = ((artwork.locationAddress?.length ?: 12) / 10.0)
                             Text(
                                 text = "A ${String.format("%.1f", distanceMock)} km",
                                 color = Color.LightGray,
@@ -272,7 +311,7 @@ fun SwapScreen(
 
                     // Botón Información (Centro)
                     IconButton(
-                        onClick = { onNavigateToDetail(exhibition.id) },
+                        onClick = { onNavigateToDetail(artwork.exhibitionId) },
                         modifier = Modifier
                             .size(56.dp)
                             .background(Color(0xFF3B82F6), CircleShape) // Azul vibrante
@@ -293,7 +332,7 @@ fun SwapScreen(
                 }
             } else {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("No hay más obras para mostrar.", color = Color.White)
+                    Text("No hay más obras por descubrir.", color = Color.White)
                 }
             }
         }
