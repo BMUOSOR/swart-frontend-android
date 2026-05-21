@@ -41,6 +41,7 @@ fun MyExhibitionsScreen(
     onNavigateToMap: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
+    onNavigateToEdit: (Long) -> Unit = {},
     viewModel: MyExhibitionsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -184,7 +185,8 @@ fun MyExhibitionsScreen(
                                 lilaAccent = LilaAccent,
                                 cardBackground = CardNavyBackground,
                                 textGrayLight = TextGrayLight,
-                                onDetailClick = onNavigateToDetail
+                                onDetailClick = onNavigateToDetail,
+                                onEditClick = { onNavigateToEdit(exhibition.idExposicion.toLong()) }
                             )
                         }
                     }
@@ -203,7 +205,8 @@ fun ExhibitionItemCard(
     lilaAccent: Color,
     cardBackground: Color,
     textGrayLight: Color,
-    onDetailClick: (Long) -> Unit
+    onDetailClick: (Long) -> Unit,
+    onEditClick: () -> Unit = {}
 ) {
     val dateText = "${exhibition.fechaInicio ?: ""} - ${exhibition.fechaFin ?: ""} • ${exhibition.nombreLugar ?: "Galería Sol"}"
 
@@ -272,7 +275,7 @@ fun ExhibitionItemCard(
                             .size(32.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF242838))
-                            .clickable { /* Editar exposición */ },
+                            .clickable { onEditClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(

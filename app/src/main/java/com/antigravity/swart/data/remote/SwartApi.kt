@@ -1,10 +1,15 @@
 package com.antigravity.swart.data.remote
 
+import com.antigravity.swart.data.remote.dto.ArtistProfileDto
+import com.antigravity.swart.data.remote.dto.ExhibitionDetailDto
 import com.antigravity.swart.data.remote.dto.ExhibitionFeedDto
 import com.antigravity.swart.data.remote.dto.MapPinDto
-import com.antigravity.swart.data.remote.dto.ArtistProfileDto
+import com.antigravity.swart.data.remote.dto.UpdateExhibitionRequest
+import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -29,4 +34,16 @@ interface SwartApi {
         @Path("id") artistId: Long,
         @Query("userId") userId: Long
     ): Map<String, Boolean>
+
+    @GET("api/exhibitions/{id}")
+    suspend fun getExhibitionDetail(@Path("id") id: Long): ExhibitionDetailDto
+
+    @PUT("api/exhibitions/{id}")
+    suspend fun updateExhibition(
+        @Path("id") id: Long,
+        @Body request: UpdateExhibitionRequest
+    ): Map<String, Boolean>
+
+    @DELETE("api/exhibitions/{id}")
+    suspend fun deleteExhibition(@Path("id") id: Long): Map<String, Boolean>
 }
