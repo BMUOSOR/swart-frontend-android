@@ -75,7 +75,7 @@ class ExhibitionRepositoryImpl(
                     precio = dto.precio,
                     score = dto.score,
                     activa = dto.activa,
-                    obras = dto.obras.map { Artwork(it.idObra.toInt(), it.titulo, it.imgUrl) },
+                    obras = dto.obras.map { Artwork(it.idObra, it.titulo, it.imgUrl) },
                     tags = dto.tags
                 )
             )

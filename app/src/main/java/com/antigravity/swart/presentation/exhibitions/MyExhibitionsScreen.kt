@@ -186,7 +186,7 @@ fun MyExhibitionsScreen(
                                 cardBackground = CardNavyBackground,
                                 textGrayLight = TextGrayLight,
                                 onDetailClick = onNavigateToDetail,
-                                onEditClick = { onNavigateToEdit(exhibition.idExposicion.toLong()) }
+                                onEditClick = { onNavigateToEdit(exhibition.id) }
                             )
                         }
                     }

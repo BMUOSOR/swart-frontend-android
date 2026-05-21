@@ -72,7 +72,7 @@ private fun subtagsForCategoria(cat: String): Map<String, List<String>> = when (
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EditExhibitionScreen(
     onBack: () -> Unit,
@@ -271,8 +271,8 @@ fun EditExhibitionScreen(
                 ) {
                     obras.forEach { obra ->
                         AsyncImage(
-                            model = obra.imgUrl,
-                            contentDescription = obra.titulo,
+                            model = obra.imageUrl,
+                            contentDescription = obra.title,
                             modifier = Modifier
                                 .size(80.dp)
                                 .clip(RoundedCornerShape(12.dp))
@@ -318,8 +318,6 @@ fun EditExhibitionScreen(
                                 labelColor = TextGray
                             ),
                             border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isActive,
                                 selectedBorderColor = NeonPurple,
                                 borderColor = Color.Transparent
                             )
@@ -352,8 +350,6 @@ fun EditExhibitionScreen(
                                             labelColor = TextGray
                                         ),
                                         border = FilterChipDefaults.filterChipBorder(
-                                            enabled = true,
-                                            selected = isSelected,
                                             selectedBorderColor = NeonPurple,
                                             borderColor = Color.Transparent
                                         )
