@@ -2,6 +2,7 @@ package com.antigravity.swart.presentation.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.data.remote.dto.AuthResponse
 import com.antigravity.swart.data.repository.RoleMissingException
 import com.antigravity.swart.domain.repository.AuthRepository
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: AuthRepository
+    private val repository: AuthRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _usuario = MutableStateFlow("")
@@ -88,6 +90,13 @@ class AuthViewModel @Inject constructor(
             
             repository.login(usuario.value, password.value, role.value).fold(
                 onSuccess = { response ->
+                    sessionManager.saveSession(
+                        userId = response.id,
+                        role = response.role,
+                        nombre = response.nombre,
+                        apellidos = response.apellidos,
+                        usuario = response.usuario
+                    )
                     _authSuccess.value = response
                 },
                 onFailure = { ex ->
@@ -117,6 +126,13 @@ class AuthViewModel @Inject constructor(
 
             repository.register(nombre.value, apellidos.value, usuario.value, password.value, role.value).fold(
                 onSuccess = { response ->
+                    sessionManager.saveSession(
+                        userId = response.id,
+                        role = response.role,
+                        nombre = response.nombre,
+                        apellidos = response.apellidos,
+                        usuario = response.usuario
+                    )
                     _authSuccess.value = response
                 },
                 onFailure = { ex ->

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -43,8 +44,10 @@ import kotlinx.coroutines.launch
 fun SwapScreen(
     role: String = "interesado",
     onNavigateToDetail: (Long) -> Unit,
+    onNavigateToArtistProfile: (Long) -> Unit = {},
     onNavigateHome: () -> Unit,
     onNavigateToMap: () -> Unit,
+    onNavigateToObras: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
@@ -52,6 +55,17 @@ fun SwapScreen(
     val uiState by viewModel.uiState.collectAsState()
     val artworks = uiState.artworks
     
+    val exhibitions = uiState.exhibitions
+
+    // Flatten artworks for swiping
+    val artworks = remember(exhibitions) {
+        exhibitions.flatMap { expo ->
+            expo.artworks.map { artwork ->
+                Pair(expo, artwork)
+            }
+        }
+    }
+
     var currentIndex by remember { mutableStateOf(0) }
 
     Scaffold(
@@ -64,6 +78,7 @@ fun SwapScreen(
                     when (it) {
                         "home" -> onNavigateHome()
                         "mapa" -> onNavigateToMap()
+                        "obras" -> onNavigateToObras()
                         "perfil" -> onLogout()
                     }
                 },
@@ -87,7 +102,7 @@ fun SwapScreen(
                 val offsetY = remember { Animatable(0f) }
                 val rotation = remember { Animatable(0f) }
                 val scope = rememberCoroutineScope()
-                
+
                 // Animación de opacidad para el nombre del artista
                 val alpha = remember(currentIndex) { Animatable(0f) }
                 LaunchedEffect(currentIndex) {
@@ -175,11 +190,36 @@ fun SwapScreen(
                     // Top Bar (Avatar y Match Badge)
                     Row(
                         modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(16.dp)
+                            .clickable { onNavigateToArtistProfile(exhibition.artistId) },
                             .fillMaxWidth()
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        AsyncImage(
+                            model = exhibition.artistAvatarUrl,
+                            contentDescription = "Artist",
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, ArtistaGradientStart, CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        // El nombre de la artista aparece en animación al lado de la foto
+                        Text(
+                            text = exhibition.artistName,
+                            color = Color.White.copy(alpha = alpha.value),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.background(
+                                Color.Black.copy(alpha = alpha.value * 0.5f),
+                                RoundedCornerShape(8.dp)
+                            ).padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(
                                 model = artwork.artistAvatarUrl,
@@ -197,7 +237,7 @@ fun SwapScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.background(
-                                    Color.Black.copy(alpha = alpha.value * 0.5f), 
+                                    Color.Black.copy(alpha = alpha.value * 0.5f),
                                     RoundedCornerShape(8.dp)
                                 ).padding(horizontal = 8.dp, vertical = 4.dp)
                             )
@@ -272,9 +312,9 @@ fun SwapScreen(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
                             )
-                            
+
                             Spacer(modifier = Modifier.width(16.dp))
-                            
+
                             Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Distancia", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             // Distancia mockeada determinista en base al string de ubicación (se calcularía con el backend real y GPS)
@@ -288,6 +328,7 @@ fun SwapScreen(
                         }
                     }
                 }
+
 
                 // 3. Fila de Botones de Acción (Action Area)
                 Row(

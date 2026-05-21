@@ -25,8 +25,10 @@ fun HomeScreen(
     userType: UserType = UserType.GENERAL,
     role: String = "interesado",
     onNavigateToDetail: (Long) -> Unit = {},
+    onNavigateToArtistProfile: (Long) -> Unit = {},
     onNavigateToSwap: () -> Unit = {},
     onNavigateToMap: (String) -> Unit = {},
+    onNavigateToObras: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -50,6 +52,8 @@ fun HomeScreen(
                         onNavigateToSwap()
                     } else if (it == "mapa") {
                         onNavigateToMap(role)
+                    } else if (it == "obras") {
+                        onNavigateToObras()
                     } else if (it == "perfil") {
                         onLogout()
                     }
@@ -102,6 +106,7 @@ fun HomeScreen(
                     ExhibitionMasonryGrid(
                         exhibitions = uiState.exhibitions,
                         onExhibitionClick = onNavigateToDetail,
+                        onArtistClick = onNavigateToArtistProfile,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
