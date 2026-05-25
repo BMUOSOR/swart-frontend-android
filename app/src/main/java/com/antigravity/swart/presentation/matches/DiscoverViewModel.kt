@@ -19,15 +19,15 @@ data class DiscoverUiState(
 
 @HiltViewModel
 class DiscoverViewModel @Inject constructor(
-    private val repository: ExhibitionRepository
+    private val repository: ExhibitionRepository,
+    private val sessionManager: com.antigravity.swart.core.SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DiscoverUiState())
     val uiState: StateFlow<DiscoverUiState> = _uiState.asStateFlow()
 
-    // En un caso real, obtendriamos el userId del AuthRepository.
-    // Como acordamos, haremos fallback a Marina Soto (ID 3) para testear sin login.
-    private val currentUserId: Long = 3L 
+    private val currentUserId: Long 
+        get() = sessionManager.getUserId()
 
     init {
         loadFeed()
@@ -55,8 +55,14 @@ class DiscoverViewModel @Inject constructor(
 
     fun recordSwipe(artwork: DiscoverArtwork, liked: Boolean) {
         viewModelScope.launch {
-            repository.recordSwipe(currentUserId, artwork.id, liked, artwork.matchScore)
-            // No bloqueamos UI. El error se podría manejar aquí.
+            repository.recordSwipe(currentUserId, artwork.id, liked, artwork.matchScore).fold(
+                onSuccess = {
+                    android.util.Log.d("DiscoverVM", "Swipe recorded successfully for artwork ${artwork.id}")
+                },
+                onFailure = { error ->
+                    android.util.Log.e("DiscoverVM", "Failed to record swipe: ${error.message}", error)
+                }
+            )
         }
     }
 }

@@ -55,16 +55,6 @@ fun SwapScreen(
     val uiState by viewModel.uiState.collectAsState()
     val artworks = uiState.artworks
     
-    val exhibitions = uiState.exhibitions
-
-    // Flatten artworks for swiping
-    val artworks = remember(exhibitions) {
-        exhibitions.flatMap { expo ->
-            expo.artworks.map { artwork ->
-                Pair(expo, artwork)
-            }
-        }
-    }
 
     var currentIndex by remember { mutableStateOf(0) }
 
@@ -191,35 +181,11 @@ fun SwapScreen(
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .padding(16.dp)
-                            .clickable { onNavigateToArtistProfile(exhibition.artistId) },
                             .fillMaxWidth()
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        AsyncImage(
-                            model = exhibition.artistAvatarUrl,
-                            contentDescription = "Artist",
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, ArtistaGradientStart, CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        // El nombre de la artista aparece en animación al lado de la foto
-                        Text(
-                            text = exhibition.artistName,
-                            color = Color.White.copy(alpha = alpha.value),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.background(
-                                Color.Black.copy(alpha = alpha.value * 0.5f),
-                                RoundedCornerShape(8.dp)
-                            ).padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(
                                 model = artwork.artistAvatarUrl,

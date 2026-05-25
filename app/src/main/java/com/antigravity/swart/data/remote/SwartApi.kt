@@ -9,11 +9,8 @@ import com.antigravity.swart.data.remote.dto.SwipeRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
 import com.antigravity.swart.data.remote.dto.UpdateExhibitionRequest
-import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -30,7 +27,7 @@ interface SwartApi {
     suspend fun getDiscoverFeed(@Path("id") userId: Long): List<DiscoverArtworkDto>
 
     @POST("api/swipes")
-    suspend fun recordSwipe(@Body request: SwipeRequestDto): Response<Unit>
+    suspend fun recordSwipe(@Body request: SwipeRequestDto): Response<Map<String, String>>
 
     @GET("api/artists/{id}")
     suspend fun getArtistProfile(@Path("id") id: Long): ArtistProfileDto
