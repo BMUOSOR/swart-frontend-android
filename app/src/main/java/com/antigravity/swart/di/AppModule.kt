@@ -19,8 +19,7 @@ object AppModule {
     @Singleton
     fun provideSwartApi(): SwartApi {
         return Retrofit.Builder()
-            // IP para el emulador de Android (10.0.2.2 apunta al localhost del PC host)
-            .baseUrl("http://10.0.2.2:8080/")
+            .baseUrl("http://127.0.0.1:8080/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(SwartApi::class.java)
