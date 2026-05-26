@@ -81,6 +81,7 @@ fun EditExhibitionScreen(
     onNavigateToMap: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToObras: () -> Unit,
+    onNavigateToEditArtwork: (Long) -> Unit,
     viewModel: EditExhibitionViewModel = hiltViewModel()
 ) {
     val uiState        by viewModel.uiState.collectAsState()
@@ -276,7 +277,8 @@ fun EditExhibitionScreen(
                             modifier = Modifier
                                 .size(80.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(CardBg),
+                                .background(CardBg)
+                                .clickable { onNavigateToEditArtwork(obra.id) },
                             contentScale = ContentScale.Crop
                         )
                     }
@@ -300,15 +302,14 @@ fun EditExhibitionScreen(
 
             // ─── 6. TAGS / CATEGORÍAS ────────────────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("CATEGORÍA & TAGS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+                Text("CATEGORÍAS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
 
-                // Categoría primaria
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CATEGORIAS.forEach { cat ->
-                        val isActive = categoria == cat
+                        val isSelected = tagsSelec.contains(cat)
                         FilterChip(
-                            selected = isActive,
-                            onClick = { viewModel.onCategoriaSelected(cat) },
+                            selected = isSelected,
+                            onClick = { viewModel.onTagToggle(cat) },
                             label = { Text(cat, fontSize = 13.sp) },
                             shape = RoundedCornerShape(50.dp),
                             colors = FilterChipDefaults.filterChipColors(
@@ -322,41 +323,6 @@ fun EditExhibitionScreen(
                                 borderColor = Color.Transparent
                             )
                         )
-                    }
-                }
-
-                // Sub-tags animados
-                AnimatedVisibility(
-                    visible = categoria.isNotBlank(),
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
-                ) {
-                    val subtags = subtagsForCategoria(categoria)
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        subtags.forEach { (seccion, tags) ->
-                            Text(seccion, color = TextGray.copy(alpha = 0.7f), fontSize = 11.sp, letterSpacing = 0.8.sp)
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                tags.forEach { tag ->
-                                    val isSelected = tagsSelec.contains(tag)
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { viewModel.onTagToggle(tag) },
-                                        label = { Text(tag, fontSize = 12.sp) },
-                                        shape = RoundedCornerShape(50.dp),
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = NeonPurple.copy(alpha = 0.15f),
-                                            selectedLabelColor = NeonPurple,
-                                            containerColor = InputBg,
-                                            labelColor = TextGray
-                                        ),
-                                        border = FilterChipDefaults.filterChipBorder(
-                                            selectedBorderColor = NeonPurple,
-                                            borderColor = Color.Transparent
-                                        )
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
             }

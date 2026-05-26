@@ -84,16 +84,9 @@ class EditExhibitionViewModel @Inject constructor(
                     _fechaFin.value = detail.fechaFin ?: ""
                     _obras.value = detail.obras
                     _bannerUrl.value = detail.imgUrl
-                    // Detect category from existing tags
-                    val allTags = detail.tags.toSet()
-                    val cat = when {
-                        allTags.any { it.lowercase().contains("pintura") || it.lowercase().contains("óleo") || it.lowercase().contains("acuarela") } -> "Pintura"
-                        allTags.any { it.lowercase().contains("escultura") || it.lowercase().contains("talla") || it.lowercase().contains("busto") } -> "Escultura"
-                        allTags.any { it.lowercase().contains("fotografía") || it.lowercase().contains("foto") || it.lowercase().contains("analógica") } -> "Fotografía"
-                        else -> ""
-                    }
-                    _categoriaSeleccionada.value = cat
-                    _tagsSeleccionados.value = allTags
+                    // Cargar sólo los tags de categoría de la exposición
+                    val categories = detail.tags.filter { it in setOf("Pintura", "Escultura", "Fotografía") }.toSet()
+                    _tagsSeleccionados.value = categories
                     _uiState.value = EditExhibitionUiState.Success(detail)
                 },
                 onFailure = { error ->

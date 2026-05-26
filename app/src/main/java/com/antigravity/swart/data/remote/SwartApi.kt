@@ -9,6 +9,8 @@ import com.antigravity.swart.data.remote.dto.SwipeRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
 import com.antigravity.swart.data.remote.dto.UpdateExhibitionRequest
+import com.antigravity.swart.data.remote.dto.ArtworkDetailDto
+import com.antigravity.swart.data.remote.dto.UpdateArtworkRequest
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -55,4 +57,16 @@ interface SwartApi {
 
     @DELETE("api/exhibitions/{id}")
     suspend fun deleteExhibition(@Path("id") id: Long): Map<String, Boolean>
+
+    @GET("api/artworks/{id}")
+    suspend fun getArtworkDetail(@Path("id") id: Long): ArtworkDetailDto
+
+    @PUT("api/artworks/{id}")
+    suspend fun updateArtwork(
+        @Path("id") id: Long,
+        @Body request: UpdateArtworkRequest
+    ): Map<String, Boolean>
+
+    @DELETE("api/artworks/{id}")
+    suspend fun deleteArtwork(@Path("id") id: Long): Map<String, Boolean>
 }

@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.antigravity.swart.presentation.exhibitions.EditExhibitionScreen
+import com.antigravity.swart.presentation.exhibitions.EditArtworkScreen
 
 @Composable
 fun AppNavigation() {
@@ -284,6 +285,49 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val role = "artista"
             EditExhibitionScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateHome = {
+                    navController.navigate("home/$role") {
+                        popUpTo("home/$role") { inclusive = true }
+                    }
+                },
+                onNavigateToSwap = {
+                    navController.navigate("swap/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToMap = {
+                    navController.navigate("mapa/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("perfil/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToObras = {
+                    navController.navigate("obras/$role") {
+                        popUpTo("obras/$role") { inclusive = true }
+                    }
+                },
+                onNavigateToEditArtwork = { artworkId ->
+                    navController.navigate("edit_artwork/$artworkId")
+                }
+            )
+        }
+        composable(
+            route = "edit_artwork/{artworkId}",
+            arguments = listOf(navArgument("artworkId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val role = "artista"
+            EditArtworkScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateHome = {
                     navController.navigate("home/$role") {

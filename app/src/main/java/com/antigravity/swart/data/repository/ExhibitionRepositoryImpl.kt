@@ -9,6 +9,7 @@ import com.antigravity.swart.domain.model.ExhibitionDetail
 import com.antigravity.swart.domain.model.MapPin
 import com.antigravity.swart.domain.model.ArtistProfile
 import com.antigravity.swart.domain.repository.ExhibitionRepository
+import com.antigravity.swart.domain.model.ArtworkDetail
 
 class ExhibitionRepositoryImpl(
     private val api: SwartApi
@@ -122,6 +123,48 @@ class ExhibitionRepositoryImpl(
     override suspend fun deleteExhibition(id: Long): Result<Boolean> {
         return try {
             val response = api.deleteExhibition(id)
+            Result.success(response["success"] ?: false)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getArtworkDetail(id: Long): Result<ArtworkDetail> {
+        return try {
+            val dto = api.getArtworkDetail(id)
+            Result.success(
+                ArtworkDetail(
+                    idObra = dto.idObra,
+                    titulo = dto.titulo,
+                    descrip = dto.descrip,
+                    imgUrl = dto.imgUrl,
+                    precio = dto.precio,
+                    disponibleCompra = dto.disponibleCompra,
+                    tags = dto.tags,
+                    categoriasExposicion = dto.categoriasExposicion
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateArtwork(
+        id: Long, titulo: String, descrip: String?, precio: Double?, disponibleCompra: Boolean, tags: List<String>
+    ): Result<Boolean> {
+        return try {
+            val response = api.updateArtwork(
+                id, com.antigravity.swart.data.remote.dto.UpdateArtworkRequest(titulo, descrip, precio, disponibleCompra, tags)
+            )
+            Result.success(response["success"] ?: false)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteArtwork(id: Long): Result<Boolean> {
+        return try {
+            val response = api.deleteArtwork(id)
             Result.success(response["success"] ?: false)
         } catch (e: Exception) {
             Result.failure(e)
