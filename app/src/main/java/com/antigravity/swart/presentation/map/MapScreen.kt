@@ -204,8 +204,10 @@ fun MapScreen(
     Scaffold(
         containerColor = DarkBackground,
         bottomBar = {
+            val sessionManager = remember { com.antigravity.swart.core.SessionManager(context) }
+            val resolvedUserType = if (sessionManager.getRole() == "artista") UserType.ARTIST else UserType.GENERAL
             SwartBottomNav(
-                userType = userType,
+                userType = resolvedUserType,
                 currentRoute = "mapa",
                 onNavigate = {
                     when (it) {

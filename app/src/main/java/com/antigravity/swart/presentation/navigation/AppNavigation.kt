@@ -112,12 +112,20 @@ fun AppNavigation() {
             val role = backStackEntry.arguments?.getString("role") ?: "interesado"
             DetailScreen(
                 exhibitionId = exhibitionId,
+                role = role,
                 onBack = { navController.popBackStack() },
                 onNavigateToArtistProfile = { artistId ->
                     navController.navigate("artist_profile/$artistId")
                 },
                 onNavigateToMap = { id ->
                     navController.navigate("mapa/$role?exhibitionId=$id")
+                },
+                onNavigate = { target ->
+                    navController.navigate("$target/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             )
         }

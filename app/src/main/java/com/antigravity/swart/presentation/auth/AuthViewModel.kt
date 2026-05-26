@@ -95,7 +95,8 @@ class AuthViewModel @Inject constructor(
                         role = response.role,
                         nombre = response.nombre,
                         apellidos = response.apellidos,
-                        usuario = response.usuario
+                        usuario = response.usuario,
+                        imgUrl = response.imgUrl
                     )
                     _authSuccess.value = response
                 },
@@ -131,7 +132,8 @@ class AuthViewModel @Inject constructor(
                         role = response.role,
                         nombre = response.nombre,
                         apellidos = response.apellidos,
-                        usuario = response.usuario
+                        usuario = response.usuario,
+                        imgUrl = response.imgUrl
                     )
                     _authSuccess.value = response
                 },
@@ -160,6 +162,14 @@ class AuthViewModel @Inject constructor(
             _error.value = null
             repository.register(nombre.value, apellidos.value, usuario.value, password.value, role.value, confirmAddRole = true).fold(
                 onSuccess = { response ->
+                    sessionManager.saveSession(
+                        userId = response.id,
+                        role = response.role,
+                        nombre = response.nombre,
+                        apellidos = response.apellidos,
+                        usuario = response.usuario,
+                        imgUrl = response.imgUrl
+                    )
                     _authSuccess.value = response
                 },
                 onFailure = { ex ->

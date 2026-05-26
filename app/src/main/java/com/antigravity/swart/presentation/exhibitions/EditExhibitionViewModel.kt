@@ -133,10 +133,10 @@ class EditExhibitionViewModel @Inject constructor(
         _tagsSeleccionados.value = current
     }
 
-    fun verifyLocationAddress() {
-        val query = _nombreLugar.value
+    fun verifyLocationAddress(fromAddressField: Boolean = false) {
+        val query = if (fromAddressField) _ubicacion.value else _nombreLugar.value
         if (query.isBlank()) {
-            _verificationError.value = "Introduce un nombre de lugar para buscar en el mapa"
+            _verificationError.value = "Introduce un término de búsqueda"
             _verificationSuccess.value = null
             return
         }
@@ -147,11 +147,19 @@ class EditExhibitionViewModel @Inject constructor(
             repository.verifyAddress(query).fold(
                 onSuccess = { result ->
                     _ubicacion.value = result.displayName
+                    // ONLY set the place name if it is currently blank to prevent overwriting custom names
+                    if (fromAddressField && _nombreLugar.value.isBlank()) {
+                        _nombreLugar.value = result.displayName
+                    }
                     _verificationSuccess.value = "Dirección encontrada y verificada"
                     _isVerifying.value = false
                 },
                 onFailure = { error ->
-                    _verificationError.value = "La dirección no es válida o no existe"
+                    _verificationError.value = if (fromAddressField) {
+                        "La dirección no es válida o no existe"
+                    } else {
+                        "Lugar no encontrado en el mapa. Por favor, introduce la dirección en el campo de abajo para verificarla."
+                    }
                     _isVerifying.value = false
                 }
             )

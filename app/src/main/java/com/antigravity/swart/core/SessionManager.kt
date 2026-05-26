@@ -24,15 +24,17 @@ class SessionManager @Inject constructor(
         private const val KEY_NOMBRE = "user_nombre"
         private const val KEY_APELLIDOS = "user_apellidos"
         private const val KEY_USUARIO = "user_usuario"
+        private const val KEY_IMG_URL = "user_img_url"
     }
 
-    fun saveSession(userId: Long, role: String, nombre: String, apellidos: String?, usuario: String) {
+    fun saveSession(userId: Long, role: String, nombre: String, apellidos: String?, usuario: String, imgUrl: String?) {
         prefs.edit()
             .putLong(KEY_USER_ID, userId)
             .putString(KEY_ROLE, role)
             .putString(KEY_NOMBRE, nombre)
             .putString(KEY_APELLIDOS, apellidos ?: "")
             .putString(KEY_USUARIO, usuario)
+            .putString(KEY_IMG_URL, imgUrl ?: "")
             .apply()
     }
 
@@ -45,6 +47,8 @@ class SessionManager @Inject constructor(
     fun getApellidos(): String = prefs.getString(KEY_APELLIDOS, "") ?: ""
 
     fun getUsuario(): String = prefs.getString(KEY_USUARIO, "") ?: ""
+
+    fun getImgUrl(): String = prefs.getString(KEY_IMG_URL, "") ?: ""
 
     fun isLoggedIn(): Boolean = getUserId() != -1L
 

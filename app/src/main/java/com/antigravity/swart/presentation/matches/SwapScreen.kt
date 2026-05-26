@@ -51,7 +51,6 @@ fun SwapScreen(
     onLogout: () -> Unit,
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
-    val userType = if (role == "artista") UserType.ARTIST else UserType.GENERAL
     val uiState by viewModel.uiState.collectAsState()
     val artworks = uiState.artworks
     
@@ -61,8 +60,11 @@ fun SwapScreen(
     Scaffold(
         containerColor = DarkBackground,
         bottomBar = {
+            val context = LocalContext.current
+            val sessionManager = remember { com.antigravity.swart.core.SessionManager(context) }
+            val resolvedUserType = if (sessionManager.getRole() == "artista") UserType.ARTIST else UserType.GENERAL
             SwartBottomNav(
-                userType = userType,
+                userType = resolvedUserType,
                 currentRoute = "descubrir",
                 onNavigate = {
                     when (it) {

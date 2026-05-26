@@ -34,18 +34,16 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    
-    // Remove currentUserType local test state
-
-
-    // Foto hardcodeada para probar que carga desde Supabase (Usuario Interesado)
-    val visitorAvatar = "https://bkrmqkpxidmemzxhefoc.supabase.co/storage/v1/object/public/Imagenes/usuario_chica_3.jpg"
+    val userAvatar by viewModel.userAvatar.collectAsState()
 
     Scaffold(
         containerColor = DarkBackground,
         bottomBar = {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val sessionManager = androidx.compose.runtime.remember { com.antigravity.swart.core.SessionManager(context) }
+            val resolvedUserType = if (sessionManager.getRole() == "artista") UserType.ARTIST else UserType.GENERAL
             SwartBottomNav(
-                userType = userType,
+                userType = resolvedUserType,
                 currentRoute = "home",
                 onNavigate = {
                     if (it == "descubrir") {
@@ -69,7 +67,7 @@ fun HomeScreen(
         ) {
             var showFilterSheet by remember { mutableStateOf(false) }
 
-            HomeTopBar(avatarUrl = visitorAvatar)
+            HomeTopBar(avatarUrl = userAvatar)
             SearchBarComponent(
                 query = searchQuery,
                 onQueryChange = { viewModel.onSearchQueryChanged(it) },

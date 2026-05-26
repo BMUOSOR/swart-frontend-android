@@ -103,6 +103,12 @@ fun EditExhibitionScreen(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(successMessage) {
+        if (successMessage != null) {
+            viewModel.loadDetail()
+        }
+    }
+
     // One-shot events
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -241,7 +247,7 @@ fun EditExhibitionScreen(
                     colors = outlinedTextFieldColors(),
                     singleLine = true,
                     trailingIcon = {
-                        IconButton(onClick = { viewModel.verifyLocationAddress() }) {
+                        IconButton(onClick = { viewModel.verifyLocationAddress(fromAddressField = false) }) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Buscar dirección",
@@ -271,7 +277,13 @@ fun EditExhibitionScreen(
                         if (isVerifying) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp), color = NeonPurple, strokeWidth = 2.dp)
                         } else {
-                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = TextGray)
+                            IconButton(onClick = { viewModel.verifyLocationAddress(fromAddressField = true) }) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Buscar dirección",
+                                    tint = NeonPurple
+                                )
+                            }
                         }
                     }
                 )

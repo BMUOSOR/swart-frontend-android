@@ -2,6 +2,7 @@ package com.antigravity.swart.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.model.Exhibition
 import com.antigravity.swart.domain.repository.ExhibitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +22,8 @@ data class HomeUiState(
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: ExhibitionRepository
+    private val repository: ExhibitionRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -29,6 +31,7 @@ class HomeViewModel @Inject constructor(
     private val _allExhibitions = MutableStateFlow<List<Exhibition>>(emptyList())
     
     val searchQuery = MutableStateFlow("")
+    val userAvatar = MutableStateFlow("")
 
     val uiState: StateFlow<HomeUiState> = combine(
         _isLoading, _allExhibitions, searchQuery, _error
@@ -39,7 +42,6 @@ class HomeViewModel @Inject constructor(
             allExhibitions.filter {
                 it.title.contains(query, ignoreCase = true) ||
                 it.artistName.contains(query, ignoreCase = true)
-                //(it.description?.contains(query, ignoreCase = true) == true)
             }
         }
         HomeUiState(isLoading, filtered, error)
@@ -47,6 +49,9 @@ class HomeViewModel @Inject constructor(
 
     init {
         loadFeed()
+        userAvatar.value = sessionManager.getImgUrl().ifBlank {
+            "https://bkrmqkpxidmemzxhefoc.supabase.co/storage/v1/object/public/Imagenes/usuario_chica_3.jpg"
+        }
     }
 
     private fun loadFeed() {

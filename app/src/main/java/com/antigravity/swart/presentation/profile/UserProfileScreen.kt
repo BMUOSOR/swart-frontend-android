@@ -39,7 +39,6 @@ fun UserProfileScreen(
     onNavigateToObras: () -> Unit = {},
     onLogout: () -> Unit
 ) {
-    val userType = if (role == "artista") UserType.ARTIST else UserType.GENERAL
     val scrollState = rememberScrollState()
     
     // Gradient definitions
@@ -61,8 +60,11 @@ fun UserProfileScreen(
     Scaffold(
         containerColor = Color(0xFF0B0D17), // Deep dark navy blue background
         bottomBar = {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val sessionManager = androidx.compose.runtime.remember { com.antigravity.swart.core.SessionManager(context) }
+            val resolvedUserType = if (sessionManager.getRole() == "artista") UserType.ARTIST else UserType.GENERAL
             SwartBottomNav(
-                userType = userType,
+                userType = resolvedUserType,
                 currentRoute = "perfil",
                 onNavigate = { route ->
                     when (route) {

@@ -41,9 +41,11 @@ import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 @Composable
 fun DetailScreen(
     exhibitionId: Long,
+    role: String,
     onBack: () -> Unit,
     onNavigateToArtistProfile: (Long) -> Unit,
     onNavigateToMap: (Long) -> Unit,
+    onNavigate: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel() // Reuse home VM for simplicity if it has data
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -55,10 +57,13 @@ fun DetailScreen(
     Scaffold(
         containerColor = DarkBackground,
         bottomBar = {
+            val context = LocalContext.current
+            val sessionManager = remember { com.antigravity.swart.core.SessionManager(context) }
+            val userType = if (sessionManager.getRole() == "artista") UserType.ARTIST else UserType.GENERAL
             SwartBottomNav(
-                userType = UserType.GENERAL,
+                userType = userType,
                 currentRoute = "",
-                onNavigate = {},
+                onNavigate = onNavigate,
                 onFabClick = {}
             )
         }

@@ -21,6 +21,7 @@ data class AuthResponse(
     val apellidos: String?,
     val usuario: String,
     val role: String,
+    val imgUrl: String? = null,
     val token: String? = null
 )
 
