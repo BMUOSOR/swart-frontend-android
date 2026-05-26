@@ -23,4 +23,5 @@ interface ExhibitionRepository {
     suspend fun getArtworkDetail(id: Long): Result<ArtworkDetail>
     suspend fun updateArtwork(id: Long, titulo: String, descrip: String?, precio: Double?, disponibleCompra: Boolean, tags: List<String>): Result<Boolean>
     suspend fun deleteArtwork(id: Long): Result<Boolean>
+    suspend fun verifyAddress(address: String): Result<com.antigravity.swart.domain.model.GeocodingResult>
 }

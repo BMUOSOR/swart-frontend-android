@@ -1,5 +1,8 @@
 package com.antigravity.swart.presentation.exhibitions
 
+import android.app.DatePickerDialog
+import androidx.compose.ui.platform.LocalContext
+import java.util.Calendar
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -76,12 +79,15 @@ private fun subtagsForCategoria(cat: String): Map<String, List<String>> = when (
 @Composable
 fun EditExhibitionScreen(
     onBack: () -> Unit,
+    onBackWithResult: (String) -> Unit,
     onNavigateHome: () -> Unit,
     onNavigateToSwap: () -> Unit,
     onNavigateToMap: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToObras: () -> Unit,
     onNavigateToEditArtwork: (Long) -> Unit,
+    successMessage: String? = null,
+    onClearSuccessMessage: () -> Unit = {},
     viewModel: EditExhibitionViewModel = hiltViewModel()
 ) {
     val uiState        by viewModel.uiState.collectAsState()
@@ -101,8 +107,8 @@ fun EditExhibitionScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is EditExhibitionEvent.SavedSuccessfully  -> onBack()
-                is EditExhibitionEvent.DeletedSuccessfully -> onNavigateToObras()
+                is EditExhibitionEvent.SavedSuccessfully  -> onBackWithResult("Exposición guardada con éxito")
+                is EditExhibitionEvent.DeletedSuccessfully -> onBackWithResult("Exposición eliminada con éxito")
                 is EditExhibitionEvent.SaveError           -> { /* Snackbar podría añadirse aquí */ }
             }
         }
@@ -235,9 +241,58 @@ fun EditExhibitionScreen(
                     colors = outlinedTextFieldColors(),
                     singleLine = true,
                     trailingIcon = {
-                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = TextGray)
+                        IconButton(onClick = { viewModel.verifyLocationAddress() }) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Buscar dirección",
+                                tint = NeonPurple
+                            )
+                        }
                     }
                 )
+            }
+
+            // Dirección / Localización
+            val isVerifying by viewModel.isVerifying.collectAsState()
+            val verificationSuccess by viewModel.verificationSuccess.collectAsState()
+            val verificationError by viewModel.verificationError.collectAsState()
+            val ubicacion by viewModel.ubicacion.collectAsState()
+
+            FormField(label = "DIRECCIÓN / LOCALIZACIÓN") {
+                OutlinedTextField(
+                    value = ubicacion,
+                    onValueChange = viewModel::onUbicacionChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = outlinedTextFieldColors(),
+                    singleLine = true,
+                    placeholder = { Text("Ej. Calle Mayor 1, Madrid", color = TextGray) },
+                    trailingIcon = {
+                        if (isVerifying) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = NeonPurple, strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = TextGray)
+                        }
+                    }
+                )
+                if (verificationSuccess != null) {
+                    Text(
+                        text = verificationSuccess!!,
+                        color = Color(0xFF10B981),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                    )
+                }
+                if (verificationError != null) {
+                    Text(
+                        text = verificationError!!,
+                        color = Color(0xFFEF4444),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                    )
+                }
             }
 
             // ─── 4. FECHAS ───────────────────────────────────────────────
@@ -246,10 +301,10 @@ fun EditExhibitionScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 FormField(label = "FECHA INICIO", modifier = Modifier.weight(1f)) {
-                    DateDropdown(value = fechaInicio, onValueChange = viewModel::onFechaInicioChange)
+                    DatePickerField(value = fechaInicio, onValueChange = viewModel::onFechaInicioChange)
                 }
                 FormField(label = "FECHA FIN", modifier = Modifier.weight(1f)) {
-                    DateDropdown(value = fechaFin, onValueChange = viewModel::onFechaFinChange)
+                    DatePickerField(value = fechaFin, onValueChange = viewModel::onFechaFinChange)
                 }
             }
 
@@ -391,6 +446,20 @@ fun EditExhibitionScreen(
             }
         )
     }
+
+    if (successMessage != null) {
+        AlertDialog(
+            onDismissRequest = onClearSuccessMessage,
+            containerColor = CardBg,
+            title = { Text("Éxito", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = { Text(successMessage, color = TextGray) },
+            confirmButton = {
+                TextButton(onClick = onClearSuccessMessage) {
+                    Text("Aceptar", color = NeonPurple, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -407,48 +476,45 @@ private fun FormField(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DateDropdown(value: String, onValueChange: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it }
-    ) {
+private fun DatePickerField(value: String, onValueChange: (String) -> Unit) {
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+    val datePickerDialog = remember {
+        DatePickerDialog(
+            context,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                val formattedDate = String.format("%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
+                onValueChange(formattedDate)
+            },
+            year,
+            month,
+            day
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = value,
             onValueChange = {},
             readOnly = true,
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = outlinedTextFieldColors(),
             trailingIcon = {
-                Icon(
-                    if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = TextGray
-                )
+                Icon(Icons.Default.DateRange, contentDescription = null, tint = TextGray)
             },
             singleLine = true
         )
-        // Date picker simplificado como dropdown de meses
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(CardBg)
-        ) {
-            listOf("2026-01-01","2026-02-01","2026-03-01","2026-04-01","2026-05-01",
-                "2026-06-01","2026-07-01","2026-08-01","2026-09-01","2026-10-01",
-                "2026-11-01","2026-12-01","2027-01-01","2027-06-01").forEach { date ->
-                DropdownMenuItem(
-                    text = { Text(date, color = TextLight, fontSize = 13.sp) },
-                    onClick = {
-                        onValueChange(date)
-                        expanded = false
-                    }
-                )
-            }
-        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable { datePickerDialog.show() }
+        )
     }
 }
 

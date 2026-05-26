@@ -42,6 +42,8 @@ fun MyExhibitionsScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
     onNavigateToEdit: (Long) -> Unit = {},
+    successMessage: String? = null,
+    onClearSuccessMessage: () -> Unit = {},
     viewModel: MyExhibitionsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -195,6 +197,20 @@ fun MyExhibitionsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (successMessage != null) {
+        AlertDialog(
+            onDismissRequest = onClearSuccessMessage,
+            containerColor = Color(0xFF161925),
+            title = { Text("Éxito", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = { Text(successMessage, color = Color(0xFF8B8FA8)) },
+            confirmButton = {
+                TextButton(onClick = onClearSuccessMessage) {
+                    Text("Aceptar", color = Color(0xFF8B5CF6), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }
 

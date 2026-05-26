@@ -244,7 +244,12 @@ fun AppNavigation() {
         }
         composable("obras/{role}") { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "artista"
+            val successMessage by backStackEntry.savedStateHandle.getStateFlow<String?>("success_message", null).collectAsState()
             com.antigravity.swart.presentation.exhibitions.MyExhibitionsScreen(
+                successMessage = successMessage,
+                onClearSuccessMessage = {
+                    backStackEntry.savedStateHandle["success_message"] = null
+                },
                 onNavigateHome = {
                     navController.navigate("home/$role") {
                         popUpTo("home/$role") { inclusive = true }
@@ -284,8 +289,17 @@ fun AppNavigation() {
             arguments = listOf(navArgument("exhibitionId") { type = NavType.LongType })
         ) { backStackEntry ->
             val role = "artista"
+            val successMessage by backStackEntry.savedStateHandle.getStateFlow<String?>("success_message", null).collectAsState()
             EditExhibitionScreen(
+                successMessage = successMessage,
+                onClearSuccessMessage = {
+                    backStackEntry.savedStateHandle["success_message"] = null
+                },
                 onBack = { navController.popBackStack() },
+                onBackWithResult = { message ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("success_message", message)
+                    navController.popBackStack()
+                },
                 onNavigateHome = {
                     navController.navigate("home/$role") {
                         popUpTo("home/$role") { inclusive = true }
@@ -329,6 +343,10 @@ fun AppNavigation() {
             val role = "artista"
             EditArtworkScreen(
                 onBack = { navController.popBackStack() },
+                onBackWithResult = { message ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("success_message", message)
+                    navController.popBackStack()
+                },
                 onNavigateHome = {
                     navController.navigate("home/$role") {
                         popUpTo("home/$role") { inclusive = true }

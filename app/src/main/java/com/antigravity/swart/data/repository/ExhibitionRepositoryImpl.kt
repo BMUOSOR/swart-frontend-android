@@ -170,4 +170,19 @@ class ExhibitionRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    override suspend fun verifyAddress(address: String): Result<com.antigravity.swart.domain.model.GeocodingResult> {
+        return try {
+            val dto = api.verifyAddress(address)
+            Result.success(
+                com.antigravity.swart.domain.model.GeocodingResult(
+                    lat = dto.lat.toDoubleOrNull() ?: 0.0,
+                    lon = dto.lon.toDoubleOrNull() ?: 0.0,
+                    displayName = dto.display_name
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -38,6 +38,9 @@ class EditExhibitionViewModel @Inject constructor(
     private val _nombreLugar = MutableStateFlow("")
     val nombreLugar: StateFlow<String> = _nombreLugar.asStateFlow()
 
+    private val _ubicacion = MutableStateFlow("")
+    val ubicacion: StateFlow<String> = _ubicacion.asStateFlow()
+
     private val _fechaInicio = MutableStateFlow("")
     val fechaInicio: StateFlow<String> = _fechaInicio.asStateFlow()
 
@@ -58,6 +61,16 @@ class EditExhibitionViewModel @Inject constructor(
     // Banner image URL
     private val _bannerUrl = MutableStateFlow<String?>(null)
     val bannerUrl: StateFlow<String?> = _bannerUrl.asStateFlow()
+
+    // Geocoding validation states
+    private val _verificationSuccess = MutableStateFlow<String?>(null)
+    val verificationSuccess: StateFlow<String?> = _verificationSuccess.asStateFlow()
+
+    private val _verificationError = MutableStateFlow<String?>(null)
+    val verificationError: StateFlow<String?> = _verificationError.asStateFlow()
+
+    private val _isVerifying = MutableStateFlow(false)
+    val isVerifying: StateFlow<Boolean> = _isVerifying.asStateFlow()
 
     // ── Events (one-shot) ─────────────────────────────────────────────────
     private val _events = MutableSharedFlow<EditExhibitionEvent>()
@@ -80,6 +93,7 @@ class EditExhibitionViewModel @Inject constructor(
                     _titulo.value = detail.titulo
                     _descripcion.value = detail.descrip ?: ""
                     _nombreLugar.value = detail.nombreLugar ?: ""
+                    _ubicacion.value = detail.ubicacion ?: ""
                     _fechaInicio.value = detail.fechaInicio ?: ""
                     _fechaFin.value = detail.fechaFin ?: ""
                     _obras.value = detail.obras
@@ -99,6 +113,11 @@ class EditExhibitionViewModel @Inject constructor(
     fun onTituloChange(value: String) { _titulo.value = value }
     fun onDescripcionChange(value: String) { _descripcion.value = value }
     fun onNombreLugarChange(value: String) { _nombreLugar.value = value }
+    fun onUbicacionChange(value: String) {
+        _ubicacion.value = value
+        _verificationSuccess.value = null
+        _verificationError.value = null
+    }
     fun onFechaInicioChange(value: String) { _fechaInicio.value = value }
     fun onFechaFinChange(value: String) { _fechaFin.value = value }
 
@@ -114,6 +133,31 @@ class EditExhibitionViewModel @Inject constructor(
         _tagsSeleccionados.value = current
     }
 
+    fun verifyLocationAddress() {
+        val query = _nombreLugar.value
+        if (query.isBlank()) {
+            _verificationError.value = "Introduce un nombre de lugar para buscar en el mapa"
+            _verificationSuccess.value = null
+            return
+        }
+        viewModelScope.launch {
+            _isVerifying.value = true
+            _verificationError.value = null
+            _verificationSuccess.value = null
+            repository.verifyAddress(query).fold(
+                onSuccess = { result ->
+                    _ubicacion.value = result.displayName
+                    _verificationSuccess.value = "Dirección encontrada y verificada"
+                    _isVerifying.value = false
+                },
+                onFailure = { error ->
+                    _verificationError.value = "La dirección no es válida o no existe"
+                    _isVerifying.value = false
+                }
+            )
+        }
+    }
+
     fun saveChanges() {
         viewModelScope.launch {
             _uiState.value = EditExhibitionUiState.Saving
@@ -122,7 +166,7 @@ class EditExhibitionViewModel @Inject constructor(
                 titulo = _titulo.value,
                 descrip = _descripcion.value.ifBlank { null },
                 nombreLugar = _nombreLugar.value.ifBlank { null },
-                ubicacion = null,
+                ubicacion = _ubicacion.value.ifBlank { null },
                 fechaInicio = _fechaInicio.value.ifBlank { null },
                 fechaFin = _fechaFin.value.ifBlank { null },
                 tags = _tagsSeleccionados.value.toList()
@@ -132,7 +176,7 @@ class EditExhibitionViewModel @Inject constructor(
                 },
                 onFailure = { error ->
                     _uiState.value = EditExhibitionUiState.Error(error.message ?: "Error al guardar")
-                    _events.emit(EditExhibitionEvent.SaveError(error.message ?: "Error al guardar"))
+                    _events.emit(EditExhibitionEvent.SaveError(error.message ?: "Error al guardar: ${error.message}"))
                 }
             )
         }

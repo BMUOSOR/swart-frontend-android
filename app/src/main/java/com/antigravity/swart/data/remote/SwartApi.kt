@@ -69,4 +69,9 @@ interface SwartApi {
 
     @DELETE("api/artworks/{id}")
     suspend fun deleteArtwork(@Path("id") id: Long): Map<String, Boolean>
+
+    @GET("api/map/verify-address")
+    suspend fun verifyAddress(
+        @Query("address") address: String
+    ): com.antigravity.swart.data.remote.dto.GeocodingResultDto
 }

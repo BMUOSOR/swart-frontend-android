@@ -74,6 +74,7 @@ private fun subtagsForCategoria(cat: String): Map<String, List<String>> = when (
 @Composable
 fun EditArtworkScreen(
     onBack: () -> Unit,
+    onBackWithResult: (String) -> Unit,
     onNavigateHome: () -> Unit,
     onNavigateToSwap: () -> Unit,
     onNavigateToMap: () -> Unit,
@@ -96,8 +97,8 @@ fun EditArtworkScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is EditArtworkEvent.SavedSuccessfully -> onBack()
-                is EditArtworkEvent.DeletedSuccessfully -> onBack()
+                is EditArtworkEvent.SavedSuccessfully -> onBackWithResult("Obra guardada con éxito")
+                is EditArtworkEvent.DeletedSuccessfully -> onBackWithResult("Obra eliminada con éxito")
                 is EditArtworkEvent.SaveError -> {}
             }
         }
@@ -294,7 +295,33 @@ fun EditArtworkScreen(
                 }
             }
 
-            // ─── 5. ETIQUETAS (TAGS) ───────────────────────────────────────
+            // ─── 5. CATEGORÍA DE LA EXPOSICIÓN ────────────────────────────
+            if (categoriasExposicion.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(CardBg)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "CATEGORÍA DE LA EXPOSICIÓN",
+                        color = TextGray,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = categoriasExposicion.joinToString(", ").uppercase(),
+                        color = NeonPurple,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // ─── 6. ETIQUETAS (TAGS) ───────────────────────────────────────
             if (categoriaSeleccionada.isNotBlank()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("TAGS ASOCIADOS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
