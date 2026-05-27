@@ -176,6 +176,7 @@ fun MapScreen(
     onNavigateToDetail: (Long) -> Unit = {},
     onNavigateToObras: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
     onLogout: () -> Unit = {},
     exhibitionIdToSelect: Long = -1L,
     viewModel: MapViewModel = hiltViewModel()
@@ -218,7 +219,8 @@ fun MapScreen(
                         "mensajes" -> onNavigateToMensajes()
                         "perfil" -> onLogout()
                     }
-                }
+                },
+                onFabClick = onNavigateToCreate
             )
         }
     ) { paddingValues ->

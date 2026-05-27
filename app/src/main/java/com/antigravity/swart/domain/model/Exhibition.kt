@@ -30,7 +30,8 @@ data class Exhibition(
 data class Artwork(
     val id: Long,
     val title: String,
-    val imageUrl: String
+    val imageUrl: String,
+    val artistId: Long? = null
 )
 
 data class DiscoverArtwork(

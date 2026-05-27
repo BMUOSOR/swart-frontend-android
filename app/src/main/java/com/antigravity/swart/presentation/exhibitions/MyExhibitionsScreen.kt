@@ -78,7 +78,8 @@ fun MyExhibitionsScreen(
                         "perfil" -> onNavigateToProfile()
                         "mensajes" -> onNavigateToMensajes()
                     }
-                }
+                },
+                onFabClick = onNavigateToCreate
             )
         }
     ) { paddingValues ->
@@ -111,23 +112,6 @@ fun MyExhibitionsScreen(
                         text = "Gestiona tus muestras actuales",
                         color = TextGrayLight,
                         fontSize = 14.sp
-                    )
-                }
-
-                // Botón cuadrado con bordes muy redondeados de color morado sólido
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(LilaAccent)
-                        .clickable { onNavigateToCreate() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Añadir Exposición",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
                     )
                 }
             }

@@ -42,6 +42,7 @@ fun InvitationsScreen(
     onNavigateToMap: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToObras: () -> Unit,
+    onNavigateToCreate: () -> Unit = {},
     viewModel: InvitationsViewModel = hiltViewModel()
 ) {
     val invitations by viewModel.invitations.collectAsState()
@@ -61,7 +62,8 @@ fun InvitationsScreen(
                         "perfil"    -> onNavigateToProfile()
                         "obras"     -> onNavigateToObras()
                     }
-                }
+                },
+                onFabClick = onNavigateToCreate
             )
         }
     ) { padding ->

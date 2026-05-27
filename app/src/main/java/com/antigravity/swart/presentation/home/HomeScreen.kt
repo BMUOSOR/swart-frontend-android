@@ -30,6 +30,7 @@ fun HomeScreen(
     onNavigateToMap: (String) -> Unit = {},
     onNavigateToObras: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -59,7 +60,7 @@ fun HomeScreen(
                         onLogout()
                     }
                 },
-                onFabClick = { /* Abrir modal de añadir obra */ }
+                onFabClick = onNavigateToCreate
             )
         }
     ) { paddingValues ->

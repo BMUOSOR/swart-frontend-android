@@ -101,6 +101,8 @@ fun EditExhibitionScreen(
     val categoria      by viewModel.categoriaSeleccionada.collectAsState()
     val tagsSelec      by viewModel.tagsSeleccionados.collectAsState()
     val bannerUrl      by viewModel.bannerUrl.collectAsState()
+    val esColaborativa by viewModel.esColaborativa.collectAsState()
+    val currentArtistId = viewModel.currentArtistId
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -322,48 +324,117 @@ fun EditExhibitionScreen(
             }
 
             // ─── 5. OBRAS ────────────────────────────────────────────────
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("OBRAS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
-                    Text("Editar lista", color = NeonPurple, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                        modifier = Modifier.clickable { /* TODO: navigate to artwork list editor */ })
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    obras.forEach { obra ->
-                        AsyncImage(
-                            model = obra.imageUrl,
-                            contentDescription = obra.title,
+            if (esColaborativa) {
+                val misObras = obras.filter { it.artistId == currentArtistId }
+                val obrasColaboradores = obras.filter { it.artistId != currentArtistId }
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("TUS OBRAS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        misObras.forEach { obra ->
+                            AsyncImage(
+                                model = obra.imageUrl,
+                                contentDescription = obra.title,
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(CardBg)
+                                    .clickable { onNavigateToEditArtwork(obra.id) },
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        Box(
                             modifier = Modifier
                                 .size(80.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(CardBg)
-                                .clickable { onNavigateToEditArtwork(obra.id) },
-                            contentScale = ContentScale.Crop
-                        )
+                                .border(
+                                    BorderStroke(1.5.dp, NeonPurple.copy(alpha = 0.6f)),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .clickable { onNavigateToCreateArtwork() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Añadir obra", tint = NeonPurple, modifier = Modifier.size(28.dp))
+                        }
                     }
-                    // Add artwork button
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(CardBg)
-                            .border(
-                                BorderStroke(1.5.dp, NeonPurple.copy(alpha = 0.6f)),
-                                RoundedCornerShape(12.dp)
-                            )
-                            .clickable { onNavigateToCreateArtwork() },
-                        contentAlignment = Alignment.Center
+                }
+
+                if (obrasColaboradores.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("OBRAS DE COLABORADORES", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            obrasColaboradores.forEach { obra ->
+                                AsyncImage(
+                                    model = obra.imageUrl,
+                                    contentDescription = obra.title,
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(CardBg),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Añadir obra", tint = NeonPurple, modifier = Modifier.size(28.dp))
+                        Text("OBRAS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        obras.forEach { obra ->
+                            AsyncImage(
+                                model = obra.imageUrl,
+                                contentDescription = obra.title,
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(CardBg)
+                                    .clickable { onNavigateToEditArtwork(obra.id) },
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(CardBg)
+                                .border(
+                                    BorderStroke(1.5.dp, NeonPurple.copy(alpha = 0.6f)),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .clickable { onNavigateToCreateArtwork() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Añadir obra", tint = NeonPurple, modifier = Modifier.size(28.dp))
+                        }
                     }
                 }
             }

@@ -43,6 +43,7 @@ fun UserProfileScreen(
     onNavigateToObras: () -> Unit = {},
     onNavigateToFavorites: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
@@ -86,7 +87,8 @@ fun UserProfileScreen(
                         "obras" -> onNavigateToObras()
                         "mensajes" -> onNavigateToMensajes()
                     }
-                }
+                },
+                onFabClick = onNavigateToCreate
             )
         }
     ) { paddingValues ->

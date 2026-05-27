@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.antigravity.swart.domain.model.Artwork
 import com.antigravity.swart.domain.model.ExhibitionDetail
 import com.antigravity.swart.domain.repository.ExhibitionRepository
+import com.antigravity.swart.presentation.components.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EditExhibitionViewModel @Inject constructor(
     private val repository: ExhibitionRepository,
+    private val sessionManager: SessionManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -62,6 +64,11 @@ class EditExhibitionViewModel @Inject constructor(
     private val _bannerUrl = MutableStateFlow<String?>(null)
     val bannerUrl: StateFlow<String?> = _bannerUrl.asStateFlow()
 
+    private val _esColaborativa = MutableStateFlow(false)
+    val esColaborativa: StateFlow<Boolean> = _esColaborativa.asStateFlow()
+
+    val currentArtistId: Long = sessionManager.artistId.value
+
     // Geocoding validation states
     private val _verificationSuccess = MutableStateFlow<String?>(null)
     val verificationSuccess: StateFlow<String?> = _verificationSuccess.asStateFlow()
@@ -98,6 +105,7 @@ class EditExhibitionViewModel @Inject constructor(
                     _fechaFin.value = detail.fechaFin ?: ""
                     _obras.value = detail.obras
                     _bannerUrl.value = detail.imgUrl
+                    _esColaborativa.value = detail.esColaborativa
                     // Cargar sólo los tags de categoría de la exposición
                     val categories = detail.tags.filter { it in setOf("Pintura", "Escultura", "Fotografía") }.toSet()
                     _tagsSeleccionados.value = categories

@@ -49,6 +49,7 @@ fun SwapScreen(
     onNavigateToMap: () -> Unit,
     onNavigateToObras: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
@@ -76,7 +77,7 @@ fun SwapScreen(
                         "perfil" -> onLogout()
                     }
                 },
-                onFabClick = {}
+                onFabClick = onNavigateToCreate
             )
         }
     ) { paddingValues ->

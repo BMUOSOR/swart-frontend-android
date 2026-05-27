@@ -17,7 +17,7 @@ fun ExhibitionFeedDto.toDomain(): Exhibition {
         ),
         isNew = isNew,
         artworksCount = obrasCount,
-        artworks = obras.map { Artwork(it.idObra, it.titulo, it.imgUrl) },
+        artworks = obras.map { Artwork(it.idObra, it.titulo, it.imgUrl, it.idArtista) },
         exhibitionImgUrl = exposicionImgUrl,
         fechaInicio = fechaInicio,
         fechaFin = fechaFin,

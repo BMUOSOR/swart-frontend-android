@@ -103,6 +103,9 @@ fun AppNavigation() {
                 },
                 onLogout = {
                     navController.navigate("perfil/$role")
+                },
+                onNavigateToCreate = {
+                    navController.navigate("create_exhibition")
                 }
             )
         }
@@ -181,6 +184,9 @@ fun AppNavigation() {
                 },
                 onLogout = {
                     navController.navigate("perfil/$role")
+                },
+                onNavigateToCreate = {
+                    navController.navigate("create_exhibition")
                 }
             )
         }
@@ -232,6 +238,9 @@ fun AppNavigation() {
                 onLogout = {
                     navController.navigate("perfil/$role")
                 },
+                onNavigateToCreate = {
+                    navController.navigate("create_exhibition")
+                },
                 exhibitionIdToSelect = exhibitionId
             )
         }
@@ -279,6 +288,9 @@ fun AppNavigation() {
                     navController.navigate("auth") {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onNavigateToCreate = {
+                    navController.navigate("create_exhibition")
                 }
             )
         }
@@ -519,6 +531,9 @@ fun AppNavigation() {
                 },
                 onNavigateToObras = {
                     navController.navigate("obras/$role") { popUpTo("obras/$role") { inclusive = true } }
+                },
+                onNavigateToCreate = {
+                    navController.navigate("create_exhibition")
                 }
             )
         }
