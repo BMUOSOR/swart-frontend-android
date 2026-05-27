@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.antigravity.swart.domain.model.Artwork
 import com.antigravity.swart.domain.model.ExhibitionDetail
 import com.antigravity.swart.domain.repository.ExhibitionRepository
-import com.antigravity.swart.presentation.components.SessionManager
+import com.antigravity.swart.core.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,7 +67,7 @@ class EditExhibitionViewModel @Inject constructor(
     private val _esColaborativa = MutableStateFlow(false)
     val esColaborativa: StateFlow<Boolean> = _esColaborativa.asStateFlow()
 
-    val currentArtistId: Long = sessionManager.artistId.value
+    val currentArtistId: Long = sessionManager.getUserId()
 
     // Geocoding validation states
     private val _verificationSuccess = MutableStateFlow<String?>(null)
