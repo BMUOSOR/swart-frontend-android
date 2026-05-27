@@ -81,7 +81,7 @@ class CreateExhibitionViewModel @Inject constructor(
 
     fun onColaborativaToggle(value: Boolean) {
         _isColaborativa.value = value
-        if (value && _artistasMutuos.value.isEmpty()) {
+        if (value) {
             loadMutuals()
         }
     }

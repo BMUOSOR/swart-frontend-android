@@ -29,5 +29,6 @@ interface ExhibitionRepository {
     suspend fun getMutuals(artistId: Long): Result<List<com.antigravity.swart.data.remote.dto.MutualArtistDto>>
     suspend fun getInvitations(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.InvitationDto>>
     suspend fun respondInvitation(invitationId: Long, accept: Boolean): Result<Boolean>
+    suspend fun getArtists(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.ArtistFollowDto>>
 }
 

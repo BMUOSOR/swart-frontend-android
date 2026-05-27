@@ -232,4 +232,12 @@ class ExhibitionRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    override suspend fun getArtists(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.ArtistFollowDto>> {
+        return try {
+            Result.success(api.getArtists(userId))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

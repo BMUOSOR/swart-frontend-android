@@ -10,6 +10,7 @@ import com.antigravity.swart.presentation.artist.ArtistProfileScreen
 import com.antigravity.swart.presentation.matches.SwapScreen
 import com.antigravity.swart.presentation.map.MapScreen
 import com.antigravity.swart.presentation.profile.UserProfileScreen
+import com.antigravity.swart.presentation.profile.ArtistsListScreen
 import com.antigravity.swart.presentation.auth.LoginScreen
 import com.antigravity.swart.presentation.auth.RegisterScreen
 import com.antigravity.swart.presentation.auth.AuthViewModel
@@ -265,7 +266,7 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateToFavorites = {
-                    navController.navigate("mensajes")
+                    navController.navigate("artistas")
                 },
                 onNavigateToMensajes = {
                     navController.navigate("mensajes") {
@@ -519,6 +520,13 @@ fun AppNavigation() {
                 onNavigateToObras = {
                     navController.navigate("obras/$role") { popUpTo("obras/$role") { inclusive = true } }
                 }
+            )
+        }
+
+        // ─── ARTISTAS SEGUIDOS ───────────────────────────────────────────────
+        composable("artistas") {
+            ArtistsListScreen(
+                onBack = { navController.popBackStack() }
             )
         }
     }

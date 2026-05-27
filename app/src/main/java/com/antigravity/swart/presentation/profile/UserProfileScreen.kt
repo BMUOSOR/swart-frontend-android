@@ -15,6 +15,10 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,8 +43,15 @@ fun UserProfileScreen(
     onNavigateToObras: () -> Unit = {},
     onNavigateToFavorites: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    viewModel: UserProfileViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
     val scrollState = rememberScrollState()
     
     // Gradient definitions
@@ -54,10 +65,9 @@ fun UserProfileScreen(
         colors = listOf(Color(0xFFF43F5E), Color(0xFFE11D48))
     )
 
-    // Mock visitor profile details
-    val avatarUrl = "https://bkrmqkpxidmemzxhefoc.supabase.co/storage/v1/object/public/Imagenes/usuario_chica_3.jpg"
-    val userName = "Clara Ríos"
-    val userLocation = "Madrid, España"
+    val avatarUrl = uiState.imgUrl
+    val userName = "${uiState.nombre} ${uiState.apellidos}".trim().ifBlank { "Usuario Swart" }
+    val userLocation = uiState.location
 
     Scaffold(
         containerColor = Color(0xFF0B0D17), // Deep dark navy blue background
@@ -165,7 +175,9 @@ fun UserProfileScreen(
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF161925)),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onNavigateToMensajes() }
             ) {
                 Row(
                     modifier = Modifier
@@ -215,19 +227,21 @@ fun UserProfileScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Badge
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(Color.Red),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "3",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                        if (uiState.pendingInvitationsCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Red),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = uiState.pendingInvitationsCount.toString(),
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                         
                         Icon(
@@ -275,14 +289,12 @@ fun UserProfileScreen(
                             isLast = false,
                             onClick = {}
                         )
-                        if (role == "artista") {
-                            SettingMenuItem(
-                                icon = Icons.Filled.Favorite,
-                                title = "Mis Artistas Favoritos / Invitaciones",
-                                isLast = false,
-                                onClick = onNavigateToFavorites
-                            )
-                        }
+                        SettingMenuItem(
+                            icon = Icons.Filled.Favorite,
+                            title = "Artistas Seguidos",
+                            isLast = false,
+                            onClick = onNavigateToFavorites
+                        )
                         SettingMenuItem(
                             icon = Icons.Filled.Notifications,
                             title = "Notificaciones",
