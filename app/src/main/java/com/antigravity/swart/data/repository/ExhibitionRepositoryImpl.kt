@@ -98,7 +98,11 @@ class ExhibitionRepositoryImpl(
                     score = dto.score,
                     activa = dto.activa,
                     obras = dto.obras.map { Artwork(it.idObra, it.titulo, it.imgUrl) },
-                    tags = dto.tags
+                    tags = dto.tags,
+                    esColaborativa = dto.esColaborativa,
+                    artistas = dto.artistas.map {
+                        com.antigravity.swart.domain.model.ArtistBasic(it.id, it.nombre, it.avatarUrl)
+                    }
                 )
             )
         } catch (e: Exception) {
@@ -181,6 +185,49 @@ class ExhibitionRepositoryImpl(
                     displayName = dto.display_name
                 )
             )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createExhibition(request: com.antigravity.swart.data.remote.dto.CreateExhibitionRequest): Result<Long> {
+        return try {
+            val response = api.createExhibition(request)
+            Result.success(response["idExposicion"] ?: -1L)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createArtwork(request: com.antigravity.swart.data.remote.dto.CreateArtworkRequest): Result<Long> {
+        return try {
+            val response = api.createArtwork(request)
+            Result.success(response["idObra"] ?: -1L)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getMutuals(artistId: Long): Result<List<com.antigravity.swart.data.remote.dto.MutualArtistDto>> {
+        return try {
+            Result.success(api.getMutuals(artistId))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getInvitations(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.InvitationDto>> {
+        return try {
+            Result.success(api.getInvitations(userId))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun respondInvitation(invitationId: Long, accept: Boolean): Result<Boolean> {
+        return try {
+            val response = api.respondInvitation(invitationId, mapOf("aceptar" to accept))
+            Result.success(response["success"] ?: false)
         } catch (e: Exception) {
             Result.failure(e)
         }

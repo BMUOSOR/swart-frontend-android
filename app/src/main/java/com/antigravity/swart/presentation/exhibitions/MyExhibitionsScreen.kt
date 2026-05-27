@@ -43,6 +43,7 @@ fun MyExhibitionsScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
     onNavigateToEdit: (Long) -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
     successMessage: String? = null,
     onClearSuccessMessage: () -> Unit = {},
     viewModel: MyExhibitionsViewModel = hiltViewModel()
@@ -117,7 +118,7 @@ fun MyExhibitionsScreen(
                         .size(48.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(LilaAccent)
-                        .clickable { /* Crear exposición */ },
+                        .clickable { onNavigateToCreate() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

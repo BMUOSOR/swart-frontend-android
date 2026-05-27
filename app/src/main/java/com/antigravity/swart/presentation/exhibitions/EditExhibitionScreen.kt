@@ -86,6 +86,7 @@ fun EditExhibitionScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToObras: () -> Unit,
     onNavigateToEditArtwork: (Long) -> Unit,
+    onNavigateToCreateArtwork: () -> Unit = {},
     successMessage: String? = null,
     onClearSuccessMessage: () -> Unit = {},
     viewModel: EditExhibitionViewModel = hiltViewModel()
@@ -359,7 +360,7 @@ fun EditExhibitionScreen(
                                 BorderStroke(1.5.dp, NeonPurple.copy(alpha = 0.6f)),
                                 RoundedCornerShape(12.dp)
                             )
-                            .clickable { /* TODO: add artwork */ },
+                            .clickable { onNavigateToCreateArtwork() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Añadir obra", tint = NeonPurple, modifier = Modifier.size(28.dp))

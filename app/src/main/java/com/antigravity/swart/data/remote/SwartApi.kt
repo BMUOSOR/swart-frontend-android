@@ -6,6 +6,10 @@ import com.antigravity.swart.data.remote.dto.ExhibitionFeedDto
 import com.antigravity.swart.data.remote.dto.MapPinDto
 import com.antigravity.swart.data.remote.dto.DiscoverArtworkDto
 import com.antigravity.swart.data.remote.dto.SwipeRequestDto
+import com.antigravity.swart.data.remote.dto.CreateExhibitionRequest
+import com.antigravity.swart.data.remote.dto.CreateArtworkRequest
+import com.antigravity.swart.data.remote.dto.MutualArtistDto
+import com.antigravity.swart.data.remote.dto.InvitationDto
 import retrofit2.Response
 import retrofit2.http.Body
 import com.antigravity.swart.data.remote.dto.UpdateExhibitionRequest
@@ -46,8 +50,14 @@ interface SwartApi {
         @Query("userId") userId: Long
     ): Map<String, Boolean>
 
+    @GET("api/artists/{id}/mutuals")
+    suspend fun getMutuals(@Path("id") artistId: Long): List<MutualArtistDto>
+
     @GET("api/exhibitions/{id}")
     suspend fun getExhibitionDetail(@Path("id") id: Long): ExhibitionDetailDto
+
+    @POST("api/exhibitions")
+    suspend fun createExhibition(@Body request: CreateExhibitionRequest): Map<String, Long>
 
     @PUT("api/exhibitions/{id}")
     suspend fun updateExhibition(
@@ -60,6 +70,9 @@ interface SwartApi {
 
     @GET("api/artworks/{id}")
     suspend fun getArtworkDetail(@Path("id") id: Long): ArtworkDetailDto
+
+    @POST("api/artworks")
+    suspend fun createArtwork(@Body request: CreateArtworkRequest): Map<String, Long>
 
     @PUT("api/artworks/{id}")
     suspend fun updateArtwork(
@@ -74,4 +87,13 @@ interface SwartApi {
     suspend fun verifyAddress(
         @Query("address") address: String
     ): com.antigravity.swart.data.remote.dto.GeocodingResultDto
+
+    @GET("api/invitations/{userId}")
+    suspend fun getInvitations(@Path("userId") userId: Long): List<InvitationDto>
+
+    @PUT("api/invitations/{id}/respond")
+    suspend fun respondInvitation(
+        @Path("id") invitationId: Long,
+        @Body body: Map<String, Boolean>
+    ): Map<String, Boolean>
 }

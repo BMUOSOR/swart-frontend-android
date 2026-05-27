@@ -37,6 +37,7 @@ fun UserProfileScreen(
     onNavigateToSwap: () -> Unit,
     onNavigateToMap: () -> Unit,
     onNavigateToObras: () -> Unit = {},
+    onNavigateToFavorites: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -263,22 +264,34 @@ fun UserProfileScreen(
                         SettingMenuItem(
                             icon = Icons.Filled.AccountCircle,
                             title = "Mi Cuenta",
-                            isLast = false
+                            isLast = false,
+                            onClick = {}
                         )
                         SettingMenuItem(
                             icon = Icons.Filled.Brush,
                             title = "Preferencias de Arte",
-                            isLast = false
+                            isLast = false,
+                            onClick = {}
                         )
+                        if (role == "artista") {
+                            SettingMenuItem(
+                                icon = Icons.Filled.Favorite,
+                                title = "Mis Artistas Favoritos / Invitaciones",
+                                isLast = false,
+                                onClick = onNavigateToFavorites
+                            )
+                        }
                         SettingMenuItem(
                             icon = Icons.Filled.Notifications,
                             title = "Notificaciones",
-                            isLast = false
+                            isLast = false,
+                            onClick = {}
                         )
                         SettingMenuItem(
                             icon = Icons.Filled.Lock,
                             title = "Privacidad",
-                            isLast = true
+                            isLast = true,
+                            onClick = {}
                         )
                     }
                 }
@@ -328,12 +341,13 @@ fun UserProfileScreen(
 fun SettingMenuItem(
     icon: ImageVector,
     title: String,
-    isLast: Boolean
+    isLast: Boolean,
+    onClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Handle click */ }
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier

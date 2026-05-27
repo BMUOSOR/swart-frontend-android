@@ -243,6 +243,9 @@ fun AppNavigation() {
                         restoreState = true
                     }
                 },
+                onNavigateToFavorites = {
+                    navController.navigate("invitations")
+                },
                 onLogout = {
                     navController.navigate("auth") {
                         popUpTo(0) { inclusive = true }
@@ -250,6 +253,7 @@ fun AppNavigation() {
                 }
             )
         }
+
         composable("obras/{role}") { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "artista"
             val successMessage by backStackEntry.savedStateHandle.getStateFlow<String?>("success_message", null).collectAsState()
@@ -289,6 +293,9 @@ fun AppNavigation() {
                 },
                 onNavigateToEdit = { exhibitionId ->
                     navController.navigate("edit_exhibition/$exhibitionId")
+                },
+                onNavigateToCreate = {
+                    navController.navigate("create_exhibition")
                 }
             )
         }
@@ -341,6 +348,10 @@ fun AppNavigation() {
                 },
                 onNavigateToEditArtwork = { artworkId ->
                     navController.navigate("edit_artwork/$artworkId")
+                },
+                onNavigateToCreateArtwork = {
+                    val exhibitionId = backStackEntry.arguments?.getLong("exhibitionId") ?: 0L
+                    navController.navigate("create_artwork/$exhibitionId")
                 }
             )
         }
@@ -385,6 +396,87 @@ fun AppNavigation() {
                     navController.navigate("obras/$role") {
                         popUpTo("obras/$role") { inclusive = true }
                     }
+                }
+            )
+        }
+
+        // ─── NUEVA EXPO ───────────────────────────────────────────────────────
+        composable("create_exhibition") {
+            val role = "artista"
+            com.antigravity.swart.presentation.exhibitions.CreateExhibitionScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToEdit = { newId ->
+                    navController.navigate("edit_exhibition/$newId") {
+                        popUpTo("create_exhibition") { inclusive = true }
+                    }
+                },
+                onNavigateHome = {
+                    navController.navigate("home/$role") { popUpTo("home/$role") { inclusive = true } }
+                },
+                onNavigateToSwap = {
+                    navController.navigate("swap/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToMap = {
+                    navController.navigate("mapa/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("perfil/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToObras = {
+                    navController.navigate("obras/$role") { popUpTo("obras/$role") { inclusive = true } }
+                }
+            )
+        }
+
+        // ─── NUEVA OBRA ───────────────────────────────────────────────────────
+        composable(
+            route = "create_artwork/{exhibitionId}",
+            arguments = listOf(navArgument("exhibitionId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val role = "artista"
+            com.antigravity.swart.presentation.exhibitions.CreateArtworkScreen(
+                onBack = { navController.popBackStack() },
+                onBackWithResult = { message ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("success_message", message)
+                    navController.popBackStack()
+                },
+                onNavigateHome = {
+                    navController.navigate("home/$role") { popUpTo("home/$role") { inclusive = true } }
+                },
+                onNavigateToSwap = {
+                    navController.navigate("swap/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToMap = {
+                    navController.navigate("mapa/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("perfil/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToObras = {
+                    navController.navigate("obras/$role") { popUpTo("obras/$role") { inclusive = true } }
+                }
+            )
+        }
+
+        // ─── INVITACIONES ─────────────────────────────────────────────────────
+        composable("invitations") {
+            val role = "artista"
+            com.antigravity.swart.presentation.exhibitions.InvitationsScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateHome = {
+                    navController.navigate("home/$role") { popUpTo("home/$role") { inclusive = true } }
+                },
+                onNavigateToSwap = {
+                    navController.navigate("swap/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToMap = {
+                    navController.navigate("mapa/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("perfil/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
+                },
+                onNavigateToObras = {
+                    navController.navigate("obras/$role") { popUpTo("obras/$role") { inclusive = true } }
                 }
             )
         }
