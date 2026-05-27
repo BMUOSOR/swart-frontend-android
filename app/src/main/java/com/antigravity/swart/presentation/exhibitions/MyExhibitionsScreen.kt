@@ -44,6 +44,7 @@ fun MyExhibitionsScreen(
     onNavigateToDetail: (Long) -> Unit,
     onNavigateToEdit: (Long) -> Unit = {},
     onNavigateToCreate: () -> Unit = {},
+    onNavigateToMensajes: () -> Unit = {},
     successMessage: String? = null,
     onClearSuccessMessage: () -> Unit = {},
     viewModel: MyExhibitionsViewModel = hiltViewModel()
@@ -75,6 +76,7 @@ fun MyExhibitionsScreen(
                         "descubrir" -> onNavigateToSwap()
                         "mapa" -> onNavigateToMap()
                         "perfil" -> onNavigateToProfile()
+                        "mensajes" -> onNavigateToMensajes()
                     }
                 }
             )

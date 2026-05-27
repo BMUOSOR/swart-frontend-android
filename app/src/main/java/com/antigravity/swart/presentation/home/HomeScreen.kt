@@ -29,6 +29,7 @@ fun HomeScreen(
     onNavigateToSwap: () -> Unit = {},
     onNavigateToMap: (String) -> Unit = {},
     onNavigateToObras: () -> Unit = {},
+    onNavigateToMensajes: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -52,6 +53,8 @@ fun HomeScreen(
                         onNavigateToMap(role)
                     } else if (it == "obras") {
                         onNavigateToObras()
+                    } else if (it == "mensajes") {
+                        onNavigateToMensajes()
                     } else if (it == "perfil") {
                         onLogout()
                     }

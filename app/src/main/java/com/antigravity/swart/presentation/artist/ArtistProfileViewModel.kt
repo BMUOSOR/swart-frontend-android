@@ -31,6 +31,8 @@ class ArtistProfileViewModel @Inject constructor(
     // El userId del usuario autenticado (el que hace follow)
     private val currentUserId: Long = sessionManager.getUserId()
 
+    val isOwnProfile: Boolean = artistId == currentUserId
+
     private val _uiState = MutableStateFlow<ArtistProfileUiState>(ArtistProfileUiState.Loading)
     val uiState: StateFlow<ArtistProfileUiState> = _uiState.asStateFlow()
 
@@ -63,6 +65,7 @@ class ArtistProfileViewModel @Inject constructor(
     }
 
     fun toggleFollow() {
+        if (isOwnProfile) return
         viewModelScope.launch {
             val currentState = _uiState.value
             if (currentState is ArtistProfileUiState.Success) {

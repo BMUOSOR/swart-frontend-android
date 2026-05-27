@@ -79,6 +79,7 @@ fun ArtistProfileScreen(
                     ArtistProfileContent(
                         profile = state.profile,
                         isFollowing = isFollowing,
+                        isOwnProfile = viewModel.isOwnProfile,
                         onBack = onBack,
                         onFollowToggle = { viewModel.toggleFollow() }
                     )
@@ -92,6 +93,7 @@ fun ArtistProfileScreen(
 fun ArtistProfileContent(
     profile: ArtistProfile,
     isFollowing: Boolean,
+    isOwnProfile: Boolean,
     onBack: () -> Unit,
     onFollowToggle: () -> Unit
 ) {
@@ -143,18 +145,20 @@ fun ArtistProfileContent(
                     )
                 }
 
-                IconButton(
-                    onClick = onFollowToggle,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(NavyCardBackground, CircleShape)
-                        .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = if (isFollowing) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorito",
-                        tint = if (isFollowing) PremiumPink else Color.White
-                    )
+                if (!isOwnProfile) {
+                    IconButton(
+                        onClick = onFollowToggle,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(NavyCardBackground, CircleShape)
+                            .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = if (isFollowing) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorito",
+                            tint = if (isFollowing) PremiumPink else Color.White
+                        )
+                    }
                 }
             }
         }

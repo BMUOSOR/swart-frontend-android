@@ -52,7 +52,7 @@ fun InvitationsScreen(
         bottomBar = {
             SwartBottomNav(
                 userType = UserType.ARTIST,
-                currentRoute = "perfil",
+                currentRoute = "mensajes",
                 onNavigate = { route ->
                     when (route) {
                         "home"      -> onNavigateHome()

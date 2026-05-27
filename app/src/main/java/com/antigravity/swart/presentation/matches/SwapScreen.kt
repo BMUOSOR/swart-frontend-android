@@ -48,6 +48,7 @@ fun SwapScreen(
     onNavigateHome: () -> Unit,
     onNavigateToMap: () -> Unit,
     onNavigateToObras: () -> Unit = {},
+    onNavigateToMensajes: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
@@ -71,6 +72,7 @@ fun SwapScreen(
                         "home" -> onNavigateHome()
                         "mapa" -> onNavigateToMap()
                         "obras" -> onNavigateToObras()
+                        "mensajes" -> onNavigateToMensajes()
                         "perfil" -> onLogout()
                     }
                 },

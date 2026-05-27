@@ -93,6 +93,13 @@ fun AppNavigation() {
                         restoreState = true
                     }
                 },
+                onNavigateToMensajes = {
+                    navController.navigate("mensajes") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onLogout = {
                     navController.navigate("perfil/$role")
                 }
@@ -164,6 +171,13 @@ fun AppNavigation() {
                         restoreState = true
                     }
                 },
+                onNavigateToMensajes = {
+                    navController.navigate("mensajes") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onLogout = {
                     navController.navigate("perfil/$role")
                 }
@@ -207,6 +221,13 @@ fun AppNavigation() {
                         restoreState = true
                     }
                 },
+                onNavigateToMensajes = {
+                    navController.navigate("mensajes") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onLogout = {
                     navController.navigate("perfil/$role")
                 },
@@ -244,7 +265,14 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateToFavorites = {
-                    navController.navigate("invitations")
+                    navController.navigate("mensajes")
+                },
+                onNavigateToMensajes = {
+                    navController.navigate("mensajes") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 },
                 onLogout = {
                     navController.navigate("auth") {
@@ -283,6 +311,13 @@ fun AppNavigation() {
                 },
                 onNavigateToProfile = {
                     navController.navigate("perfil/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToMensajes = {
+                    navController.navigate("mensajes") {
                         popUpTo("home/$role") { saveState = true }
                         launchSingleTop = true
                         restoreState = true
@@ -405,10 +440,9 @@ fun AppNavigation() {
             val role = "artista"
             com.antigravity.swart.presentation.exhibitions.CreateExhibitionScreen(
                 onBack = { navController.popBackStack() },
-                onNavigateToEdit = { newId ->
-                    navController.navigate("edit_exhibition/$newId") {
-                        popUpTo("create_exhibition") { inclusive = true }
-                    }
+                onBackWithResult = { message ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("success_message", message)
+                    navController.popBackStack()
                 },
                 onNavigateHome = {
                     navController.navigate("home/$role") { popUpTo("home/$role") { inclusive = true } }
@@ -424,6 +458,13 @@ fun AppNavigation() {
                 },
                 onNavigateToObras = {
                     navController.navigate("obras/$role") { popUpTo("obras/$role") { inclusive = true } }
+                },
+                onNavigateToMensajes = {
+                    navController.navigate("mensajes") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             )
         }
@@ -459,7 +500,7 @@ fun AppNavigation() {
         }
 
         // ─── INVITACIONES ─────────────────────────────────────────────────────
-        composable("invitations") {
+        composable("mensajes") {
             val role = "artista"
             com.antigravity.swart.presentation.exhibitions.InvitationsScreen(
                 onBack = { navController.popBackStack() },

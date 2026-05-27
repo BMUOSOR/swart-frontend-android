@@ -38,6 +38,7 @@ fun UserProfileScreen(
     onNavigateToMap: () -> Unit,
     onNavigateToObras: () -> Unit = {},
     onNavigateToFavorites: () -> Unit = {},
+    onNavigateToMensajes: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -73,6 +74,7 @@ fun UserProfileScreen(
                         "descubrir" -> onNavigateToSwap()
                         "mapa" -> onNavigateToMap()
                         "obras" -> onNavigateToObras()
+                        "mensajes" -> onNavigateToMensajes()
                     }
                 }
             )

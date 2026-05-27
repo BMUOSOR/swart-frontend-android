@@ -51,12 +51,13 @@ private val CE_CATEGORIAS = listOf("Pintura", "Escultura", "Fotografía")
 @Composable
 fun CreateExhibitionScreen(
     onBack: () -> Unit,
-    onNavigateToEdit: (Long) -> Unit,
+    onBackWithResult: (String) -> Unit,
     onNavigateHome: () -> Unit,
     onNavigateToSwap: () -> Unit,
     onNavigateToMap: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToObras: () -> Unit,
+    onNavigateToMensajes: () -> Unit = {},
     viewModel: CreateExhibitionViewModel = hiltViewModel()
 ) {
     val titulo         by viewModel.titulo.collectAsState()
@@ -81,7 +82,7 @@ fun CreateExhibitionScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is CreateExhibitionEvent.CreatedSuccessfully -> {
-                    onNavigateToEdit(event.newId)
+                    onBackWithResult("Exposición creada correctamente")
                 }
                 is CreateExhibitionEvent.Error -> {
                     snackbarHostState.showSnackbar(event.message)
@@ -104,6 +105,7 @@ fun CreateExhibitionScreen(
                         "mapa"      -> onNavigateToMap()
                         "perfil"    -> onNavigateToProfile()
                         "obras"     -> onNavigateToObras()
+                        "mensajes"  -> onNavigateToMensajes()
                     }
                 }
             )
@@ -208,16 +210,37 @@ fun CreateExhibitionScreen(
                     ) {
                         // Artistas ya añadidos
                         artistasInv.forEach { artista ->
-                            Box(modifier = Modifier.size(50.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clickable { viewModel.toggleInvitado(artista) },
+                                contentAlignment = Alignment.TopEnd
+                            ) {
                                 AsyncImage(
                                     model = artista.avatarUrl,
                                     contentDescription = artista.nombre,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
-                                        .size(50.dp)
+                                        .size(48.dp)
+                                        .align(Alignment.BottomStart)
                                         .clip(CircleShape)
                                         .border(2.dp, CENeonPurple, CircleShape)
                                 )
+                                Box(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFEF4444))
+                                        .border(1.dp, Color.White, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Eliminar",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
                             }
                         }
                         // Botón añadir
