@@ -113,13 +113,17 @@ fun EditExhibitionScreen(
         }
     }
 
+    val context = LocalContext.current
+
     // One-shot events
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is EditExhibitionEvent.SavedSuccessfully  -> onBackWithResult("Exposición guardada con éxito")
                 is EditExhibitionEvent.DeletedSuccessfully -> onBackWithResult("Exposición eliminada con éxito")
-                is EditExhibitionEvent.SaveError           -> { /* Snackbar podría añadirse aquí */ }
+                is EditExhibitionEvent.SaveError           -> {
+                    android.widget.Toast.makeText(context, event.message, android.widget.Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
