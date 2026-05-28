@@ -102,6 +102,7 @@ fun EditExhibitionScreen(
     val tagsSelec      by viewModel.tagsSeleccionados.collectAsState()
     val bannerUrl      by viewModel.bannerUrl.collectAsState()
     val esColaborativa by viewModel.esColaborativa.collectAsState()
+    val artistas       by viewModel.artistas.collectAsState()
     val currentArtistId = viewModel.currentArtistId
 
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -329,13 +330,10 @@ fun EditExhibitionScreen(
                 val obrasColaboradores = obras.filter { it.artistId != currentArtistId }
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("TUS OBRAS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
-                    }
+                    // Título de sección
+                    Text("TUS OBRAS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+
+                    // Carrusel de tus obras + botón añadir
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -371,25 +369,36 @@ fun EditExhibitionScreen(
                     }
                 }
 
-                if (obrasColaboradores.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("OBRAS DE COLABORADORES", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            obrasColaboradores.forEach { obra ->
-                                AsyncImage(
-                                    model = obra.imageUrl,
-                                    contentDescription = obra.title,
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(CardBg),
-                                    contentScale = ContentScale.Crop
-                                )
+                // Secciones por artista colaborador
+                val colaboradores = artistas.filter { it.id != currentArtistId }
+                colaboradores.forEach { artista ->
+                    val obrasDeEsteArtista = obrasColaboradores.filter { it.artistId == artista.id }
+                    if (obrasDeEsteArtista.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                "OBRAS DE ${artista.name.uppercase()}",
+                                color = TextGray,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 1.sp
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                obrasDeEsteArtista.forEach { obra ->
+                                    AsyncImage(
+                                        model = obra.imageUrl,
+                                        contentDescription = obra.title,
+                                        modifier = Modifier
+                                            .size(80.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(CardBg),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                             }
                         }
                     }

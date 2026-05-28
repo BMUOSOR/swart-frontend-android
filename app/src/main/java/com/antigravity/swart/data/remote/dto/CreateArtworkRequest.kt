@@ -2,6 +2,7 @@ package com.antigravity.swart.data.remote.dto
 
 data class CreateArtworkRequest(
     val idExposicion: Long,
+    val idArtista: Long? = null,
     val titulo: String,
     val descrip: String? = null,
     val imgUrl: String? = null,

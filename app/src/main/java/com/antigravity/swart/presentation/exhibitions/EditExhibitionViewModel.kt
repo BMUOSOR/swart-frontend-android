@@ -3,6 +3,7 @@ package com.antigravity.swart.presentation.exhibitions
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antigravity.swart.domain.model.ArtistBasic
 import com.antigravity.swart.domain.model.Artwork
 import com.antigravity.swart.domain.model.ExhibitionDetail
 import com.antigravity.swart.domain.repository.ExhibitionRepository
@@ -67,6 +68,9 @@ class EditExhibitionViewModel @Inject constructor(
     private val _esColaborativa = MutableStateFlow(false)
     val esColaborativa: StateFlow<Boolean> = _esColaborativa.asStateFlow()
 
+    private val _artistas = MutableStateFlow<List<ArtistBasic>>(emptyList())
+    val artistas: StateFlow<List<ArtistBasic>> = _artistas.asStateFlow()
+
     val currentArtistId: Long = sessionManager.getUserId()
 
     // Geocoding validation states
@@ -106,6 +110,7 @@ class EditExhibitionViewModel @Inject constructor(
                     _obras.value = detail.obras
                     _bannerUrl.value = detail.imgUrl
                     _esColaborativa.value = detail.esColaborativa
+                    _artistas.value = detail.artistas
                     // Cargar sólo los tags de categoría de la exposición
                     val categories = detail.tags.filter { it in setOf("Pintura", "Escultura", "Fotografía") }.toSet()
                     _tagsSeleccionados.value = categories
