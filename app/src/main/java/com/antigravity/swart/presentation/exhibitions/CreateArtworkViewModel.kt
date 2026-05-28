@@ -61,6 +61,28 @@ class CreateArtworkViewModel @Inject constructor(
         _tagsSeleccionados.value = curr
     }
 
+    private val _imageUrl = MutableStateFlow<String?>(null)
+    val imageUrl: StateFlow<String?> = _imageUrl.asStateFlow()
+
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
+
+    fun uploadImage(filePart: okhttp3.MultipartBody.Part) {
+        viewModelScope.launch {
+            _isUploading.value = true
+            repository.uploadImage(filePart).fold(
+                onSuccess = { url ->
+                    _imageUrl.value = url
+                    _isUploading.value = false
+                },
+                onFailure = { error ->
+                    _isUploading.value = false
+                    _events.emit(CreateArtworkEvent.Error("Fallo al subir imagen: ${error.message}"))
+                }
+            )
+        }
+    }
+
     fun createArtwork() {
         if (_titulo.value.isBlank()) {
             viewModelScope.launch { _events.emit(CreateArtworkEvent.Error("El título es obligatorio")) }
@@ -79,7 +101,7 @@ class CreateArtworkViewModel @Inject constructor(
                 idArtista = artistId,
                 titulo = _titulo.value,
                 descrip = _descripcion.value.ifBlank { null },
-                imgUrl = null,
+                imgUrl = _imageUrl.value,
                 precio = precio,
                 disponibleCompra = _disponibleCompra.value,
                 tags = allTags

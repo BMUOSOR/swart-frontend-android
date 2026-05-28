@@ -1,6 +1,9 @@
 package com.antigravity.swart.presentation.exhibitions
 
 import android.app.DatePickerDialog
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.antigravity.swart.presentation.components.SwartBottomNav
 import com.antigravity.swart.presentation.components.UserType
 import java.util.Calendar
@@ -88,6 +93,39 @@ fun CreateArtworkScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val imageUrl           by viewModel.imageUrl.collectAsState()
+    val isUploading        by viewModel.isUploading.collectAsState()
+
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let {
+                val part = uriToMultipartBodyPart(context, it, "file")
+                if (part != null) {
+                    viewModel.uploadImage(part)
+                }
+            }
+        }
+    )
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                tempUri?.let { uri ->
+                    val part = uriToMultipartBodyPart(context, uri, "file")
+                    if (part != null) {
+                        viewModel.uploadImage(part)
+                    }
+                }
+            }
+        }
+    )
+
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -95,6 +133,18 @@ fun CreateArtworkScreen(
                 is CreateArtworkEvent.Error -> snackbarHostState.showSnackbar(event.message)
             }
         }
+    }
+
+    if (showImageSourceDialog) {
+        ImageSourceSelectorDialog(
+            onDismiss = { showImageSourceDialog = false },
+            onGallerySelect = { galleryLauncher.launch("image/*") },
+            onCameraSelect = {
+                val uri = createTempImageUri(context)
+                tempUri = uri
+                cameraLauncher.launch(uri)
+            }
+        )
     }
 
     Scaffold(
@@ -146,7 +196,7 @@ fun CreateArtworkScreen(
                 Spacer(Modifier.size(42.dp))
             }
 
-            // ─── PLACEHOLDER IMAGEN ───────────────────────────────────────
+            // ─── IMAGEN DE LA OBRA ─────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -155,26 +205,41 @@ fun CreateArtworkScreen(
                     .background(CACardBg),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Image,
-                        contentDescription = null,
-                        tint = CATextGray,
-                        modifier = Modifier.size(64.dp)
+                if (imageUrl != null) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Imagen de la obra",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
-                    Text(
-                        "Imagen no disponible",
-                        color = CATextGray,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        "(se podrá añadir después)",
-                        color = CATextGray.copy(alpha = 0.6f),
-                        fontSize = 12.sp
-                    )
+                }
+                
+                if (isUploading) {
+                    CircularProgressIndicator(color = CANeonPurple)
+                } else {
+                    // Glassmorphism overlay button
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50.dp))
+                            .background(Color.White.copy(alpha = 0.15f))
+                            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(50.dp))
+                            .clickable { showImageSourceDialog = true }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = null, tint = CANeonPurple, modifier = Modifier.size(18.dp))
+                            Text(
+                                text = if (imageUrl == null) "Añadir foto de obra" else "Cambiar foto",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
 

@@ -179,6 +179,25 @@ class EditExhibitionViewModel @Inject constructor(
         }
     }
 
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
+
+    fun uploadBanner(filePart: okhttp3.MultipartBody.Part) {
+        viewModelScope.launch {
+            _isUploading.value = true
+            repository.uploadImage(filePart).fold(
+                onSuccess = { url ->
+                    _bannerUrl.value = url
+                    _isUploading.value = false
+                },
+                onFailure = { error ->
+                    _isUploading.value = false
+                    _events.emit(EditExhibitionEvent.SaveError("Fallo al subir banner: ${error.message}"))
+                }
+            )
+        }
+    }
+
     fun saveChanges() {
         viewModelScope.launch {
             _uiState.value = EditExhibitionUiState.Saving
@@ -190,6 +209,7 @@ class EditExhibitionViewModel @Inject constructor(
                 ubicacion = _ubicacion.value.ifBlank { null },
                 fechaInicio = _fechaInicio.value.ifBlank { null },
                 fechaFin = _fechaFin.value.ifBlank { null },
+                imgUrl = _bannerUrl.value,
                 tags = _tagsSeleccionados.value.toList()
             ).fold(
                 onSuccess = {

@@ -1,6 +1,9 @@
 package com.antigravity.swart.presentation.exhibitions
 
 import android.app.DatePickerDialog
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import java.util.Calendar
 import androidx.compose.animation.AnimatedVisibility
@@ -114,6 +117,35 @@ fun EditExhibitionScreen(
     }
 
     val context = LocalContext.current
+    val isUploading by viewModel.isUploading.collectAsState()
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let {
+                val part = uriToMultipartBodyPart(context, it, "file")
+                if (part != null) {
+                    viewModel.uploadBanner(part)
+                }
+            }
+        }
+    )
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                tempUri?.let { uri ->
+                    val part = uriToMultipartBodyPart(context, uri, "file")
+                    if (part != null) {
+                        viewModel.uploadBanner(part)
+                    }
+                }
+            }
+        }
+    )
 
     // One-shot events
     LaunchedEffect(Unit) {
@@ -199,22 +231,31 @@ fun EditExhibitionScreen(
                         contentScale = ContentScale.Crop
                     )
                 }
-                // Glassmorphism overlay button
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50.dp))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(50.dp))
-                        .clickable { /* TODO: pick image */ }
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                if (isUploading) {
+                    CircularProgressIndicator(color = NeonPurple)
+                } else {
+                    // Glassmorphism overlay button
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50.dp))
+                            .background(Color.White.copy(alpha = 0.15f))
+                            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(50.dp))
+                            .clickable { showImageSourceDialog = true }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = null, tint = NeonPurple, modifier = Modifier.size(18.dp))
-                        Text("Cambiar banner", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = null, tint = NeonPurple, modifier = Modifier.size(18.dp))
+                            Text(
+                                text = if (bannerUrl == null) "Añadir banner" else "Cambiar banner",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }
@@ -554,6 +595,18 @@ fun EditExhibitionScreen(
                 TextButton(onClick = onClearSuccessMessage) {
                     Text("Aceptar", color = NeonPurple, fontWeight = FontWeight.Bold)
                 }
+            }
+        )
+    }
+
+    if (showImageSourceDialog) {
+        ImageSourceSelectorDialog(
+            onDismiss = { showImageSourceDialog = false },
+            onGallerySelect = { galleryLauncher.launch("image/*") },
+            onCameraSelect = {
+                val uri = createTempImageUri(context)
+                tempUri = uri
+                cameraLauncher.launch(uri)
             }
         )
     }

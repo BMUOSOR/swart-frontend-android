@@ -9,6 +9,8 @@ import com.antigravity.swart.domain.model.MapPin
 import com.antigravity.swart.domain.model.DiscoverArtwork
 import com.antigravity.swart.domain.model.ArtworkDetail
 
+import okhttp3.MultipartBody
+
 interface ExhibitionRepository {
     suspend fun getFeed(): Result<List<Exhibition>>
     suspend fun getMapPins(): Result<List<MapPin>>
@@ -18,7 +20,7 @@ interface ExhibitionRepository {
     suspend fun followArtist(artistId: Long, userId: Long): Result<Boolean>
     suspend fun getFollowStatus(artistId: Long, userId: Long): Result<Boolean>
     suspend fun getExhibitionDetail(id: Long): Result<ExhibitionDetail>
-    suspend fun updateExhibition(id: Long, titulo: String, descrip: String?, nombreLugar: String?, ubicacion: String?, fechaInicio: String?, fechaFin: String?, tags: List<String>): Result<Boolean>
+    suspend fun updateExhibition(id: Long, titulo: String, descrip: String?, nombreLugar: String?, ubicacion: String?, fechaInicio: String?, fechaFin: String?, imgUrl: String?, tags: List<String>): Result<Boolean>
     suspend fun deleteExhibition(id: Long): Result<Boolean>
     suspend fun getArtworkDetail(id: Long): Result<ArtworkDetail>
     suspend fun updateArtwork(id: Long, titulo: String, descrip: String?, precio: Double?, disponibleCompra: Boolean, tags: List<String>): Result<Boolean>
@@ -30,5 +32,6 @@ interface ExhibitionRepository {
     suspend fun getInvitations(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.InvitationDto>>
     suspend fun respondInvitation(invitationId: Long, accept: Boolean): Result<Boolean>
     suspend fun getArtists(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.ArtistFollowDto>>
+    suspend fun uploadImage(filePart: MultipartBody.Part): Result<String>
 }
 

@@ -112,11 +112,11 @@ class ExhibitionRepositoryImpl(
 
     override suspend fun updateExhibition(
         id: Long, titulo: String, descrip: String?, nombreLugar: String?,
-        ubicacion: String?, fechaInicio: String?, fechaFin: String?, tags: List<String>
+        ubicacion: String?, fechaInicio: String?, fechaFin: String?, imgUrl: String?, tags: List<String>
     ): Result<Boolean> {
         return try {
             val response = api.updateExhibition(
-                id, UpdateExhibitionRequest(titulo, descrip, nombreLugar, ubicacion, fechaInicio, fechaFin, tags)
+                id, UpdateExhibitionRequest(titulo, descrip, nombreLugar, ubicacion, fechaInicio, fechaFin, imgUrl, tags)
             )
             Result.success(response["success"] ?: false)
         } catch (e: Exception) {
@@ -236,6 +236,16 @@ class ExhibitionRepositoryImpl(
     override suspend fun getArtists(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.ArtistFollowDto>> {
         return try {
             Result.success(api.getArtists(userId))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun uploadImage(filePart: okhttp3.MultipartBody.Part): Result<String> {
+        return try {
+            val response = api.uploadImage(filePart)
+            val url = response["url"] ?: throw Exception("URL no devuelta por el servidor")
+            Result.success(url)
         } catch (e: Exception) {
             Result.failure(e)
         }

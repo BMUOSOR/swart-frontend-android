@@ -25,5 +25,6 @@ data class UpdateExhibitionRequest(
     val ubicacion: String?,
     val fechaInicio: String?,
     val fechaFin: String?,
+    val imgUrl: String?,
     val tags: List<String>
 )

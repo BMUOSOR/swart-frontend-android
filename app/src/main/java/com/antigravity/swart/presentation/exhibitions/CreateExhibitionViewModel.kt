@@ -137,6 +137,28 @@ class CreateExhibitionViewModel @Inject constructor(
         }
     }
 
+    private val _bannerUrl = MutableStateFlow<String?>(null)
+    val bannerUrl: StateFlow<String?> = _bannerUrl.asStateFlow()
+
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
+
+    fun uploadBanner(filePart: okhttp3.MultipartBody.Part) {
+        viewModelScope.launch {
+            _isUploading.value = true
+            repository.uploadImage(filePart).fold(
+                onSuccess = { url ->
+                    _bannerUrl.value = url
+                    _isUploading.value = false
+                },
+                onFailure = { error ->
+                    _isUploading.value = false
+                    _events.emit(CreateExhibitionEvent.Error("Fallo al subir banner: ${error.message}"))
+                }
+            )
+        }
+    }
+
     fun createExhibition() {
         val artistaId = sessionManager.getUserId()
         if (_titulo.value.isBlank()) {
@@ -152,7 +174,7 @@ class CreateExhibitionViewModel @Inject constructor(
                 ubicacion = _ubicacion.value.ifBlank { null },
                 fechaInicio = _fechaInicio.value.ifBlank { null },
                 fechaFin = _fechaFin.value.ifBlank { null },
-                imgUrl = null,
+                imgUrl = _bannerUrl.value,
                 precio = null,
                 activa = true,
                 esColaborativa = _isColaborativa.value,

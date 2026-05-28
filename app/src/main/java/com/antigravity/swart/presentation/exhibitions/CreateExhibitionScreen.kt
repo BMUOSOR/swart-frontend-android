@@ -1,6 +1,9 @@
 package com.antigravity.swart.presentation.exhibitions
 
 import android.app.DatePickerDialog
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -74,9 +77,41 @@ fun CreateExhibitionScreen(
     val isVerifying    by viewModel.isVerifying.collectAsState()
     val verifSuccess   by viewModel.verificationSuccess.collectAsState()
     val verifError     by viewModel.verificationError.collectAsState()
+    val bannerUrl      by viewModel.bannerUrl.collectAsState()
+    val isUploading    by viewModel.isUploading.collectAsState()
 
     var showMutualsSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let {
+                val part = uriToMultipartBodyPart(context, it, "file")
+                if (part != null) {
+                    viewModel.uploadBanner(part)
+                }
+            }
+        }
+    )
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                tempUri?.let { uri ->
+                    val part = uriToMultipartBodyPart(context, uri, "file")
+                    if (part != null) {
+                        viewModel.uploadBanner(part)
+                    }
+                }
+            }
+        }
+    )
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -139,6 +174,51 @@ fun CreateExhibitionScreen(
                 )
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.size(42.dp))
+            }
+
+            // ─── BANNER ───────────────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(CECardBg),
+                contentAlignment = Alignment.Center
+            ) {
+                if (bannerUrl != null) {
+                    AsyncImage(
+                        model = bannerUrl,
+                        contentDescription = "Banner",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                if (isUploading) {
+                    CircularProgressIndicator(color = CENeonPurple)
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50.dp))
+                            .background(Color.White.copy(alpha = 0.15f))
+                            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(50.dp))
+                            .clickable { showImageSourceDialog = true }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = null, tint = CENeonPurple, modifier = Modifier.size(18.dp))
+                            Text(
+                                text = if (bannerUrl == null) "Añadir banner" else "Cambiar banner",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
             }
 
             // ─── TÍTULO ───────────────────────────────────────────────────
@@ -459,6 +539,18 @@ fun CreateExhibitionScreen(
                 }
             }
         }
+    }
+
+    if (showImageSourceDialog) {
+        ImageSourceSelectorDialog(
+            onDismiss = { showImageSourceDialog = false },
+            onGallerySelect = { galleryLauncher.launch("image/*") },
+            onCameraSelect = {
+                val uri = createTempImageUri(context)
+                tempUri = uri
+                cameraLauncher.launch(uri)
+            }
+        )
     }
 }
 
