@@ -55,10 +55,14 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.content.ContextCompat
 
-fun createMarkerBitmap(context: Context, tag: String): Bitmap {
+fun createMarkerBitmap(context: Context, tag: String, match: Int): Bitmap {
     val size = 200 // Increased resolution for sharper icons
     val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
+    
+    // Scale marker drawing based on match percentage (0% match = 0.6f size, 100% match = 1.1f size)
+    val scale = 0.6f + (match / 100f) * 0.5f
+    canvas.scale(scale, scale, size / 2f, size / 2f)
     
     // Colors based on discipline
     val startColor = if (tag.lowercase() == "escultura") 0xFFEC4899.toInt() else 0xFF6366F1.toInt()
@@ -187,6 +191,11 @@ fun MapScreen(
     
     var lastCenteredPinId by remember { mutableStateOf<Long?>(null) }
     
+    // Dialog state for Google Maps redirect
+    var showGoogleMapsDialog by remember { mutableStateOf(false) }
+    var pendingGoogleMapsPin by remember { mutableStateOf<MapPin?>(null) }
+    var hasPromptedForNavigation by remember(exhibitionIdToSelect) { mutableStateOf(false) }
+    
     // Prepare official Painters
     val palettePainter = rememberVectorPainter(Icons.Default.Palette)
     val photoPainter = rememberVectorPainter(Icons.Default.Image)
@@ -200,6 +209,17 @@ fun MapScreen(
     LaunchedEffect(exhibitionIdToSelect) {
         if (exhibitionIdToSelect != -1L) {
             viewModel.selectExhibition(exhibitionIdToSelect)
+        }
+    }
+
+    LaunchedEffect(exhibitionIdToSelect, uiState.filteredPins) {
+        if (exhibitionIdToSelect != -1L && !hasPromptedForNavigation && uiState.filteredPins.isNotEmpty()) {
+            val targetPin = uiState.filteredPins.find { it.idExposicion == exhibitionIdToSelect }
+            if (targetPin != null) {
+                pendingGoogleMapsPin = targetPin
+                showGoogleMapsDialog = true
+                hasPromptedForNavigation = true
+            }
         }
     }
 
@@ -246,6 +266,16 @@ fun MapScreen(
                         )
                         tileProvider.tileSource = darkTileSource
                         
+                        // Apply contrast/brightness boost matrix to make streets white and highly visible (Google Maps dark mode look)
+                        val cm = android.graphics.ColorMatrix(floatArrayOf(
+                            2.5f, 0f, 0f, 0f, -120f, // Red
+                            0f, 2.5f, 0f, 0f, -120f, // Green
+                            0f, 0f, 2.5f, 0f, -120f, // Blue
+                            0f, 0f, 0f, 1f, 0f       // Alpha
+                        ))
+                        overlayManager.tilesOverlay.setColorFilter(android.graphics.ColorMatrixColorFilter(cm))
+                        overlayManager.tilesOverlay.loadingBackgroundColor = android.graphics.Color.BLACK
+                        
                         // Center on Madrid initially
                         controller.setZoom(13.0)
                         controller.setCenter(GeoPoint(40.4168, -3.7038))
@@ -264,9 +294,13 @@ fun MapScreen(
                         marker.position = GeoPoint(pin.lat, pin.lon)
                         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         
-                        // Create custom premium marker
-                        val markerBitmap = createMarkerBitmap(context, pin.mainTag)
+                        // Create custom premium marker with dynamic sizing based on match percentage
+                        val markerBitmap = createMarkerBitmap(context, pin.mainTag, pin.match)
                         marker.icon = android.graphics.drawable.BitmapDrawable(context.resources, markerBitmap)
+                        
+                        // Set dynamic marker opacity (alpha) based on match percentage (between 0.4f and 1.0f)
+                        val markerAlpha = 0.4f + (pin.match / 100f) * 0.6f
+                        marker.alpha = markerAlpha
                         
                         marker.setOnMarkerClickListener { _, _ ->
                             viewModel.onPinClick(pin)
@@ -336,6 +370,47 @@ fun MapScreen(
                     onToggleTag = viewModel::onToggleTag,
                     onPriceChange = viewModel::onPriceChange,
                     onDateRangeChange = viewModel::onDateRangeChange
+                )
+            }
+
+            // Google Maps Redirect Dialog
+            if (showGoogleMapsDialog && pendingGoogleMapsPin != null) {
+                val pin = pendingGoogleMapsPin!!
+                AlertDialog(
+                    onDismissRequest = { showGoogleMapsDialog = false },
+                    title = { Text(text = "Ver en Google Maps", color = Color.White) },
+                    text = { Text(text = "¿Deseas abrir la ubicación de \"${pin.titulo}\" en la aplicación de Google Maps?", color = Color.LightGray) },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showGoogleMapsDialog = false
+                                val gmmIntentUri = android.net.Uri.parse("geo:${pin.lat},${pin.lon}?q=${android.net.Uri.encode(pin.titulo + ", " + pin.galeria)}")
+                                val mapIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri)
+                                mapIntent.setPackage("com.google.android.apps.maps")
+                                try {
+                                    context.startActivity(mapIntent)
+                                } catch (e: Exception) {
+                                    // Fallback if Google Maps app is not installed
+                                    val mapIntentFallback = android.content.Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri)
+                                    try {
+                                        context.startActivity(mapIntentFallback)
+                                    } catch (ex: Exception) {
+                                        // Ignore
+                                    }
+                                }
+                            }
+                        ) {
+                            Text("Sí", color = ArtistaGradientStart)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showGoogleMapsDialog = false }) {
+                            Text("No", color = TextGray)
+                        }
+                    },
+                    containerColor = CardBackground,
+                    textContentColor = Color.LightGray,
+                    titleContentColor = Color.White
                 )
             }
         }

@@ -55,7 +55,7 @@ fun SwapScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val artworks = uiState.artworks
-    
+
 
     var currentIndex by remember { mutableStateOf(0) }
 
@@ -123,12 +123,14 @@ fun SwapScreen(
                     }
                 }
 
-                // 2. Tarjeta Principal (Swipe Card)
                 Box(
                     modifier = Modifier
-                        .weight(1f) // flex: 1
+                        .weight(1f)
                         .padding(16.dp)
-                        .offset(x = offsetX.value.dp, y = offsetY.value.dp)
+                        .offset(
+                            x = offsetX.value.dp,
+                            y = offsetY.value.dp
+                        )
                         .graphicsLayer {
                             rotationZ = rotation.value
                         }
@@ -136,30 +138,46 @@ fun SwapScreen(
                             detectDragGestures(
                                 onDragEnd = {
                                     scope.launch {
-                                        if (offsetX.value > 150f) {
-                                            swipeCard(isRight = true)
-                                        } else if (offsetX.value < -150f) {
-                                            swipeCard(isRight = false)
-                                        } else {
-                                            launch { offsetX.animateTo(0f) }
-                                            launch { offsetY.animateTo(0f) }
-                                            launch { rotation.animateTo(0f) }
+                                        when {
+                                            offsetX.value > 150f -> {
+                                                swipeCard(isRight = true)
+                                            }
+
+                                            offsetX.value < -150f -> {
+                                                swipeCard(isRight = false)
+                                            }
+
+                                            else -> {
+                                                launch { offsetX.animateTo(0f) }
+                                                launch { offsetY.animateTo(0f) }
+                                                launch { rotation.animateTo(0f) }
+                                            }
                                         }
                                     }
                                 },
                                 onDrag = { change, dragAmount ->
                                     change.consume()
+
                                     scope.launch {
-                                        offsetX.snapTo(offsetX.value + dragAmount.x)
-                                        offsetY.snapTo(offsetY.value + dragAmount.y)
-                                        rotation.snapTo(offsetX.value / 15f)
+                                        offsetX.snapTo(
+                                            offsetX.value + dragAmount.x
+                                        )
+
+                                        offsetY.snapTo(
+                                            offsetY.value + dragAmount.y
+                                        )
+
+                                        rotation.snapTo(
+                                            offsetX.value / 15f
+                                        )
                                     }
                                 }
                             )
                         }
                         .clip(RoundedCornerShape(24.dp))
                 ) {
-                    // Imagen de fondo en modo cover
+
+                    // Imagen fondo
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(artwork.imageUrl)
@@ -170,19 +188,22 @@ fun SwapScreen(
                         modifier = Modifier.fillMaxSize()
                     )
 
-                    // Gradiente superpuesto (Overlay) 60-80% opacidad
+                    // Overlay inferior mejor colocado
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
                                 Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
-                                    startY = 300f
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.92f)
+                                    ),
+                                    startY = 700f
                                 )
                             )
                     )
 
-                    // Top Bar (Avatar y Match Badge)
+                    // TOP BAR
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -191,44 +212,79 @@ fun SwapScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
                             AsyncImage(
                                 model = artwork.artistAvatarUrl,
                                 contentDescription = "Artist",
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(CircleShape)
-                                    .border(2.dp, ArtistaGradientStart, CircleShape),
+                                    .border(
+                                        2.dp,
+                                        ArtistaGradientStart,
+                                        CircleShape
+                                    ),
                                 contentScale = ContentScale.Crop
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Spacer(
+                                modifier = Modifier.width(12.dp)
+                            )
+
                             Text(
                                 text = artwork.artistName,
                                 color = Color.White.copy(alpha = alpha.value),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.background(
-                                    Color.Black.copy(alpha = alpha.value * 0.5f),
-                                    RoundedCornerShape(8.dp)
-                                ).padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier
+                                    .background(
+                                        Color.Black.copy(
+                                            alpha = alpha.value * 0.5f
+                                        ),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(
+                                        horizontal = 8.dp,
+                                        vertical = 4.dp
+                                    )
                             )
                         }
 
-                        // Badge de Exploración o Match
                         if (artwork.isExploration) {
+
                             Row(
                                 modifier = Modifier
                                     .background(
                                         brush = Brush.horizontalGradient(
-                                            colors = listOf(Color(0xFFFFD700), Color(0xFF9C27B0))
+                                            listOf(
+                                                Color(0xFFFFD700),
+                                                Color(0xFF9C27B0)
+                                            )
                                         ),
                                         shape = RoundedCornerShape(16.dp)
                                     )
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    .padding(
+                                        horizontal = 12.dp,
+                                        vertical = 6.dp
+                                    ),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
+
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+
+                                Spacer(
+                                    modifier = Modifier.width(4.dp)
+                                )
+
                                 Text(
                                     text = "Nuevo Estilo ✨",
                                     color = Color.White,
@@ -236,16 +292,23 @@ fun SwapScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+
                         } else {
+
                             Row(
                                 modifier = Modifier
                                     .background(
-                                        Color(0xFF22C55E).copy(alpha = 0.9f),
-                                        shape = RoundedCornerShape(16.dp)
+                                        Color(0xFF22C55E)
+                                            .copy(alpha = 0.9f),
+                                        RoundedCornerShape(16.dp)
                                     )
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    .padding(
+                                        horizontal = 12.dp,
+                                        vertical = 6.dp
+                                    ),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+
                                 Text(
                                     text = "Match ${artwork.matchScore.toInt()}%",
                                     color = Color.White,
@@ -256,46 +319,76 @@ fun SwapScreen(
                         }
                     }
 
-                    // Información de la obra (Abajo-Izquierda)
-                    Column(
+                    // CONTENIDO INFERIOR PEGADO ABAJO
+                    Box(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(24.dp)
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp)
                     ) {
-                        // Título de la obra
-                        Text(
-                            text = artwork.title,
-                            color = Color.White,
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Black
-                        )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp)
+                        ) {
 
-                        // Metadatos (Fila)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.LocationOn, contentDescription = "Ubicación", tint = ArtistaGradientStart, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            // Lugar de la exposición
                             Text(
-                                text = artwork.locationName ?: "Lugar desconocido",
-                                color = Color.LightGray,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
+                                text = artwork.title,
+                                color = Color.White,
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Black
                             )
 
-                            Spacer(modifier = Modifier.width(16.dp))
-
-                            Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Distancia", tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            // Distancia mockeada determinista en base al string de ubicación (se calcularía con el backend real y GPS)
-                            val distanceMock = ((artwork.locationAddress?.length ?: 12) / 10.0)
-                            Text(
-                                text = "A ${String.format("%.1f", distanceMock)} km",
-                                color = Color.LightGray,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
+                            Spacer(
+                                modifier = Modifier.height(4.dp)
                             )
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+
+                                Icon(
+                                    Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = ArtistaGradientStart,
+                                    modifier = Modifier.size(16.dp)
+                                )
+
+                                Spacer(
+                                    modifier = Modifier.width(4.dp)
+                                )
+
+                                Text(
+                                    text = artwork.locationName
+                                        ?: "Lugar desconocido",
+                                    color = Color.LightGray,
+                                    fontSize = 14.sp
+                                )
+
+                                Spacer(
+                                    modifier = Modifier.width(16.dp)
+                                )
+
+                                Icon(
+                                    Icons.Default.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFC107),
+                                    modifier = Modifier.size(16.dp)
+                                )
+
+                                Spacer(
+                                    modifier = Modifier.width(4.dp)
+                                )
+
+                                val distanceMock =
+                                    ((artwork.locationAddress?.length ?: 12) / 10.0)
+
+                                Text(
+                                    text = "A ${String.format("%.1f", distanceMock)} km",
+                                    color = Color.LightGray,
+                                    fontSize = 14.sp
+                                )
+                            }
                         }
                     }
                 }

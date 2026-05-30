@@ -372,15 +372,8 @@ fun ArtistProfileContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 6. Exposiciones activas
-        val activeExpos = remember(profile.activeExhibitions) {
-            profile.activeExhibitions.filter { exhibition ->
-                val endDate = exhibition.fechaFin?.let {
-                    try { java.time.LocalDate.parse(it) } catch (e: Exception) { null }
-                }
-                endDate == null || !endDate.isBefore(java.time.LocalDate.now())
-            }
-        }
-        if (activeExpos.isNotEmpty()) {
+        val allExpos = profile.activeExhibitions
+        if (allExpos.isNotEmpty()) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
@@ -390,7 +383,7 @@ fun ArtistProfileContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Exposiciones activas",
+                        text = "Exposiciones",
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -406,7 +399,7 @@ fun ArtistProfileContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                activeExpos.forEach { exhibition ->
+                allExpos.forEach { exhibition ->
                     ExhibitionCardSpanish(exhibition = exhibition, context = context)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -415,24 +408,24 @@ fun ArtistProfileContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 7. Obras en venta (precio > 0)
-        if (profile.worksForSale.isNotEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+        // 7. Obras en venta
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Obras en venta",
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                Text(
+                    text = "Obras en venta",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                if (profile.worksForSale.isNotEmpty()) {
                     IconButton(
                         onClick = { /* Filtrar */ },
                         modifier = Modifier
@@ -447,9 +440,11 @@ fun ArtistProfileContent(
                         )
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            if (profile.worksForSale.isNotEmpty()) {
                 // Agrupamos en filas de a 2 obras para recrear el Grid
                 val chunkedWorks = profile.worksForSale.chunked(2)
                 chunkedWorks.forEach { rowWorks ->
@@ -468,6 +463,13 @@ fun ArtistProfileContent(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
+            } else {
+                Text(
+                    text = "El artista no tiene obras en venta en este momento.",
+                    color = GrayTextDark,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
         }
     }
