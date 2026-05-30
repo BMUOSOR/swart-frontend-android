@@ -323,37 +323,16 @@ fun EditArtworkScreen(
 
             // ─── 6. ETIQUETAS (TAGS) ───────────────────────────────────────
             if (categoriaSeleccionada.isNotBlank()) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text("TAGS ASOCIADOS", color = TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
-
                     val subtags = subtagsForCategoria(categoriaSeleccionada)
                     subtags.forEach { (seccion, tags) ->
-                        Text(seccion, color = TextGray.copy(alpha = 0.7f), fontSize = 11.sp, letterSpacing = 0.8.sp)
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            tags.forEach { tag ->
-                                val isSelected = tagsSeleccionados.contains(tag)
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = { viewModel.onTagToggle(tag) },
-                                    label = { Text(tag, fontSize = 12.sp) },
-                                    shape = RoundedCornerShape(50.dp),
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = NeonPurple.copy(alpha = 0.15f),
-                                        selectedLabelColor = NeonPurple,
-                                        containerColor = InputBg,
-                                        labelColor = TextGray
-                                    ),
-                                    border = FilterChipDefaults.filterChipBorder(
-                                        selectedBorderColor = NeonPurple,
-                                        borderColor = Color.Transparent
-                                    )
-                                )
-                            }
-                        }
+                        CompactTagSection(
+                            seccionName = seccion,
+                            allTags = tags,
+                            selectedTags = tagsSeleccionados,
+                            onTagToggle = viewModel::onTagToggle
+                        )
                     }
                 }
             }
@@ -449,6 +428,88 @@ fun EditArtworkScreen(
                 }
             }
         )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun CompactTagSection(
+    seccionName: String,
+    allTags: List<String>,
+    selectedTags: Set<String>,
+    onTagToggle: (String) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(seccionName, color = TextGray.copy(alpha = 0.7f), fontSize = 11.sp, letterSpacing = 0.8.sp)
+        
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = NeonPurple,
+                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                focusedContainerColor = InputBg,
+                unfocusedContainerColor = InputBg,
+                focusedTextColor = TextLight,
+                unfocusedTextColor = TextLight,
+                cursorColor = NeonPurple
+            ),
+            placeholder = { Text("Buscar...", color = TextGray.copy(alpha = 0.5f), fontSize = 12.sp) },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = TextGray, modifier = Modifier.size(16.dp))
+                    }
+                } else {
+                    Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextGray.copy(alpha = 0.5f), modifier = Modifier.size(16.dp))
+                }
+            }
+        )
+
+        val sectionSelected = selectedTags.filter { it in allTags }
+        val sectionUnselected = allTags.filter { it !in selectedTags && it.contains(searchQuery, ignoreCase = true) }
+        val displayedTags = (sectionSelected + sectionUnselected).take(8)
+
+        if (displayedTags.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                displayedTags.forEach { tag ->
+                    val isSelected = selectedTags.contains(tag)
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onTagToggle(tag) },
+                        label = { Text(tag, fontSize = 12.sp) },
+                        shape = RoundedCornerShape(50.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NeonPurple.copy(alpha = 0.15f),
+                            selectedLabelColor = NeonPurple,
+                            containerColor = InputBg,
+                            labelColor = TextGray
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            selectedBorderColor = NeonPurple,
+                            borderColor = Color.Transparent
+                        )
+                    )
+                }
+            }
+        } else {
+            Text(
+                text = "No se encontraron tags",
+                color = TextGray.copy(alpha = 0.5f),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+            )
+        }
     }
 }
 

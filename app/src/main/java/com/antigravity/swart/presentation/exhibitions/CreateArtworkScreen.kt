@@ -330,36 +330,16 @@ fun CreateArtworkScreen(
 
             // ─── TAGS ─────────────────────────────────────────────────────
             if (categoriaSeleccionada.isNotBlank()) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text("TAGS ASOCIADOS", color = CATextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
                     val subtags = caSubtagsForCategoria(categoriaSeleccionada)
                     subtags.forEach { (seccion, tags) ->
-                        Text(seccion, color = CATextGray.copy(alpha = 0.7f), fontSize = 11.sp, letterSpacing = 0.8.sp)
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            tags.forEach { tag ->
-                                val isSelected = tagsSeleccionados.contains(tag)
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = { viewModel.onTagToggle(tag) },
-                                    label = { Text(tag, fontSize = 12.sp) },
-                                    shape = RoundedCornerShape(50.dp),
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = CANeonPurple.copy(alpha = 0.15f),
-                                        selectedLabelColor = CANeonPurple,
-                                        containerColor = CAInputBg,
-                                        labelColor = CATextGray
-                                    ),
-                                    border = FilterChipDefaults.filterChipBorder(
-                                        selectedBorderColor = CANeonPurple,
-                                        borderColor = Color.Transparent
-                                    )
-                                )
-                            }
-                        }
+                        CompactTagSection(
+                            seccionName = seccion,
+                            allTags = tags,
+                            selectedTags = tagsSeleccionados,
+                            onTagToggle = viewModel::onTagToggle
+                        )
                     }
                 }
             }
@@ -412,6 +392,88 @@ fun CreateArtworkScreen(
             }
 
             Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun CompactTagSection(
+    seccionName: String,
+    allTags: List<String>,
+    selectedTags: Set<String>,
+    onTagToggle: (String) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(seccionName, color = CATextGray.copy(alpha = 0.7f), fontSize = 11.sp, letterSpacing = 0.8.sp)
+        
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = CANeonPurple,
+                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                focusedContainerColor = CAInputBg,
+                unfocusedContainerColor = CAInputBg,
+                focusedTextColor = CATextLight,
+                unfocusedTextColor = CATextLight,
+                cursorColor = CANeonPurple
+            ),
+            placeholder = { Text("Buscar...", color = CATextGray.copy(alpha = 0.5f), fontSize = 12.sp) },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = CATextGray, modifier = Modifier.size(16.dp))
+                    }
+                } else {
+                    Icon(Icons.Default.Search, contentDescription = "Buscar", tint = CATextGray.copy(alpha = 0.5f), modifier = Modifier.size(16.dp))
+                }
+            }
+        )
+
+        val sectionSelected = selectedTags.filter { it in allTags }
+        val sectionUnselected = allTags.filter { it !in selectedTags && it.contains(searchQuery, ignoreCase = true) }
+        val displayedTags = (sectionSelected + sectionUnselected).take(8)
+
+        if (displayedTags.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                displayedTags.forEach { tag ->
+                    val isSelected = selectedTags.contains(tag)
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onTagToggle(tag) },
+                        label = { Text(tag, fontSize = 12.sp) },
+                        shape = RoundedCornerShape(50.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = CANeonPurple.copy(alpha = 0.15f),
+                            selectedLabelColor = CANeonPurple,
+                            containerColor = CAInputBg,
+                            labelColor = CATextGray
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            selectedBorderColor = CANeonPurple,
+                            borderColor = Color.Transparent
+                        )
+                    )
+                }
+            }
+        } else {
+            Text(
+                text = "No se encontraron tags",
+                color = CATextGray.copy(alpha = 0.5f),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+            )
         }
     }
 }

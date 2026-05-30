@@ -56,9 +56,13 @@ class CreateArtworkViewModel @Inject constructor(
     fun onDisponibleCompraChange(v: Boolean) { _disponibleCompra.value = v }
     fun onCategoriaSelected(cat: String) { _categoriaSeleccionada.value = cat }
     fun onTagToggle(tag: String) {
-        val curr = _tagsSeleccionados.value.toMutableSet()
-        if (curr.contains(tag)) curr.remove(tag) else curr.add(tag)
-        _tagsSeleccionados.value = curr
+        val curr = _tagsSeleccionados.value.toMutableList()
+        if (curr.contains(tag)) {
+            curr.remove(tag)
+        } else {
+            curr.add(0, tag)
+        }
+        _tagsSeleccionados.value = curr.toSet()
     }
 
     private val _imageUrl = MutableStateFlow<String?>(null)

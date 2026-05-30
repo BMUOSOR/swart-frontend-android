@@ -96,9 +96,13 @@ class EditArtworkViewModel @Inject constructor(
     }
 
     fun onTagToggle(tag: String) {
-        val current = _tagsSeleccionados.value.toMutableSet()
-        if (current.contains(tag)) current.remove(tag) else current.add(tag)
-        _tagsSeleccionados.value = current
+        val current = _tagsSeleccionados.value.toMutableList()
+        if (current.contains(tag)) {
+            current.remove(tag)
+        } else {
+            current.add(0, tag)
+        }
+        _tagsSeleccionados.value = current.toSet()
     }
 
     fun saveChanges() {
