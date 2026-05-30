@@ -104,6 +104,23 @@ class ArtistProfileViewModel @Inject constructor(
             )
         }
     }
+
+    fun startGeneralChat(onSuccess: (Long) -> Unit) {
+        viewModelScope.launch {
+            if (currentUserId == -1L) return@launch
+            repository.startChat(
+                senderId = currentUserId,
+                receiverId = artistId,
+                initialMessage = "¡Hola! Me gustaría iniciar una conversación contigo.",
+                urlImagenObra = null
+            ).fold(
+                onSuccess = { chatId ->
+                    onSuccess(chatId)
+                },
+                onFailure = { }
+            )
+        }
+    }
 }
 
 sealed interface ArtistProfileUiState {

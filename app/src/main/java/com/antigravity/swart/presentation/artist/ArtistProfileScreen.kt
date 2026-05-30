@@ -91,6 +91,11 @@ fun ArtistProfileScreen(
                         onInquiryClick = { work ->
                             selectedWorkForInquiry = work
                             showInquiryDialog = true
+                        },
+                        onChatClick = {
+                            viewModel.startGeneralChat { chatId ->
+                                onNavigateToChat(chatId)
+                            }
                         }
                     )
 
@@ -154,7 +159,8 @@ fun ArtistProfileContent(
     onBack: () -> Unit,
     onNavigateToDetail: (Long) -> Unit = {},
     onFollowToggle: () -> Unit,
-    onInquiryClick: (ArtworkForSale) -> Unit = {}
+    onInquiryClick: (ArtworkForSale) -> Unit = {},
+    onChatClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val accentGradient = Brush.horizontalGradient(
@@ -305,47 +311,47 @@ fun ArtistProfileContent(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 3. Botón principal: Chatear con el artista
-        Button(
-            onClick = { /* Chat */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-            contentPadding = PaddingValues()
-        ) {
-            Box(
+        if (!isOwnProfile) {
+            // 3. Botón principal: Chatear con el artista
+            Button(
+                onClick = onChatClick,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(accentGradient)
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                contentPadding = PaddingValues()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(accentGradient)
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Chat,
-                        contentDescription = "Chat",
-                        tint = Color.White
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Chatear con el artista",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Chat,
+                            contentDescription = "Chat",
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Chatear con el artista",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
         // 4. Estadísticas
         Row(
