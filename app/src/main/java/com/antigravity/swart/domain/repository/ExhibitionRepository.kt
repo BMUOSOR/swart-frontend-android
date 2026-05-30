@@ -33,5 +33,9 @@ interface ExhibitionRepository {
     suspend fun respondInvitation(invitationId: Long, accept: Boolean): Result<Boolean>
     suspend fun getArtists(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.ArtistFollowDto>>
     suspend fun uploadImage(filePart: MultipartBody.Part): Result<String>
+    suspend fun startChat(senderId: Long, receiverId: Long, initialMessage: String, urlImagenObra: String?): Result<Long>
+    suspend fun getConversations(userId: Long): Result<List<com.antigravity.swart.domain.model.Conversation>>
+    suspend fun getChatMessages(chatId: Long): Result<List<com.antigravity.swart.domain.model.Message>>
+    suspend fun sendChatMessage(chatId: Long, senderId: Long, contenido: String): Result<Boolean>
 }
 

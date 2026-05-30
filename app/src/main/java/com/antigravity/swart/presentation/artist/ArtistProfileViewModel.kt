@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.model.ArtistProfile
+import com.antigravity.swart.domain.model.ArtworkForSale
 import com.antigravity.swart.domain.repository.ExhibitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,6 +85,23 @@ class ArtistProfileViewModel @Inject constructor(
                     }
                 )
             }
+        }
+    }
+
+    fun startInquiryChat(work: ArtworkForSale, onSuccess: (Long) -> Unit) {
+        viewModelScope.launch {
+            if (currentUserId == -1L) return@launch
+            repository.startChat(
+                senderId = currentUserId,
+                receiverId = artistId,
+                initialMessage = "Hola! Me ha interesado esta obra, ¿Podemos hablar sobre ella?.",
+                urlImagenObra = work.imgUrl
+            ).fold(
+                onSuccess = { chatId ->
+                    onSuccess(chatId)
+                },
+                onFailure = { }
+            )
         }
     }
 }

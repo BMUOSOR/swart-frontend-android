@@ -24,6 +24,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.antigravity.swart.presentation.exhibitions.EditExhibitionScreen
 import com.antigravity.swart.presentation.exhibitions.EditArtworkScreen
+import com.antigravity.swart.presentation.chat.ChatScreen
 
 @Composable
 fun AppNavigation() {
@@ -145,6 +146,9 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onNavigateToDetail = { exhibitionId ->
                     navController.navigate("detail/$exhibitionId?role=artista")
+                },
+                onNavigateToChat = { chatId ->
+                    navController.navigate("chat/$chatId")
                 }
             )
         }
@@ -540,7 +544,19 @@ fun AppNavigation() {
                 },
                 onNavigateToCreate = {
                     navController.navigate("create_exhibition")
+                },
+                onNavigateToChat = { chatId ->
+                    navController.navigate("chat/$chatId")
                 }
+            )
+        }
+
+        composable(
+            route = "chat/{chatId}",
+            arguments = listOf(navArgument("chatId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            ChatScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 

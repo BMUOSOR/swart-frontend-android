@@ -104,6 +104,21 @@ interface SwartApi {
         @Body body: Map<String, Boolean>
     ): Map<String, Boolean>
 
+    @POST("api/chats/start")
+    suspend fun startChat(@Body request: com.antigravity.swart.data.remote.dto.StartChatRequest): Map<String, Long>
+
+    @GET("api/chats/user/{userId}")
+    suspend fun getConversations(@Path("userId") userId: Long): List<com.antigravity.swart.data.remote.dto.ConversationDto>
+
+    @GET("api/chats/{chatId}/messages")
+    suspend fun getChatMessages(@Path("chatId") chatId: Long): List<com.antigravity.swart.data.remote.dto.MessageDto>
+
+    @POST("api/chats/{chatId}/messages")
+    suspend fun sendChatMessage(
+        @Path("chatId") chatId: Long,
+        @Body request: com.antigravity.swart.data.remote.dto.SendMessageRequest
+    ): Map<String, String>
+
     @Multipart
     @POST("api/upload")
     suspend fun uploadImage(@Part file: MultipartBody.Part): Map<String, String>

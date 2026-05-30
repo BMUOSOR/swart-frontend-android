@@ -21,19 +21,28 @@ class InvitationsViewModel @Inject constructor(
     private val _invitations = MutableStateFlow<List<InvitationDto>>(emptyList())
     val invitations: StateFlow<List<InvitationDto>> = _invitations.asStateFlow()
 
+    private val _conversations = MutableStateFlow<List<com.antigravity.swart.domain.model.Conversation>>(emptyList())
+    val conversations: StateFlow<List<com.antigravity.swart.domain.model.Conversation>> = _conversations.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    init { loadInvitations() }
+    init { loadData() }
 
-    fun loadInvitations() {
+    fun loadData() {
         viewModelScope.launch {
             _isLoading.value = true
             val userId = sessionManager.getUserId()
-            repository.getInvitations(userId).fold(
-                onSuccess = { _invitations.value = it },
-                onFailure = { }
-            )
+            if (userId != -1L) {
+                repository.getInvitations(userId).fold(
+                    onSuccess = { _invitations.value = it },
+                    onFailure = { }
+                )
+                repository.getConversations(userId).fold(
+                    onSuccess = { _conversations.value = it },
+                    onFailure = { }
+                )
+            }
             _isLoading.value = false
         }
     }
@@ -41,7 +50,7 @@ class InvitationsViewModel @Inject constructor(
     fun respondInvitation(invitationId: Long, accept: Boolean) {
         viewModelScope.launch {
             repository.respondInvitation(invitationId, accept).fold(
-                onSuccess = { loadInvitations() },
+                onSuccess = { loadData() },
                 onFailure = { }
             )
         }

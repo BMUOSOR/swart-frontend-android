@@ -46,6 +46,7 @@ val GrayTextDark = Color(0xFF9CA3AF)
 fun ArtistProfileScreen(
     viewModel: ArtistProfileViewModel = hiltViewModel(),
     onNavigateToDetail: (Long) -> Unit = {},
+    onNavigateToChat: (Long) -> Unit = {},
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -77,14 +78,68 @@ fun ArtistProfileScreen(
                     }
                 }
                 is ArtistProfileUiState.Success -> {
+                    var showInquiryDialog by remember { mutableStateOf(false) }
+                    var selectedWorkForInquiry by remember { mutableStateOf<ArtworkForSale?>(null) }
+
                     ArtistProfileContent(
                         profile = state.profile,
                         isFollowing = isFollowing,
                         isOwnProfile = viewModel.isOwnProfile,
                         onBack = onBack,
                         onNavigateToDetail = onNavigateToDetail,
-                        onFollowToggle = { viewModel.toggleFollow() }
+                        onFollowToggle = { viewModel.toggleFollow() },
+                        onInquiryClick = { work ->
+                            selectedWorkForInquiry = work
+                            showInquiryDialog = true
+                        }
                     )
+
+                    if (showInquiryDialog && selectedWorkForInquiry != null) {
+                        val work = selectedWorkForInquiry!!
+                        AlertDialog(
+                            onDismissRequest = { showInquiryDialog = false },
+                            containerColor = Color(0xFF161925),
+                            title = {
+                                Text(
+                                    text = "Preguntar por obra",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = "¿Quieres preguntar al artista sobre la obra \"${work.titulo}\"?",
+                                    color = Color(0xFF8B8FA8)
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        showInquiryDialog = false
+                                        viewModel.startInquiryChat(work) { chatId ->
+                                            onNavigateToChat(chatId)
+                                        }
+                                    }
+                                ) {
+                                    Text(
+                                        text = "Sí",
+                                        color = Color(0xFFEC4899),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = { showInquiryDialog = false }
+                                ) {
+                                    Text(
+                                        text = "No",
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -98,7 +153,8 @@ fun ArtistProfileContent(
     isOwnProfile: Boolean,
     onBack: () -> Unit,
     onNavigateToDetail: (Long) -> Unit = {},
-    onFollowToggle: () -> Unit
+    onFollowToggle: () -> Unit,
+    onInquiryClick: (ArtworkForSale) -> Unit = {}
 ) {
     val context = LocalContext.current
     val accentGradient = Brush.horizontalGradient(
@@ -462,7 +518,12 @@ fun ArtistProfileContent(
                     ) {
                         rowWorks.forEach { work ->
                             Box(modifier = Modifier.weight(1f)) {
-                                WorkCardSpanish(work = work, context = context)
+                                WorkCardSpanish(
+                                    work = work,
+                                    context = context,
+                                    isOwnProfile = isOwnProfile,
+                                    onInquiryClick = onInquiryClick
+                                )
                             }
                         }
                         if (rowWorks.size == 1) {
@@ -645,7 +706,9 @@ fun ExhibitionCardSpanish(
 @Composable
 fun WorkCardSpanish(
     work: ArtworkForSale,
-    context: android.content.Context
+    context: android.content.Context,
+    isOwnProfile: Boolean = false,
+    onInquiryClick: (ArtworkForSale) -> Unit = {}
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -693,19 +756,21 @@ fun WorkCardSpanish(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .background(Color.White.copy(alpha = 0.08f), CircleShape)
-                            .clickable { /* Añadir */ },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Añadir",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
+                    if (!isOwnProfile) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                                .clickable { onInquiryClick(work) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Añadir",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }

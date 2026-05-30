@@ -250,4 +250,42 @@ class ExhibitionRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    override suspend fun startChat(senderId: Long, receiverId: Long, initialMessage: String, urlImagenObra: String?): Result<Long> {
+        return try {
+            val req = com.antigravity.swart.data.remote.dto.StartChatRequest(senderId, receiverId, initialMessage, urlImagenObra)
+            val response = api.startChat(req)
+            Result.success(response["idConversacion"] ?: -1L)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getConversations(userId: Long): Result<List<com.antigravity.swart.domain.model.Conversation>> {
+        return try {
+            val response = api.getConversations(userId)
+            Result.success(response.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getChatMessages(chatId: Long): Result<List<com.antigravity.swart.domain.model.Message>> {
+        return try {
+            val response = api.getChatMessages(chatId)
+            Result.success(response.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun sendChatMessage(chatId: Long, senderId: Long, contenido: String): Result<Boolean> {
+        return try {
+            val req = com.antigravity.swart.data.remote.dto.SendMessageRequest(senderId, contenido)
+            val response = api.sendChatMessage(chatId, req)
+            Result.success(response.containsKey("idMensaje"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
