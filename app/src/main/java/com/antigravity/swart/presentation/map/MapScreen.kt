@@ -55,13 +55,12 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.content.ContextCompat
 
-fun createMarkerBitmap(context: Context, tag: String, match: Int): Bitmap {
+fun createMarkerBitmap(context: Context, tag: String, scale: Float): Bitmap {
     val size = 200 // Increased resolution for sharper icons
     val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     
-    // Scale marker drawing based on match percentage (0% match = 0.6f size, 100% match = 1.1f size)
-    val scale = 0.6f + (match / 100f) * 0.5f
+    // Scale marker drawing based on the passed scale factor
     canvas.scale(scale, scale, size / 2f, size / 2f)
     
     // Colors based on discipline
@@ -266,15 +265,7 @@ fun MapScreen(
                         )
                         tileProvider.tileSource = darkTileSource
                         
-                        // Apply contrast/brightness boost matrix to make streets white and highly visible (Google Maps dark mode look)
-                        val cm = android.graphics.ColorMatrix(floatArrayOf(
-                            2.5f, 0f, 0f, 0f, -120f, // Red
-                            0f, 2.5f, 0f, 0f, -120f, // Green
-                            0f, 0f, 2.5f, 0f, -120f, // Blue
-                            0f, 0f, 0f, 1f, 0f       // Alpha
-                        ))
-                        overlayManager.tilesOverlay.setColorFilter(android.graphics.ColorMatrixColorFilter(cm))
-                        overlayManager.tilesOverlay.loadingBackgroundColor = android.graphics.Color.BLACK
+
                         
                         // Center on Madrid initially
                         controller.setZoom(13.0)
@@ -289,17 +280,36 @@ fun MapScreen(
                 },
                 update = { mapView ->
                     mapView.overlays.clear()
+                    
+                    // Exaggerate differences proportionally relative to current matches (feature scaling)
+                    val minMatch = uiState.filteredPins.minOfOrNull { it.match } ?: 50
+                    val maxMatch = uiState.filteredPins.maxOfOrNull { it.match } ?: 100
+                    
+                    // Enforce a minimum range of 15% to keep sizes reasonable when differences are negligible (e.g. 98% vs 99%)
+                    val effectiveMin = minOf(minMatch.toFloat(), maxMatch.toFloat() - 15f)
+                    val range = maxMatch.toFloat() - effectiveMin
+                    
                     uiState.filteredPins.forEach { pin ->
                         val marker = Marker(mapView)
                         marker.position = GeoPoint(pin.lat, pin.lon)
                         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         
-                        // Create custom premium marker with dynamic sizing based on match percentage
-                        val markerBitmap = createMarkerBitmap(context, pin.mainTag, pin.match)
+                        val factor = if (range > 0f) {
+                            ((pin.match - effectiveMin) / range).coerceIn(0f, 1f)
+                        } else {
+                            0.5f
+                        }
+                        
+                        // Exaggerated size scale: 0.5f (lowest match) to 1.2f (highest match)
+                        val scale = 0.5f + factor * 0.7f
+                        // Exaggerated opacity/alpha scale: 0.3f (lowest match) to 1.0f (highest match)
+                        val markerAlpha = 0.3f + factor * 0.7f
+                        
+                        // Create custom premium marker with dynamic scale
+                        val markerBitmap = createMarkerBitmap(context, pin.mainTag, scale)
                         marker.icon = android.graphics.drawable.BitmapDrawable(context.resources, markerBitmap)
                         
-                        // Set dynamic marker opacity (alpha) based on match percentage (between 0.4f and 1.0f)
-                        val markerAlpha = 0.4f + (pin.match / 100f) * 0.6f
+                        // Set dynamic marker opacity
                         marker.alpha = markerAlpha
                         
                         marker.setOnMarkerClickListener { _, _ ->
