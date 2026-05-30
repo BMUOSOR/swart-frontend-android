@@ -44,10 +44,12 @@ fun UserProfileScreen(
     onNavigateToFavorites: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
     onNavigateToCreate: () -> Unit = {},
+    onNavigateToArtistProfile: (Long) -> Unit = {},
     onLogout: () -> Unit,
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadProfile()
@@ -73,7 +75,6 @@ fun UserProfileScreen(
     Scaffold(
         containerColor = Color(0xFF0B0D17), // Deep dark navy blue background
         bottomBar = {
-            val context = androidx.compose.ui.platform.LocalContext.current
             val sessionManager = androidx.compose.runtime.remember { com.antigravity.swart.core.SessionManager(context) }
             val resolvedUserType = if (sessionManager.getRole() == "artista") UserType.ARTIST else UserType.GENERAL
             SwartBottomNav(
@@ -283,7 +284,13 @@ fun UserProfileScreen(
                             icon = Icons.Filled.AccountCircle,
                             title = "Mi Cuenta",
                             isLast = false,
-                            onClick = {}
+                            onClick = {
+                                val sessionManager = com.antigravity.swart.core.SessionManager(context)
+                                val userId = sessionManager.getUserId()
+                                if (userId != -1L) {
+                                    onNavigateToArtistProfile(userId)
+                                }
+                            }
                         )
                         SettingMenuItem(
                             icon = Icons.Filled.Brush,

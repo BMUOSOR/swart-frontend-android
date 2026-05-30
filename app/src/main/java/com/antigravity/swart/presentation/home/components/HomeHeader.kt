@@ -105,7 +105,8 @@ fun SearchBarComponent(
             Icon(
                 painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size), 
                 contentDescription = "Filtros",
-                tint = Color.White
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
             )
         }
     }

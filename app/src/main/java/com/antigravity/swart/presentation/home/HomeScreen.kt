@@ -37,6 +37,11 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val userAvatar by viewModel.userAvatar.collectAsState()
+    val filterStartDate by viewModel.filterStartDate.collectAsState()
+    val filterEndDate by viewModel.filterEndDate.collectAsState()
+    val filterArtistName by viewModel.filterArtistName.collectAsState()
+    val selectedTag by viewModel.selectedTag.collectAsState()
+    val filterArtworkTag by viewModel.filterArtworkTag.collectAsState()
 
     Scaffold(
         containerColor = DarkBackground,
@@ -80,8 +85,16 @@ fun HomeScreen(
             
             if (showFilterSheet) {
                 com.antigravity.swart.presentation.home.components.FilterBottomSheet(
+                    initialStartDate = filterStartDate,
+                    initialEndDate = filterEndDate,
+                    initialArtistName = filterArtistName,
+                    initialSelectedTag = selectedTag,
+                    initialArtworkTag = filterArtworkTag,
                     onDismissRequest = { showFilterSheet = false },
-                    onApplyFilters = { showFilterSheet = false }
+                    onApplyFilters = { startDate, endDate, artistName, tag, artworkTag ->
+                        viewModel.applyFilters(startDate, endDate, artistName, tag, artworkTag)
+                        showFilterSheet = false
+                    }
                 )
             }
             

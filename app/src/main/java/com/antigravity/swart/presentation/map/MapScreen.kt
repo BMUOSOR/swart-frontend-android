@@ -256,13 +256,17 @@ fun MapScreen(
                         setMultiTouchControls(true)
                         
                         // Dark Tiles Style (CartoDB Dark Matter)
+
                         val darkTileSource = XYTileSource(
                             "CartoDB_DarkMatter",
                             0, 19, 256, ".png",
-                            arrayOf("https://a.basemaps.cartocdn.com/dark_all/", 
-                                    "https://b.basemaps.cartocdn.com/dark_all/", 
-                                    "https://c.basemaps.cartocdn.com/dark_all/")
+                            arrayOf(
+                                "https://a.basemaps.cartocdn.com/dark_all/",
+                                "https://b.basemaps.cartocdn.com/dark_all/",
+                                "https://c.basemaps.cartocdn.com/dark_all/"
+                            )
                         )
+
                         tileProvider.tileSource = darkTileSource
                         
 

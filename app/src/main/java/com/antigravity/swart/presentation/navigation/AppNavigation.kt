@@ -142,7 +142,10 @@ fun AppNavigation() {
         }
         composable("artist_profile/{artistId}") { backStackEntry ->
             ArtistProfileScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToDetail = { exhibitionId ->
+                    navController.navigate("detail/$exhibitionId?role=artista")
+                }
             )
         }
         composable("swap/{role}") { backStackEntry ->
@@ -283,6 +286,9 @@ fun AppNavigation() {
                         launchSingleTop = true
                         restoreState = true
                     }
+                },
+                onNavigateToArtistProfile = { artistId ->
+                    navController.navigate("artist_profile/$artistId")
                 },
                 onLogout = {
                     navController.navigate("auth") {

@@ -15,16 +15,21 @@ import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterBottomSheet(
+    initialStartDate: String = "",
+    initialEndDate: String = "",
+    initialArtistName: String = "",
+    initialSelectedTag: String = "Todos",
+    initialArtworkTag: String = "",
     onDismissRequest: () -> Unit,
-    onApplyFilters: () -> Unit
+    onApplyFilters: (startDate: String, endDate: String, artistName: String, selectedTag: String, artworkTag: String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     
-    // Filtros dummy states
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
-    var artistName by remember { mutableStateOf("") }
-    var selectedTag by remember { mutableStateOf("Todos") }
+    var startDate by remember { mutableStateOf(initialStartDate) }
+    var endDate by remember { mutableStateOf(initialEndDate) }
+    var artistName by remember { mutableStateOf(initialArtistName) }
+    var selectedTag by remember { mutableStateOf(initialSelectedTag) }
+    var artworkTag by remember { mutableStateOf(initialArtworkTag) }
     
     val tags = listOf("Todos", "Pintura", "Escultura", "Fotografía")
 
@@ -102,6 +107,26 @@ fun FilterBottomSheet(
             )
             
             Spacer(modifier = Modifier.height(24.dp))
+
+            // 2b. Buscar por etiquetas de obras
+            Text("Buscar por etiquetas de obras", color = Color.White, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = artworkTag,
+                onValueChange = { artworkTag = it },
+                placeholder = { Text("Ej. óleo, retrato, abstracto...", color = Color.Gray) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = Color.White.copy(alpha = 0.05f),
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedBorderColor = ArtistaGradientStart,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
             
             // 3. Tags / Disciplina
             Text("Disciplina", color = Color.White, fontWeight = FontWeight.SemiBold)
@@ -130,8 +155,7 @@ fun FilterBottomSheet(
             // Botón aplicar
             Button(
                 onClick = { 
-                    // Aquí se aplicarían los filtros en el ViewModel
-                    onApplyFilters() 
+                    onApplyFilters(startDate, endDate, artistName, selectedTag, artworkTag) 
                 },
                 modifier = Modifier
                     .fillMaxWidth()

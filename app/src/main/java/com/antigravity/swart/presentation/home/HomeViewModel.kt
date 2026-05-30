@@ -32,18 +32,76 @@ class HomeViewModel @Inject constructor(
     
     val searchQuery = MutableStateFlow("")
     val userAvatar = MutableStateFlow("")
+    
+    val selectedTag = MutableStateFlow("Todos")
+    val filterStartDate = MutableStateFlow("")
+    val filterEndDate = MutableStateFlow("")
+    val filterArtistName = MutableStateFlow("")
+    val filterArtworkTag = MutableStateFlow("")
 
     val uiState: StateFlow<HomeUiState> = combine(
-        _isLoading, _allExhibitions, searchQuery, _error
-    ) { isLoading, allExhibitions, query, error ->
-        val filtered = if (query.isBlank()) {
-            allExhibitions
-        } else {
-            allExhibitions.filter {
+        _isLoading, _allExhibitions, searchQuery, selectedTag, filterStartDate, filterEndDate, filterArtistName, filterArtworkTag, _error
+    ) { flowsArray ->
+        val isLoading = flowsArray[0] as Boolean
+        @Suppress("UNCHECKED_CAST")
+        val allExhibitions = flowsArray[1] as List<Exhibition>
+        val query = flowsArray[2] as String
+        val tag = flowsArray[3] as String
+        val startD = flowsArray[4] as String
+        val endD = flowsArray[5] as String
+        val artistN = flowsArray[6] as String
+        val artworkT = flowsArray[7] as String
+        val error = flowsArray[8] as String?
+
+        var filtered = allExhibitions
+        
+        if (query.isNotBlank()) {
+            filtered = filtered.filter {
                 it.title.contains(query, ignoreCase = true) ||
                 it.artistName.contains(query, ignoreCase = true)
             }
         }
+        
+        if (tag != "Todos") {
+            filtered = filtered.filter { exhibition ->
+                exhibition.tags.any { it.equals(tag, ignoreCase = true) }
+            }
+        }
+        
+        if (artistN.isNotBlank()) {
+            filtered = filtered.filter {
+                it.artistName.contains(artistN, ignoreCase = true)
+            }
+        }
+        
+        if (startD.isNotBlank()) {
+            filtered = filtered.filter {
+                val converted = convertDateInput(startD)
+                if (converted != null) {
+                    it.fechaInicio?.contains(converted) == true
+                } else {
+                    it.fechaInicio?.contains(startD) == true
+                }
+            }
+        }
+        
+        if (endD.isNotBlank()) {
+            filtered = filtered.filter {
+                val converted = convertDateInput(endD)
+                if (converted != null) {
+                    it.fechaFin?.contains(converted) == true
+                } else {
+                    it.fechaFin?.contains(endD) == true
+                }
+            }
+        }
+        
+        if (artworkT.isNotBlank()) {
+            filtered = filtered.filter { exhibition ->
+                exhibition.tags.any { it.contains(artworkT, ignoreCase = true) }
+            }
+        }
+        
         HomeUiState(isLoading, filtered, error)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 
@@ -73,5 +131,23 @@ class HomeViewModel @Inject constructor(
     
     fun onSearchQueryChanged(newQuery: String) {
         searchQuery.value = newQuery
+    }
+
+    fun applyFilters(startDate: String, endDate: String, artistName: String, tag: String, artworkTag: String) {
+        filterStartDate.value = startDate
+        filterEndDate.value = endDate
+        filterArtistName.value = artistName
+        selectedTag.value = tag
+        filterArtworkTag.value = artworkTag
+    }
+
+    private fun convertDateInput(input: String): String? {
+        val parts = input.split("/")
+        if (parts.size == 2) {
+            val day = parts[0].trim().padStart(2, '0')
+            val month = parts[1].trim().padStart(2, '0')
+            return "$month-$day"
+        }
+        return null
     }
 }
