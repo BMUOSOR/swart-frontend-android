@@ -1,5 +1,6 @@
 package com.antigravity.swart.presentation.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,7 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.ui.res.painterResource
+import com.antigravity.swart.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -102,27 +104,12 @@ fun RegisterScreen(
             .padding(top = 64.dp, bottom = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Logo / Icon
-        val gradient = if (role == "artista") {
-            Brush.horizontalGradient(listOf(ArtistaGradientStart, ArtistaGradientEnd))
-        } else {
-            Brush.horizontalGradient(listOf(InteresadoGradientStart, InteresadoGradientEnd))
-        }
-
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(gradient),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.AutoAwesome,
-                contentDescription = null,
-                tint = TextWhite,
-                modifier = Modifier.size(32.dp)
-            )
-        }
+        // Logo
+        Image(
+            painter = painterResource(id = R.drawable.dise_o_de_la_ui_logotipo__1_),
+            contentDescription = "Logo",
+            modifier = Modifier.size(64.dp)
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
