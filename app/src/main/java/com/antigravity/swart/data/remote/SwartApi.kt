@@ -117,7 +117,7 @@ interface SwartApi {
     suspend fun sendChatMessage(
         @Path("chatId") chatId: Long,
         @Body request: com.antigravity.swart.data.remote.dto.SendMessageRequest
-    ): Map<String, String>
+    ): Map<String, Any>
 
     @Multipart
     @POST("api/upload")

@@ -5,9 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.model.Message
-import com.antigravity.swart.domain.model.Conversation
 import com.antigravity.swart.domain.repository.ExhibitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,12 +22,11 @@ class ChatViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    val chatId: Long = try {
-        val arg = savedStateHandle.get<String>("chatId")
-        arg?.toLongOrNull() ?: savedStateHandle.get<Long>("chatId") ?: 1L
-    } catch (e: Exception) {
-        1L
-    }
+    // Prefer savedStateHandle value; screen calls ensureChatId() to override if needed
+    private val _chatId = MutableStateFlow(
+        savedStateHandle.get<Long>("chatId") ?: 0L
+    )
+    val chatId: Long get() = _chatId.value
 
     val currentUserId: Long = sessionManager.getUserId()
 
@@ -43,19 +42,33 @@ class ChatViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private var isPollingActive = true
+    private var pollingJob: Job? = null
 
     init {
-        loadChatDetails()
-        startMessagePolling()
+        viewModelScope.launch {
+            _chatId.collect { id ->
+                if (id > 0L) {
+                    loadChatDetails(id)
+                    startMessagePolling(id)
+                }
+            }
+        }
     }
 
-    private fun loadChatDetails() {
+    // Called by ChatScreen to guarantee the correct chatId is used regardless of
+    // whether SavedStateHandle was populated before the ViewModel was created.
+    fun ensureChatId(id: Long) {
+        if (id > 0L && _chatId.value != id) {
+            _chatId.value = id
+        }
+    }
+
+    private fun loadChatDetails(id: Long) {
         viewModelScope.launch {
             if (currentUserId == -1L) return@launch
             repository.getConversations(currentUserId).fold(
                 onSuccess = { list ->
-                    val match = list.find { it.idConversacion == chatId }
+                    val match = list.find { it.idConversacion == id }
                     if (match != null) {
                         _otherUserNombre.value = match.otherUserNombre
                         _otherUserAvatar.value = match.otherUserAvatar
@@ -66,12 +79,13 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun startMessagePolling() {
-        viewModelScope.launch {
+    private fun startMessagePolling(id: Long) {
+        pollingJob?.cancel()
+        pollingJob = viewModelScope.launch {
             _isLoading.value = true
             var isFirstLoad = true
-            while (isPollingActive) {
-                repository.getChatMessages(chatId).fold(
+            while (true) {
+                repository.getChatMessages(id).fold(
                     onSuccess = { list ->
                         _messages.value = list
                         if (isFirstLoad) {
@@ -86,18 +100,18 @@ class ChatViewModel @Inject constructor(
                         }
                     }
                 )
-                delay(3000) // Poll every 3 seconds
+                delay(3000)
             }
         }
     }
 
     fun sendMessage(content: String) {
-        if (content.isBlank() || currentUserId == -1L) return
+        val id = _chatId.value
+        if (content.isBlank() || currentUserId == -1L || id <= 0L) return
         viewModelScope.launch {
-            repository.sendChatMessage(chatId, currentUserId, content).fold(
+            repository.sendChatMessage(id, currentUserId, content).fold(
                 onSuccess = {
-                    // Force refresh immediately
-                    repository.getChatMessages(chatId).fold(
+                    repository.getChatMessages(id).fold(
                         onSuccess = { _messages.value = it },
                         onFailure = { }
                     )
@@ -109,6 +123,6 @@ class ChatViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        isPollingActive = false
+        pollingJob?.cancel()
     }
 }

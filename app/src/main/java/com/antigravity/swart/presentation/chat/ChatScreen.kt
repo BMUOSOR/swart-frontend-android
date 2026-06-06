@@ -36,9 +36,15 @@ private val ChatTextLight = Color(0xFFE8E8F0)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
+    chatId: Long,
     onBack: () -> Unit,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
+    // Guarantee the ViewModel uses the chatId from navigation, even if SavedStateHandle
+    // wasn't populated before the ViewModel was first created.
+    LaunchedEffect(chatId) {
+        if (chatId > 0L) viewModel.ensureChatId(chatId)
+    }
     val messages by viewModel.messages.collectAsState()
     val otherUserNombre by viewModel.otherUserNombre.collectAsState()
     val otherUserAvatar by viewModel.otherUserAvatar.collectAsState()

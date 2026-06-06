@@ -283,7 +283,7 @@ class ExhibitionRepositoryImpl(
         return try {
             val req = com.antigravity.swart.data.remote.dto.SendMessageRequest(senderId, contenido)
             val response = api.sendChatMessage(chatId, req)
-            Result.success(response.containsKey("idMensaje"))
+            Result.success(response.containsKey("idMensaje") || response.containsKey("fechaCreacion"))
         } catch (e: Exception) {
             Result.failure(e)
         }

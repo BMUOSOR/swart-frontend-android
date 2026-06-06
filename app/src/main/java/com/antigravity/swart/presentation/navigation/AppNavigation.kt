@@ -555,7 +555,9 @@ fun AppNavigation() {
             route = "chat/{chatId}",
             arguments = listOf(navArgument("chatId") { type = NavType.LongType })
         ) { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getLong("chatId") ?: 0L
             ChatScreen(
+                chatId = chatId,
                 onBack = { navController.popBackStack() }
             )
         }

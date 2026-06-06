@@ -112,11 +112,21 @@ fun SwapScreen(
 
                 // Función de helper para avanzar la carta
                 fun swipeCard(isRight: Boolean) {
-                    viewModel.recordSwipe(artwork, isRight)
                     scope.launch {
+                        // Animamos la tarjeta primero para que la UI responda de inmediato
                         val targetX = if (isRight) 1000f else -1000f
                         offsetX.animateTo(targetX)
+                        
+                        // Grabamos el swipe y ESPERAMOS a que termine en el backend
+                        viewModel.recordSwipe(artwork, isRight)
+                        
                         currentIndex++
+                        
+                        // LUEGO pedimos más feed, garantizando que el backend ya consideró el swipe anterior
+                        if (currentIndex >= artworks.size - 3) {
+                            viewModel.loadMoreFeed()
+                        }
+                        
                         offsetX.snapTo(0f)
                         offsetY.snapTo(0f)
                         rotation.snapTo(0f)
@@ -127,14 +137,16 @@ fun SwapScreen(
                     modifier = Modifier
                         .weight(1f)
                         .padding(16.dp)
-                        .offset(
-                            x = offsetX.value.dp,
-                            y = offsetY.value.dp
-                        )
+                        .offset {
+                            androidx.compose.ui.unit.IntOffset(
+                                offsetX.value.toInt(),
+                                offsetY.value.toInt()
+                            )
+                        }
                         .graphicsLayer {
                             rotationZ = rotation.value
                         }
-                        .pointerInput(Unit) {
+                        .pointerInput(currentIndex) {
                             detectDragGestures(
                                 onDragEnd = {
                                     scope.launch {
@@ -344,7 +356,8 @@ fun SwapScreen(
                             )
 
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
 
                                 Icon(
@@ -362,11 +375,14 @@ fun SwapScreen(
                                     text = artwork.locationName
                                         ?: "Lugar desconocido",
                                     color = Color.LightGray,
-                                    fontSize = 14.sp
+                                    fontSize = 14.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
                                 )
 
                                 Spacer(
-                                    modifier = Modifier.width(16.dp)
+                                    modifier = Modifier.width(8.dp)
                                 )
 
                                 Icon(
@@ -386,7 +402,8 @@ fun SwapScreen(
                                 Text(
                                     text = "A ${String.format("%.1f", distanceMock)} km",
                                     color = Color.LightGray,
-                                    fontSize = 14.sp
+                                    fontSize = 14.sp,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -437,7 +454,19 @@ fun SwapScreen(
                 }
             } else {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("No hay más obras por descubrir.", color = Color.White)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("No hay más obras por descubrir.", color = Color.White)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { 
+                                viewModel.loadFeed()
+                                currentIndex = 0
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = ArtistaGradientStart)
+                        ) {
+                            Text("Buscar más obras")
+                        }
+                    }
                 }
             }
         }

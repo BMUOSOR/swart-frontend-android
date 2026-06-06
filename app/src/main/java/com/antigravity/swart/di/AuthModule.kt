@@ -19,7 +19,7 @@ object AuthModule {
     @Singleton
     fun provideAuthApi(): AuthApi {
         return Retrofit.Builder()
-            .baseUrl("http://127.0.0.1:8080/") // adb reverse tcp:8080 tcp:8080 forwards to host localhost
+            .baseUrl("http://10.0.2.2:8080/") // 10.0.2.2 is the special alias to your host loopback interface (localhost) on Android emulator
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AuthApi::class.java)

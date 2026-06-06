@@ -33,7 +33,7 @@ class DiscoverViewModel @Inject constructor(
         loadFeed()
     }
 
-    private fun loadFeed() {
+    fun loadFeed() {
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
             repository.getDiscoverFeed(currentUserId).fold(
@@ -53,16 +53,38 @@ class DiscoverViewModel @Inject constructor(
         }
     }
 
-    fun recordSwipe(artwork: DiscoverArtwork, liked: Boolean) {
+    fun loadMoreFeed() {
+        // Prevent concurrent loads
+        if (_uiState.value.isLoading) return
+        
+        // Don't show full loading spinner, just background load
         viewModelScope.launch {
-            repository.recordSwipe(currentUserId, artwork.id, liked, artwork.matchScore).fold(
-                onSuccess = {
-                    android.util.Log.d("DiscoverVM", "Swipe recorded successfully for artwork ${artwork.id}")
+            repository.getDiscoverFeed(currentUserId).fold(
+                onSuccess = { newArtworks ->
+                    val currentIds = _uiState.value.artworks.map { it.id }.toSet()
+                    val uniqueNew = newArtworks.filter { it.id !in currentIds }
+                    
+                    if (uniqueNew.isNotEmpty()) {
+                        _uiState.value = _uiState.value.copy(
+                            artworks = _uiState.value.artworks + uniqueNew
+                        )
+                    }
                 },
-                onFailure = { error ->
-                    android.util.Log.e("DiscoverVM", "Failed to record swipe: ${error.message}", error)
+                onFailure = { 
+                    // Silent failure for background pagination
                 }
             )
         }
+    }
+
+    suspend fun recordSwipe(artwork: DiscoverArtwork, liked: Boolean) {
+        repository.recordSwipe(currentUserId, artwork.id, liked, artwork.matchScore).fold(
+            onSuccess = {
+                android.util.Log.d("DiscoverVM", "Swipe recorded successfully for artwork ${artwork.id}")
+            },
+            onFailure = { error ->
+                android.util.Log.e("DiscoverVM", "Failed to record swipe: ${error.message}", error)
+            }
+        )
     }
 }
