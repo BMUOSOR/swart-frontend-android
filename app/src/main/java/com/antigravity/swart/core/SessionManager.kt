@@ -11,6 +11,7 @@ import javax.inject.Singleton
  * Persiste el userId y role en SharedPreferences para que estén disponibles
  * en toda la aplicación entre pantallas.
  */
+
 @Singleton
 class SessionManager @Inject constructor(
     @ApplicationContext context: Context
