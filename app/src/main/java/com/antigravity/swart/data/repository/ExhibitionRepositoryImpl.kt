@@ -41,6 +41,25 @@ class ExhibitionRepositoryImpl(
         }
     }
 
+    override suspend fun getLikedArtworks(userId: Long): Result<List<com.antigravity.swart.domain.model.DiscoverArtwork>> {
+        return try {
+            val response = api.getLikedArtworks(userId)
+            Result.success(response.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun removeLike(userId: Long, obraId: Long): Result<Unit> {
+        return try {
+            val response = api.removeLike(userId, obraId)
+            if (response.isSuccessful) Result.success(Unit)
+            else Result.failure(Exception("Error al eliminar: ${response.code()}"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun recordSwipe(userId: Long, artworkId: Long, liked: Boolean, matchScore: Double): Result<Unit> {
         return try {
             val response = api.recordSwipe(com.antigravity.swart.data.remote.dto.SwipeRequestDto(userId, artworkId, liked, matchScore))
@@ -251,7 +270,16 @@ class ExhibitionRepositoryImpl(
         }
     }
 
-    override suspend fun startChat(senderId: Long, receiverId: Long, initialMessage: String, urlImagenObra: String?): Result<Long> {
+    override suspend fun updateAvatar(userId: Long, imageUrl: String): Result<Unit> {
+        return try {
+            api.updateAvatar(userId, mapOf("imgUrl" to imageUrl))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun startChat(senderId: Long, receiverId: Long, initialMessage: String?, urlImagenObra: String?): Result<Long> {
         return try {
             val req = com.antigravity.swart.data.remote.dto.StartChatRequest(senderId, receiverId, initialMessage, urlImagenObra)
             val response = api.startChat(req)
@@ -284,6 +312,75 @@ class ExhibitionRepositoryImpl(
             val req = com.antigravity.swart.data.remote.dto.SendMessageRequest(senderId, contenido)
             val response = api.sendChatMessage(chatId, req)
             Result.success(response.containsKey("idMensaje") || response.containsKey("fechaCreacion"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun reverseGeocode(lat: Double, lon: Double): Result<com.antigravity.swart.domain.model.GeocodingResult> {
+        return try {
+            val dto = api.reverseGeocode(lat, lon)
+            Result.success(
+                com.antigravity.swart.domain.model.GeocodingResult(
+                    lat = dto.lat.toDoubleOrNull() ?: lat,
+                    lon = dto.lon.toDoubleOrNull() ?: lon,
+                    displayName = dto.display_name
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getEmptyBalizas(): Result<List<com.antigravity.swart.domain.model.EmptyBaliza>> {
+        return try {
+            val response = api.getEmptyBalizas()
+            Result.success(response.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createEmptyBaliza(lat: Double, lon: Double): Result<com.antigravity.swart.domain.model.EmptyBaliza> {
+        return try {
+            val response = api.createEmptyBaliza(
+                com.antigravity.swart.data.remote.dto.EmptyBalizaRequest(lat, lon)
+            )
+            Result.success(response.toDomain())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteEmptyBaliza(id: Long): Result<Boolean> {
+        return try {
+            val response = api.deleteEmptyBaliza(id)
+            Result.success(response["success"] ?: false)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateArtistProfile(
+        id: Long, bio: String?, instagram: String?, twitter: String?, correo: String?
+    ): Result<Boolean> {
+        return try {
+            val response = api.updateArtistProfile(
+                id,
+                com.antigravity.swart.data.remote.dto.UpdateArtistProfileRequest(
+                    bio = bio, instagram = instagram, twitter = twitter, correo = correo
+                )
+            )
+            Result.success(response["success"] ?: false)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun incrementExhibitionView(id: Long): Result<Boolean> {
+        return try {
+            val response = api.incrementExhibitionView(id)
+            Result.success(response["success"] ?: false)
         } catch (e: Exception) {
             Result.failure(e)
         }

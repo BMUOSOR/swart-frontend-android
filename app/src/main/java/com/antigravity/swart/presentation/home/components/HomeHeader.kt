@@ -17,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.antigravity.swart.presentation.theme.InteresadoGradientStart
+import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 
 @Composable
 fun HomeTopBar(avatarUrl: String) {
@@ -38,25 +39,15 @@ fun HomeTopBar(avatarUrl: String) {
             )
         }
         
-        Box {
-            AsyncImage(
-                model = avatarUrl, // Usar el avatar del usuario visitante o por defecto
-                contentDescription = "User Profile",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(Color.DarkGray)
-            )
-            // Punto de notificación rojo
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .clip(CircleShape)
-                    .background(Color.Red)
-                    .align(Alignment.TopEnd)
-            )
-        }
+        AsyncImage(
+            model = avatarUrl,
+            contentDescription = "User Profile",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(Color.DarkGray)
+        )
     }
 }
 
@@ -65,7 +56,8 @@ fun HomeTopBar(avatarUrl: String) {
 fun SearchBarComponent(
     query: String,
     onQueryChange: (String) -> Unit,
-    onFilterClick: () -> Unit = {}
+    onFilterClick: () -> Unit = {},
+    accentColor: Color = InteresadoGradientStart
 ) {
     Row(
         modifier = Modifier
@@ -85,25 +77,24 @@ fun SearchBarComponent(
                 unfocusedContainerColor = Color.White.copy(alpha = 0.05f),
                 focusedContainerColor = Color.White.copy(alpha = 0.05f),
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = InteresadoGradientStart
+                focusedIndicatorColor = accentColor
             ),
             modifier = Modifier
                 .weight(1f)
                 .height(56.dp)
         )
-        
+
         Spacer(modifier = Modifier.width(16.dp))
-        
-        // Botón de filtros lila
+
+        // Botón de filtros
         IconButton(
             onClick = onFilterClick,
             modifier = Modifier
                 .size(56.dp)
-                .background(InteresadoGradientStart, RoundedCornerShape(16.dp))
+                .background(accentColor, RoundedCornerShape(16.dp))
         ) {
-            // Un icono que simule filtros (podemos usar uno de material)
             Icon(
-                painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size), 
+                painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
                 contentDescription = "Filtros",
                 tint = Color.White,
                 modifier = Modifier.size(20.dp)

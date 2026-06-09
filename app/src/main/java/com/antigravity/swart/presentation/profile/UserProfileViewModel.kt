@@ -1,13 +1,20 @@
 package com.antigravity.swart.presentation.profile
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.repository.ExhibitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 
 data class UserProfileUiState(
@@ -17,7 +24,9 @@ data class UserProfileUiState(
     val location: String = "Madrid, España",
     val role: String = "",
     val pendingInvitationsCount: Int = 0,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isUploadingAvatar: Boolean = false,
+    val uploadError: String? = null
 )
 
 @HiltViewModel
@@ -67,5 +76,62 @@ class UserProfileViewModel @Inject constructor(
         } else {
             _uiState.value = _uiState.value.copy(isLoading = false)
         }
+    }
+
+    fun uploadAndUpdateAvatar(uri: Uri, context: Context) {
+        val userId = sessionManager.getUserId()
+        if (userId == -1L) return
+        _uiState.value = _uiState.value.copy(isUploadingAvatar = true, uploadError = null)
+        viewModelScope.launch {
+            try {
+                // Read file on IO thread to avoid blocking the main thread
+                val (bytes, mimeType) = withContext(Dispatchers.IO) {
+                    val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+                    val data = context.contentResolver.openInputStream(uri)?.readBytes()
+                        ?: throw Exception("No se pudo leer la imagen seleccionada")
+                    Pair(data, mime)
+                }
+
+                val ext = if (mimeType.contains("png")) "png" else "jpg"
+                val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+                val part = MultipartBody.Part.createFormData("file", "avatar.$ext", requestBody)
+
+                repository.uploadImage(part).fold(
+                    onSuccess = { imageUrl ->
+                        repository.updateAvatar(userId, imageUrl).fold(
+                            onSuccess = {
+                                sessionManager.saveImgUrl(imageUrl)
+                                _uiState.value = _uiState.value.copy(
+                                    imgUrl = imageUrl,
+                                    isUploadingAvatar = false,
+                                    uploadError = null
+                                )
+                            },
+                            onFailure = { err ->
+                                _uiState.value = _uiState.value.copy(
+                                    isUploadingAvatar = false,
+                                    uploadError = "Error al guardar la foto: ${err.message}"
+                                )
+                            }
+                        )
+                    },
+                    onFailure = { err ->
+                        _uiState.value = _uiState.value.copy(
+                            isUploadingAvatar = false,
+                            uploadError = "Error al subir la foto: ${err.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isUploadingAvatar = false,
+                    uploadError = "Error: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun clearUploadError() {
+        _uiState.value = _uiState.value.copy(uploadError = null)
     }
 }

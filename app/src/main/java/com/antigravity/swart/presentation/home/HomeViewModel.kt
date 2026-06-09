@@ -74,25 +74,19 @@ class HomeViewModel @Inject constructor(
             }
         }
         
+        // Fecha inicio: mostrar exposiciones cuya fechaFin >= startD
         if (startD.isNotBlank()) {
             filtered = filtered.filter {
-                val converted = convertDateInput(startD)
-                if (converted != null) {
-                    it.fechaInicio?.contains(converted) == true
-                } else {
-                    it.fechaInicio?.contains(startD) == true
-                }
+                val expoEnd = it.fechaFin ?: return@filter false
+                expoEnd >= startD
             }
         }
-        
+
+        // Fecha fin: mostrar exposiciones cuya fechaInicio <= endD
         if (endD.isNotBlank()) {
             filtered = filtered.filter {
-                val converted = convertDateInput(endD)
-                if (converted != null) {
-                    it.fechaFin?.contains(converted) == true
-                } else {
-                    it.fechaFin?.contains(endD) == true
-                }
+                val expoStart = it.fechaInicio ?: return@filter false
+                expoStart <= endD
             }
         }
         
@@ -141,13 +135,10 @@ class HomeViewModel @Inject constructor(
         filterArtworkTag.value = artworkTag
     }
 
-    private fun convertDateInput(input: String): String? {
-        val parts = input.split("/")
-        if (parts.size == 2) {
-            val day = parts[0].trim().padStart(2, '0')
-            val month = parts[1].trim().padStart(2, '0')
-            return "$month-$day"
+    fun incrementView(exhibitionId: Long) {
+        viewModelScope.launch {
+            repository.incrementExhibitionView(exhibitionId)
         }
-        return null
     }
+
 }

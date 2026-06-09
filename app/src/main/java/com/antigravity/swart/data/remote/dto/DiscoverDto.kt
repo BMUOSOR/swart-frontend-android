@@ -11,7 +11,8 @@ data class DiscoverArtworkDto(
     val nombreLugar: String?,
     val ubicacion: String?,
     val artistName: String,
-    val artistAvatar: String
+    val artistAvatar: String,
+    val artistId: Long = 0L
 )
 
 data class SwipeRequestDto(
@@ -32,5 +33,6 @@ fun DiscoverArtworkDto.toDomain() = com.antigravity.swart.domain.model.DiscoverA
     locationName = nombreLugar,
     locationAddress = ubicacion,
     artistName = artistName,
-    artistAvatarUrl = artistAvatar
+    artistAvatarUrl = artistAvatar,
+    artistId = artistId
 )

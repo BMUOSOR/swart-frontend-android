@@ -1,9 +1,14 @@
 package com.antigravity.swart.presentation.exhibitions
 
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.net.Uri
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.yalantis.ucrop.UCrop
+import java.io.File
+import java.util.UUID
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -43,7 +48,7 @@ private val CENavyBg       = Color(0xFF0B0D17)
 private val CECardBg       = Color(0xFF161925)
 private val CEInputBg      = Color(0xFF1E2235)
 private val CENeonPink     = Color(0xFFFF2D87)
-private val CENeonPurple   = Color(0xFF7B2FFF)
+private val CENeonPurple   = Color(0xFFEC4899)
 private val CETextGray     = Color(0xFF8B8FA8)
 private val CETextLight    = Color(0xFFE8E8F0)
 private val ceNeonGradient = Brush.horizontalGradient(listOf(CENeonPurple, CENeonPink))
@@ -79,22 +84,48 @@ fun CreateExhibitionScreen(
     val verifError     by viewModel.verificationError.collectAsState()
     val bannerUrl      by viewModel.bannerUrl.collectAsState()
     val isUploading    by viewModel.isUploading.collectAsState()
+    val isFromMap         by viewModel.isFromMap.collectAsState()
+    val isLoadingAddress  by viewModel.isLoadingAddress.collectAsState()
 
     var showMutualsSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
     var showImageSourceDialog by remember { mutableStateOf(false) }
     var tempUri by remember { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
+
+    // ── TextFieldValue local states (preserva composición IME para ñ, acentos, etc.) ──
+    var tituloTfv      by remember { mutableStateOf(TextFieldValue(titulo)) }
+    var descripcionTfv by remember { mutableStateOf(TextFieldValue(descripcion)) }
+    var nombreLugarTfv by remember { mutableStateOf(TextFieldValue(nombreLugar)) }
+    var ubicacionTfv   by remember { mutableStateOf(TextFieldValue(ubicacion)) }
+    // Sincronizar cuando el ViewModel actualiza los campos de localización externamente
+    LaunchedEffect(nombreLugar) { if (nombreLugar != nombreLugarTfv.text) nombreLugarTfv = TextFieldValue(nombreLugar) }
+    LaunchedEffect(ubicacion)   { if (ubicacion   != ubicacionTfv.text)   ubicacionTfv   = TextFieldValue(ubicacion)   }
+
+    // uCrop result handler — receives cropped image and uploads it
+    val uCropLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val resultUri = UCrop.getOutput(result.data!!)
+            resultUri?.let { uri ->
+                val part = uriToMultipartBodyPart(context, uri, "file")
+                if (part != null) viewModel.uploadBanner(part)
+            }
+        }
+    }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
             uri?.let {
-                val part = uriToMultipartBodyPart(context, it, "file")
-                if (part != null) {
-                    viewModel.uploadBanner(part)
-                }
+                val destFile = File(context.cacheDir, "banner_${UUID.randomUUID()}.jpg")
+                val uCropIntent = UCrop.of(it, Uri.fromFile(destFile))
+                    .withAspectRatio(16f, 9f)
+                    .withMaxResultSize(1920, 1080)
+                    .getIntent(context)
+                uCropLauncher.launch(uCropIntent)
             }
         }
     )
@@ -104,10 +135,12 @@ fun CreateExhibitionScreen(
         onResult = { success ->
             if (success) {
                 tempUri?.let { uri ->
-                    val part = uriToMultipartBodyPart(context, uri, "file")
-                    if (part != null) {
-                        viewModel.uploadBanner(part)
-                    }
+                    val destFile = File(context.cacheDir, "banner_${UUID.randomUUID()}.jpg")
+                    val uCropIntent = UCrop.of(uri, Uri.fromFile(destFile))
+                        .withAspectRatio(16f, 9f)
+                        .withMaxResultSize(1920, 1080)
+                        .getIntent(context)
+                    uCropLauncher.launch(uCropIntent)
                 }
             }
         }
@@ -224,8 +257,8 @@ fun CreateExhibitionScreen(
             // ─── TÍTULO ───────────────────────────────────────────────────
             CEFormField(label = "TÍTULO EXPOSICIÓN") {
                 OutlinedTextField(
-                    value = titulo,
-                    onValueChange = viewModel::onTituloChange,
+                    value = tituloTfv,
+                    onValueChange = { tituloTfv = it; viewModel.onTituloChange(it.text) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     colors = ceOutlinedTextFieldColors(),
@@ -237,8 +270,8 @@ fun CreateExhibitionScreen(
             // ─── DESCRIPCIÓN ──────────────────────────────────────────────
             CEFormField(label = "DESCRIPCIÓN") {
                 OutlinedTextField(
-                    value = descripcion,
-                    onValueChange = viewModel::onDescripcionChange,
+                    value = descripcionTfv,
+                    onValueChange = { descripcionTfv = it; viewModel.onDescripcionChange(it.text) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ceOutlinedTextFieldColors(),
@@ -352,16 +385,21 @@ fun CreateExhibitionScreen(
             // ─── NOMBRE DEL LUGAR ─────────────────────────────────────────
             CEFormField(label = "NOMBRE DEL LUGAR") {
                 OutlinedTextField(
-                    value = nombreLugar,
-                    onValueChange = viewModel::onNombreLugarChange,
+                    value = nombreLugarTfv,
+                    onValueChange = { if (!isFromMap) { nombreLugarTfv = it; viewModel.onNombreLugarChange(it.text) } },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     colors = ceOutlinedTextFieldColors(),
                     singleLine = true,
+                    readOnly = isFromMap,
                     placeholder = { Text("Ej. Museo del Prado", color = CETextGray) },
                     trailingIcon = {
-                        IconButton(onClick = { viewModel.verifyLocationAddress(fromAddressField = false) }) {
-                            Icon(Icons.Default.Search, contentDescription = "Buscar", tint = CENeonPurple)
+                        when {
+                            isLoadingAddress -> CircularProgressIndicator(modifier = Modifier.size(20.dp), color = CENeonPurple, strokeWidth = 2.dp)
+                            isFromMap -> Icon(Icons.Default.Lock, contentDescription = "Fijado desde el mapa", tint = CETextGray, modifier = Modifier.size(20.dp))
+                            else -> IconButton(onClick = { viewModel.verifyLocationAddress(fromAddressField = false) }) {
+                                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = CENeonPurple)
+                            }
                         }
                     }
                 )
@@ -370,18 +408,23 @@ fun CreateExhibitionScreen(
             // ─── DIRECCIÓN / LOCALIZACIÓN ─────────────────────────────────
             CEFormField(label = "DIRECCIÓN / LOCALIZACIÓN") {
                 OutlinedTextField(
-                    value = ubicacion,
-                    onValueChange = viewModel::onUbicacionChange,
+                    value = ubicacionTfv,
+                    onValueChange = { if (!isFromMap) { ubicacionTfv = it; viewModel.onUbicacionChange(it.text) } },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     colors = ceOutlinedTextFieldColors(),
                     singleLine = true,
-                    placeholder = { Text("Ej. Calle Mayor 1, Madrid", color = CETextGray) },
+                    readOnly = isFromMap,
+                    placeholder = {
+                        if (isLoadingAddress) Text("Obteniendo dirección...", color = CETextGray)
+                        else Text("Ej. Calle Mayor 1, Madrid", color = CETextGray)
+                    },
                     trailingIcon = {
-                        if (isVerifying) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = CENeonPurple, strokeWidth = 2.dp)
-                        } else {
-                            IconButton(onClick = { viewModel.verifyLocationAddress(fromAddressField = true) }) {
+                        when {
+                            isLoadingAddress -> CircularProgressIndicator(modifier = Modifier.size(20.dp), color = CENeonPurple, strokeWidth = 2.dp)
+                            isFromMap -> Icon(Icons.Default.Lock, contentDescription = "Fijado desde el mapa", tint = CETextGray, modifier = Modifier.size(20.dp))
+                            isVerifying -> CircularProgressIndicator(modifier = Modifier.size(24.dp), color = CENeonPurple, strokeWidth = 2.dp)
+                            else -> IconButton(onClick = { viewModel.verifyLocationAddress(fromAddressField = true) }) {
                                 Icon(Icons.Default.Search, contentDescription = "Buscar dirección", tint = CENeonPurple)
                             }
                         }

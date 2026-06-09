@@ -14,7 +14,8 @@ import javax.inject.Inject
 data class ArtistsListUiState(
     val artists: List<ArtistFollowDto> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val chatLoading: Boolean = false
 )
 
 @HiltViewModel
@@ -50,6 +51,26 @@ class ArtistsListViewModel @Inject constructor(
                         isLoading = false,
                         error = error.message ?: "Error al cargar artistas"
                     )
+                }
+            )
+        }
+    }
+
+    fun startChat(artistId: Long, onChatCreated: (Long) -> Unit) {
+        val userId = sessionManager.getUserId()
+        if (userId == -1L) return
+        _uiState.value = _uiState.value.copy(chatLoading = true)
+        viewModelScope.launch {
+            repository.startChat(
+                senderId = userId,
+                receiverId = artistId
+            ).fold(
+                onSuccess = { chatId ->
+                    _uiState.value = _uiState.value.copy(chatLoading = false)
+                    onChatCreated(chatId)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(chatLoading = false)
                 }
             )
         }

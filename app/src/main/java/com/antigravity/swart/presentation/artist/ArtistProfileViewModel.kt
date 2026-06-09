@@ -105,14 +105,31 @@ class ArtistProfileViewModel @Inject constructor(
         }
     }
 
+    private val _isSavingProfile = MutableStateFlow(false)
+    val isSavingProfile: StateFlow<Boolean> = _isSavingProfile.asStateFlow()
+
+    fun updateProfile(bio: String?, instagram: String?, twitter: String?, correo: String?) {
+        viewModelScope.launch {
+            _isSavingProfile.value = true
+            repository.updateArtistProfile(artistId, bio, instagram, twitter, correo).fold(
+                onSuccess = {
+                    _isSavingProfile.value = false
+                    // Refrescar el perfil para que la UI refleje los cambios
+                    loadArtistProfile()
+                },
+                onFailure = {
+                    _isSavingProfile.value = false
+                }
+            )
+        }
+    }
+
     fun startGeneralChat(onSuccess: (Long) -> Unit) {
         viewModelScope.launch {
             if (currentUserId == -1L) return@launch
             repository.startChat(
                 senderId = currentUserId,
-                receiverId = artistId,
-                initialMessage = "¡Hola! Me gustaría iniciar una conversación contigo.",
-                urlImagenObra = null
+                receiverId = artistId
             ).fold(
                 onSuccess = { chatId ->
                     onSuccess(chatId)

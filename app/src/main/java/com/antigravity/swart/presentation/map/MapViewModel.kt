@@ -21,7 +21,14 @@ data class MapUiState(
     val isFilterSheetVisible: Boolean = false,
     val maxPrice: Float = 100f,
     val startDate: Long? = null,
-    val endDate: Long? = null
+    val endDate: Long? = null,
+    // Empty balizas
+    val emptyBalizas: List<com.antigravity.swart.domain.model.EmptyBaliza> = emptyList(),
+    val selectedEmptyBaliza: com.antigravity.swart.domain.model.EmptyBaliza? = null,
+    val selectedEmptyBalizaAddress: String? = null,
+    val isLoadingBalizaAddress: Boolean = false,
+    val isPlacingMode: Boolean = false,
+    val isCreatingEmptyBaliza: Boolean = false,
 )
 
 @HiltViewModel
@@ -36,6 +43,7 @@ class MapViewModel @Inject constructor(
 
     init {
         getMapPins()
+        loadEmptyBalizas()
     }
 
     fun getMapPins() {
@@ -137,10 +145,93 @@ class MapViewModel @Inject constructor(
     }
 
     fun onPinClick(pin: MapPin) {
-        _uiState.value = _uiState.value.copy(selectedPin = pin)
+        _uiState.value = _uiState.value.copy(selectedPin = pin, selectedEmptyBaliza = null)
     }
 
     fun onDismissSelectedPin() {
         _uiState.value = _uiState.value.copy(selectedPin = null)
+    }
+
+    fun loadEmptyBalizas() {
+        viewModelScope.launch {
+            repository.getEmptyBalizas().fold(
+                onSuccess = { list -> _uiState.value = _uiState.value.copy(emptyBalizas = list) },
+                onFailure = { /* silently ignore */ }
+            )
+        }
+    }
+
+    fun placeEmptyBaliza(lat: Double, lon: Double) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCreatingEmptyBaliza = true, isPlacingMode = false)
+            repository.createEmptyBaliza(lat, lon).fold(
+                onSuccess = { baliza ->
+                    _uiState.value = _uiState.value.copy(
+                        emptyBalizas = _uiState.value.emptyBalizas + baliza,
+                        isCreatingEmptyBaliza = false
+                    )
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isCreatingEmptyBaliza = false)
+                }
+            )
+        }
+    }
+
+    fun onEmptyBalizaClick(baliza: com.antigravity.swart.domain.model.EmptyBaliza) {
+        _uiState.value = _uiState.value.copy(
+            selectedEmptyBaliza = baliza,
+            selectedPin = null,
+            selectedEmptyBalizaAddress = null,
+            isLoadingBalizaAddress = true
+        )
+        viewModelScope.launch {
+            repository.reverseGeocode(baliza.lat, baliza.lon).fold(
+                onSuccess = { result ->
+                    _uiState.value = _uiState.value.copy(
+                        selectedEmptyBalizaAddress = result.displayName,
+                        isLoadingBalizaAddress = false
+                    )
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(
+                        selectedEmptyBalizaAddress = "${"%.5f".format(baliza.lat)}, ${"%.5f".format(baliza.lon)}",
+                        isLoadingBalizaAddress = false
+                    )
+                }
+            )
+        }
+    }
+
+    fun dismissEmptyBaliza() {
+        _uiState.value = _uiState.value.copy(
+            selectedEmptyBaliza = null,
+            selectedEmptyBalizaAddress = null,
+            isLoadingBalizaAddress = false
+        )
+    }
+
+    fun deleteEmptyBaliza(id: Long) {
+        viewModelScope.launch {
+            repository.deleteEmptyBaliza(id).fold(
+                onSuccess = { success ->
+                    if (success) {
+                        _uiState.value = _uiState.value.copy(
+                            emptyBalizas = _uiState.value.emptyBalizas.filter { it.id != id },
+                            selectedEmptyBaliza = null
+                        )
+                    }
+                },
+                onFailure = { /* ignore */ }
+            )
+        }
+    }
+
+    fun togglePlacingMode() {
+        _uiState.value = _uiState.value.copy(
+            isPlacingMode = !_uiState.value.isPlacingMode,
+            selectedPin = null,
+            selectedEmptyBaliza = null
+        )
     }
 }

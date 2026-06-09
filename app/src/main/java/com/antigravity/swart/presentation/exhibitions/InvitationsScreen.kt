@@ -26,34 +26,38 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.antigravity.swart.presentation.components.SwartBottomNav
 import com.antigravity.swart.presentation.components.UserType
+import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 
 private val InvNavyBg     = Color(0xFF0B0D17)
 private val InvCardBg     = Color(0xFF161925)
 private val InvInputBg    = Color(0xFF1E2235)
 private val InvNeonPink   = Color(0xFFFF2D87)
-private val InvNeonPurple = Color(0xFF7B2FFF)
+private val InvNeonPurple = Color(0xFFEC4899)
 private val InvTextGray   = Color(0xFF8B8FA8)
 private val InvTextLight  = Color(0xFFE8E8F0)
 
 @Composable
 fun InvitationsScreen(
+    role: String = "artista",
     onBack: () -> Unit,
     onNavigateHome: () -> Unit,
     onNavigateToSwap: () -> Unit,
     onNavigateToMap: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToObras: () -> Unit,
+    onNavigateToFavoritos: () -> Unit = {},
     onNavigateToCreate: () -> Unit = {},
     onNavigateToChat: (Long) -> Unit = {},
     viewModel: InvitationsViewModel = hiltViewModel()
 ) {
+    val isArtista = role == "artista"
     val invitations by viewModel.invitations.collectAsState()
     val conversations by viewModel.conversations.collectAsState()
     val isLoading   by viewModel.isLoading.collectAsState()
-    
+
     var selectedTabIndex by remember { mutableStateOf(0) }
-    
+
     LaunchedEffect(Unit) {
         viewModel.loadData()
     }
@@ -62,7 +66,7 @@ fun InvitationsScreen(
         containerColor = InvNavyBg,
         bottomBar = {
             SwartBottomNav(
-                userType = UserType.ARTIST,
+                userType = if (isArtista) UserType.ARTIST else UserType.GENERAL,
                 currentRoute = "mensajes",
                 onNavigate = { route ->
                     when (route) {
@@ -71,6 +75,7 @@ fun InvitationsScreen(
                         "mapa"      -> onNavigateToMap()
                         "perfil"    -> onNavigateToProfile()
                         "obras"     -> onNavigateToObras()
+                        "favoritos" -> onNavigateToFavoritos()
                     }
                 },
                 onFabClick = onNavigateToCreate
@@ -98,7 +103,7 @@ fun InvitationsScreen(
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = "Invitaciones",
+                    text = if (isArtista) "Invitaciones" else "Mensajes",
                     color = InvTextLight,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -108,16 +113,17 @@ fun InvitationsScreen(
             Spacer(Modifier.size(42.dp))
         }
 
-        // ─── TABS ─────────────────────────────────────────────────────
-        val tabs = listOf("Chats", "Invitaciones")
+        // ─── TABS (solo artista ve la pestaña de Invitaciones) ────────
+        val tabs = if (isArtista) listOf("Chats", "Invitaciones") else listOf("Chats")
+        val tabAccent = if (isArtista) InvNeonPurple else InteresadoGradientStart
         TabRow(
             selectedTabIndex = selectedTabIndex,
             containerColor = InvCardBg,
-            contentColor = InvNeonPurple,
+            contentColor = tabAccent,
             indicator = { tabPositions ->
                 TabRowDefaults.Indicator(
                     Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                    color = InvNeonPurple
+                    color = tabAccent
                 )
             },
             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
@@ -249,8 +255,8 @@ fun InvitationsScreen(
                         }
                     }
                 }
-            } else {
-                // Invitaciones tab
+            } else if (isArtista) {
+                // Invitaciones tab — solo artistas
                 if (invitations.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxWidth().height(200.dp),

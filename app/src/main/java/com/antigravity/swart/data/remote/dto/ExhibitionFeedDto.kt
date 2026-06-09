@@ -24,5 +24,7 @@ data class ExhibitionFeedDto(
     val nombreLugar: String?,
     val ubicacion: String?,
     val precio: Double?,
-    val score: Double?
+    val score: Double?,
+    val visitantes: Long = 0,
+    val favoritosCount: Int = 0
 )

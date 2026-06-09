@@ -51,6 +51,10 @@ class SessionManager @Inject constructor(
 
     fun getImgUrl(): String = prefs.getString(KEY_IMG_URL, "") ?: ""
 
+    fun saveImgUrl(url: String) {
+        prefs.edit().putString(KEY_IMG_URL, url).apply()
+    }
+
     fun isLoggedIn(): Boolean = getUserId() != -1L
 
     fun clearSession() {

@@ -1,6 +1,10 @@
 package com.antigravity.swart.presentation.map
 
 import android.content.Context
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -171,6 +175,41 @@ fun createMarkerBitmap(context: Context, tag: String, scale: Float): Bitmap {
     return bitmap
 }
 
+fun createEmptyBalizaMarker(context: Context): Bitmap {
+    val size = 140
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    // Shadow
+    paint.color = 0x33000000
+    canvas.drawCircle(size / 2f, size / 2f, size / 2.1f, paint)
+
+    // Gray outer circle
+    paint.color = 0xFF6B7280.toInt()
+    canvas.drawCircle(size / 2f, size / 2f, size / 2.4f, paint)
+
+    // Dark inner circle
+    paint.color = 0xFF1F2937.toInt()
+    canvas.drawCircle(size / 2f, size / 2f, size / 2.8f, paint)
+
+    // Lighter gray middle circle
+    paint.color = 0xFF9CA3AF.toInt()
+    canvas.drawCircle(size / 2f, size / 2f, size / 3.5f, paint)
+
+    // White "+" symbol
+    paint.shader = null
+    paint.color = 0xFFFFFFFF.toInt()
+    paint.style = Paint.Style.STROKE
+    paint.strokeWidth = size / 15f
+    paint.strokeCap = Paint.Cap.ROUND
+    val r = size / 8f
+    canvas.drawLine(size / 2f - r, size / 2f, size / 2f + r, size / 2f, paint)
+    canvas.drawLine(size / 2f, size / 2f - r, size / 2f, size / 2f + r, paint)
+
+    return bitmap
+}
+
 @Composable
 fun MapScreen(
     userType: UserType = UserType.GENERAL,
@@ -179,7 +218,9 @@ fun MapScreen(
     onNavigateToDetail: (Long) -> Unit = {},
     onNavigateToObras: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
+    onNavigateToFavoritos: () -> Unit = {},
     onNavigateToCreate: () -> Unit = {},
+    onNavigateToCreateExhibition: (lat: Double, lon: Double, balizaId: Long) -> Unit = { _, _, _ -> },
     onLogout: () -> Unit = {},
     exhibitionIdToSelect: Long = -1L,
     viewModel: MapViewModel = hiltViewModel()
@@ -187,8 +228,23 @@ fun MapScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val density = androidx.compose.ui.platform.LocalDensity.current
-    
+    val isArtist = userType == UserType.ARTIST
+
+    var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     var lastCenteredPinId by remember { mutableStateOf<Long?>(null) }
+
+    // Recargar el mapa cada vez que la pantalla vuelve al primer plano
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.getMapPins()
+                viewModel.loadEmptyBalizas()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     
     // Dialog state for Google Maps redirect
     var showGoogleMapsDialog by remember { mutableStateOf(false) }
@@ -224,11 +280,24 @@ fun MapScreen(
 
     Scaffold(
         containerColor = DarkBackground,
+        floatingActionButton = {
+            if (!uiState.isPlacingMode) {
+                FloatingActionButton(
+                    onClick = { viewModel.togglePlacingMode() },
+                    containerColor = Color(0xFF374151),
+                    contentColor = Color.White,
+                    shape = CircleShape
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddLocation,
+                        contentDescription = "Colocar baliza vacía"
+                    )
+                }
+            }
+        },
         bottomBar = {
-            val sessionManager = remember { com.antigravity.swart.core.SessionManager(context) }
-            val resolvedUserType = if (sessionManager.getRole() == "artista") UserType.ARTIST else UserType.GENERAL
             SwartBottomNav(
-                userType = resolvedUserType,
+                userType = userType,
                 currentRoute = "mapa",
                 onNavigate = {
                     when (it) {
@@ -236,10 +305,10 @@ fun MapScreen(
                         "descubrir" -> onNavigateToSwap()
                         "obras" -> onNavigateToObras()
                         "mensajes" -> onNavigateToMensajes()
+                        "favoritos" -> onNavigateToFavoritos()
                         "perfil" -> onLogout()
                     }
-                },
-                onFabClick = onNavigateToCreate
+                }
             )
         }
     ) { paddingValues ->
@@ -280,49 +349,66 @@ fun MapScreen(
                         
                         // Disable standard info windows (we use our own card)
                         InfoWindow.closeAllInfoWindowsOn(this)
-                    }
+                    }.also { mapViewRef = it }
                 },
                 update = { mapView ->
+                    mapViewRef = mapView
                     mapView.overlays.clear()
-                    
+
                     // Exaggerate differences proportionally relative to current matches (feature scaling)
                     val minMatch = uiState.filteredPins.minOfOrNull { it.match } ?: 50
                     val maxMatch = uiState.filteredPins.maxOfOrNull { it.match } ?: 100
-                    
-                    // Enforce a minimum range of 15% to keep sizes reasonable when differences are negligible (e.g. 98% vs 99%)
+
                     val effectiveMin = minOf(minMatch.toFloat(), maxMatch.toFloat() - 15f)
                     val range = maxMatch.toFloat() - effectiveMin
-                    
-                    uiState.filteredPins.forEach { pin ->
-                        val marker = Marker(mapView)
-                        marker.position = GeoPoint(pin.lat, pin.lon)
-                        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                        
-                        val factor = if (range > 0f) {
-                            ((pin.match - effectiveMin) / range).coerceIn(0f, 1f)
-                        } else {
-                            0.5f
+
+                    // Helper: añadir marcadores de exposiciones
+                    fun addExhibitionMarkers() {
+                        uiState.filteredPins.forEach { pin ->
+                            val marker = Marker(mapView)
+                            marker.position = GeoPoint(pin.lat, pin.lon)
+                            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                            val factor = if (range > 0f) ((pin.match - effectiveMin) / range).coerceIn(0f, 1f) else 0.5f
+                            val scale = 0.5f + factor * 0.7f
+                            val markerAlpha = 0.3f + factor * 0.7f
+                            val markerBitmap = createMarkerBitmap(context, pin.mainTag, scale)
+                            marker.icon = android.graphics.drawable.BitmapDrawable(context.resources, markerBitmap)
+                            marker.alpha = markerAlpha
+                            marker.setOnMarkerClickListener { _, _ ->
+                                viewModel.onPinClick(pin)
+                                true
+                            }
+                            mapView.overlays.add(marker)
                         }
-                        
-                        // Exaggerated size scale: 0.5f (lowest match) to 1.2f (highest match)
-                        val scale = 0.5f + factor * 0.7f
-                        // Exaggerated opacity/alpha scale: 0.3f (lowest match) to 1.0f (highest match)
-                        val markerAlpha = 0.3f + factor * 0.7f
-                        
-                        // Create custom premium marker with dynamic scale
-                        val markerBitmap = createMarkerBitmap(context, pin.mainTag, scale)
-                        marker.icon = android.graphics.drawable.BitmapDrawable(context.resources, markerBitmap)
-                        
-                        // Set dynamic marker opacity
-                        marker.alpha = markerAlpha
-                        
-                        marker.setOnMarkerClickListener { _, _ ->
-                            viewModel.onPinClick(pin)
-                            true
-                        }
-                        mapView.overlays.add(marker)
                     }
-                    
+
+                    // Helper: añadir balizas vacías (marcadores grises)
+                    val emptyBalizaBitmap = createEmptyBalizaMarker(context)
+                    fun addEmptyBalizaMarkers() {
+                        uiState.emptyBalizas.forEach { baliza ->
+                            val marker = Marker(mapView)
+                            marker.position = GeoPoint(baliza.lat, baliza.lon)
+                            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                            marker.icon = android.graphics.drawable.BitmapDrawable(context.resources, emptyBalizaBitmap)
+                            marker.alpha = 0.85f
+                            marker.setOnMarkerClickListener { _, _ ->
+                                viewModel.onEmptyBalizaClick(baliza)
+                                true
+                            }
+                            mapView.overlays.add(marker)
+                        }
+                    }
+
+                    // Artista: balizas vacías encima de exposiciones
+                    // Interesado: balizas vacías debajo de exposiciones
+                    if (isArtist) {
+                        addExhibitionMarkers()
+                        addEmptyBalizaMarkers()  // encima
+                    } else {
+                        addEmptyBalizaMarkers()  // debajo
+                        addExhibitionMarkers()
+                    }
+
                     // Center and zoom if selectedPin changes
                     uiState.selectedPin?.let { pin ->
                         if (lastCenteredPinId != pin.idExposicion) {
@@ -334,7 +420,7 @@ fun MapScreen(
                     } ?: run {
                         lastCenteredPinId = null
                     }
-                    
+
                     mapView.invalidate()
                 }
             )
@@ -354,18 +440,160 @@ fun MapScreen(
                 )
             }
 
-            // Selected Exhibition Card Overlay
-            uiState.selectedPin?.let { pin ->
+            // Selected Exhibition Card Overlay (role-aware)
+            if (!uiState.isPlacingMode) {
+                uiState.selectedPin?.let { pin ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
+                            .align(Alignment.BottomCenter)
+                    ) {
+                        ExhibitionMapCard(
+                            pin = pin,
+                            isClickable = !isArtist,
+                            onClick = { if (!isArtist) onNavigateToDetail(pin.idExposicion) }
+                        )
+                    }
+                }
+
+                // Empty Baliza Card Overlay
+                uiState.selectedEmptyBaliza?.let { baliza ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
+                            .align(Alignment.BottomCenter)
+                    ) {
+                        if (isArtist) {
+                            ArtistEmptyBalizaCard(
+                                baliza = baliza,
+                                address = uiState.selectedEmptyBalizaAddress,
+                                isLoadingAddress = uiState.isLoadingBalizaAddress,
+                                onCreateExhibition = {
+                                    viewModel.dismissEmptyBaliza()
+                                    onNavigateToCreateExhibition(baliza.lat, baliza.lon, baliza.id)
+                                },
+                                onDelete = { viewModel.deleteEmptyBaliza(baliza.id) },
+                                onDismiss = { viewModel.dismissEmptyBaliza() }
+                            )
+                        } else {
+                            InteresadoEmptyBalizaCard(
+                                address = uiState.selectedEmptyBalizaAddress,
+                                isLoadingAddress = uiState.isLoadingBalizaAddress,
+                                onDelete = { viewModel.deleteEmptyBaliza(baliza.id) },
+                                onDismiss = { viewModel.dismissEmptyBaliza() }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Placing Mode Overlay
+            if (uiState.isPlacingMode) {
+                // Semi-transparent top banner
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
-                        .align(Alignment.BottomCenter)
+                        .padding(top = 96.dp, start = 16.dp, end = 16.dp)
+                        .align(Alignment.TopCenter)
                 ) {
-                    ExhibitionMapCard(
-                        pin = pin,
-                        onClick = { onNavigateToDetail(pin.idExposicion) }
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xCC1F2937),
+                        tonalElevation = 8.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = null,
+                                tint = Color(0xFF9CA3AF),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Mueve el mapa para posicionar la baliza",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // Crosshair at center
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .align(Alignment.Center)
+                ) {
+                    // Horizontal line
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(Color.White.copy(alpha = 0.9f))
+                            .align(Alignment.Center)
                     )
+                    // Vertical line
+                    Box(
+                        modifier = Modifier
+                            .width(2.dp)
+                            .fillMaxHeight()
+                            .background(Color.White.copy(alpha = 0.9f))
+                            .align(Alignment.Center)
+                    )
+                    // Center dot
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF6B7280))
+                            .align(Alignment.Center)
+                    )
+                }
+
+                // Confirm / Cancel buttons at bottom
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp, start = 24.dp, end = 24.dp)
+                        .align(Alignment.BottomCenter),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.togglePlacingMode() },
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF6B7280))
+                    ) {
+                        Text("Cancelar", color = Color(0xFF9CA3AF), fontWeight = FontWeight.Bold)
+                    }
+                    Button(
+                        onClick = {
+                            val center = mapViewRef?.mapCenter
+                            if (center != null) {
+                                viewModel.placeEmptyBaliza(center.latitude, center.longitude)
+                            }
+                        },
+                        enabled = !uiState.isCreatingEmptyBaliza,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF374151))
+                    ) {
+                        if (uiState.isCreatingEmptyBaliza) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Colocar aquí", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
 
@@ -375,7 +603,7 @@ fun MapScreen(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-            
+
             // Filter Bottom Sheet
             if (uiState.isFilterSheetVisible) {
                 FilterBottomSheet(
@@ -437,6 +665,10 @@ fun FunctionalSearchBar(
     onQueryChange: (String) -> Unit,
     onFilterClick: () -> Unit
 ) {
+    // Local TextFieldValue preserva la composición IME para ñ, acentos, etc.
+    var tfv by remember { mutableStateOf(TextFieldValue(query)) }
+    LaunchedEffect(query) { if (query != tfv.text) tfv = TextFieldValue(query) }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -453,7 +685,7 @@ fun FunctionalSearchBar(
             Icon(Icons.Default.Search, contentDescription = null, tint = TextGray)
             Spacer(modifier = Modifier.width(12.dp))
             Box(modifier = Modifier.weight(1f)) {
-                if (query.isEmpty()) {
+                if (tfv.text.isEmpty()) {
                     Text(
                         text = "Galerías, obras o artistas",
                         color = TextGray,
@@ -461,8 +693,8 @@ fun FunctionalSearchBar(
                     )
                 }
                 BasicTextField(
-                    value = query,
-                    onValueChange = onQueryChange,
+                    value = tfv,
+                    onValueChange = { tfv = it; onQueryChange(it.text) },
                     textStyle = TextStyle(
                         color = TextWhite,
                         fontSize = 15.sp
@@ -472,8 +704,8 @@ fun FunctionalSearchBar(
                     singleLine = true
                 )
             }
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
+            if (tfv.text.isNotEmpty()) {
+                IconButton(onClick = { tfv = TextFieldValue(""); onQueryChange("") }) {
                     Icon(Icons.Default.Close, contentDescription = null, tint = TextGray, modifier = Modifier.size(20.dp))
                 }
             }
@@ -748,12 +980,13 @@ fun FilterChipItem(
 @Composable
 fun ExhibitionMapCard(
     pin: MapPin,
-    onClick: () -> Unit
+    isClickable: Boolean = true,
+    onClick: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .then(if (isClickable) Modifier.clickable { onClick() } else Modifier),
         shape = RoundedCornerShape(24.dp),
         color = CardBackground.copy(alpha = 0.95f),
         tonalElevation = 12.dp
@@ -815,6 +1048,136 @@ fun ExhibitionMapCard(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(icon, contentDescription = null, tint = TextWhite, modifier = Modifier.size(22.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun ArtistEmptyBalizaCard(
+    baliza: com.antigravity.swart.domain.model.EmptyBaliza,
+    address: String?,
+    isLoadingAddress: Boolean,
+    onCreateExhibition: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = CardBackground.copy(alpha = 0.97f),
+        tonalElevation = 12.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF374151)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Place, contentDescription = null, tint = Color(0xFF9CA3AF), modifier = Modifier.size(20.dp))
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Baliza vacía", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        if (isLoadingAddress) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                CircularProgressIndicator(modifier = Modifier.size(10.dp), color = TextGray, strokeWidth = 1.5.dp)
+                                Text("Obteniendo dirección...", color = TextGray, fontSize = 11.sp)
+                            }
+                        } else {
+                            Text(
+                                text = address ?: "${"%.5f".format(baliza.lat)}, ${"%.5f".format(baliza.lon)}",
+                                color = TextGray, fontSize = 11.sp, maxLines = 2
+                            )
+                        }
+                    }
+                }
+                Row {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                    }
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = TextGray, modifier = Modifier.size(18.dp))
+                    }
+                }
+            }
+            Button(
+                onClick = onCreateExhibition,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Brush.horizontalGradient(listOf(ArtistaGradientStart, ArtistaGradientEnd))),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Crear exposición aquí", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InteresadoEmptyBalizaCard(
+    address: String?,
+    isLoadingAddress: Boolean,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = CardBackground.copy(alpha = 0.97f),
+        tonalElevation = 12.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF374151)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Place, contentDescription = null, tint = Color(0xFF6B7280), modifier = Modifier.size(28.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Baliza vacía", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (isLoadingAddress) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        CircularProgressIndicator(modifier = Modifier.size(10.dp), color = TextGray, strokeWidth = 1.5.dp)
+                        Text("Obteniendo dirección...", color = TextGray, fontSize = 13.sp)
+                    }
+                } else {
+                    Text(
+                        text = address ?: "Sin exposición asignada todavía",
+                        color = TextGray, fontSize = 13.sp, maxLines = 2
+                    )
+                }
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+            }
+            IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = TextGray, modifier = Modifier.size(18.dp))
             }
         }
     }

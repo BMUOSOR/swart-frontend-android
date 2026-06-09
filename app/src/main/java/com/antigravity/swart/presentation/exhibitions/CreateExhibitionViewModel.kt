@@ -1,5 +1,6 @@
 package com.antigravity.swart.presentation.exhibitions
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antigravity.swart.core.SessionManager
@@ -19,7 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CreateExhibitionViewModel @Inject constructor(
     private val repository: ExhibitionRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _titulo = MutableStateFlow("")
@@ -66,6 +68,45 @@ class CreateExhibitionViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<CreateExhibitionEvent>()
     val events: SharedFlow<CreateExhibitionEvent> = _events.asSharedFlow()
+
+    private val _bannerUrl = MutableStateFlow<String?>(null)
+    val bannerUrl: StateFlow<String?> = _bannerUrl.asStateFlow()
+
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
+
+    private val _isFromMap = MutableStateFlow(false)
+    val isFromMap: StateFlow<Boolean> = _isFromMap.asStateFlow()
+
+    private val _isLoadingAddress = MutableStateFlow(false)
+    val isLoadingAddress: StateFlow<Boolean> = _isLoadingAddress.asStateFlow()
+
+    init {
+        val lat = savedStateHandle.get<String>("lat")?.toDoubleOrNull()
+        val lon = savedStateHandle.get<String>("lon")?.toDoubleOrNull()
+        if (lat != null && lon != null) {
+            _isFromMap.value = true
+            _isLoadingAddress.value = true
+            _verificationSuccess.value = "Obteniendo dirección..."
+            viewModelScope.launch {
+                repository.reverseGeocode(lat, lon).fold(
+                    onSuccess = { result ->
+                        _ubicacion.value = result.displayName
+                        _nombreLugar.value = result.displayName.split(",").firstOrNull()?.trim() ?: "Ubicación del mapa"
+                        _verificationSuccess.value = "Dirección encontrada y verificada"
+                        _isLoadingAddress.value = false
+                    },
+                    onFailure = {
+                        // Fallback a coordenadas si el geocoding falla
+                        _ubicacion.value = "${"%.5f".format(lat)}, ${"%.5f".format(lon)}"
+                        _nombreLugar.value = "Ubicación del mapa"
+                        _verificationSuccess.value = "Posición fijada desde el mapa"
+                        _isLoadingAddress.value = false
+                    }
+                )
+            }
+        }
+    }
 
     fun onTituloChange(value: String) { _titulo.value = value }
     fun onDescripcionChange(value: String) { _descripcion.value = value }
@@ -137,12 +178,6 @@ class CreateExhibitionViewModel @Inject constructor(
         }
     }
 
-    private val _bannerUrl = MutableStateFlow<String?>(null)
-    val bannerUrl: StateFlow<String?> = _bannerUrl.asStateFlow()
-
-    private val _isUploading = MutableStateFlow(false)
-    val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
-
     fun uploadBanner(filePart: okhttp3.MultipartBody.Part) {
         viewModelScope.launch {
             _isUploading.value = true
@@ -161,6 +196,10 @@ class CreateExhibitionViewModel @Inject constructor(
 
     fun createExhibition() {
         val artistaId = sessionManager.getUserId()
+        val balizaId = savedStateHandle.get<String>("balizaId")?.toLongOrNull()
+            ?.takeIf { it > 0 }
+        val mapLat = savedStateHandle.get<String>("lat")?.toDoubleOrNull()
+        val mapLon = savedStateHandle.get<String>("lon")?.toDoubleOrNull()
         if (_titulo.value.isBlank()) {
             viewModelScope.launch { _events.emit(CreateExhibitionEvent.Error("El título es obligatorio")) }
             return
@@ -172,6 +211,9 @@ class CreateExhibitionViewModel @Inject constructor(
                 descrip = _descripcion.value.ifBlank { null },
                 nombreLugar = _nombreLugar.value.ifBlank { null },
                 ubicacion = _ubicacion.value.ifBlank { null },
+                lat = mapLat,
+                lon = mapLon,
+                categoria = _categoria.value.ifBlank { null },
                 fechaInicio = _fechaInicio.value.ifBlank { null },
                 fechaFin = _fechaFin.value.ifBlank { null },
                 imgUrl = _bannerUrl.value,
@@ -184,6 +226,10 @@ class CreateExhibitionViewModel @Inject constructor(
             repository.createExhibition(request).fold(
                 onSuccess = { newId ->
                     _isCreating.value = false
+                    // Eliminar la baliza vacía de origen si la exposición fue creada desde una
+                    if (balizaId != null) {
+                        repository.deleteEmptyBaliza(balizaId)
+                    }
                     _events.emit(CreateExhibitionEvent.CreatedSuccessfully(newId))
                 },
                 onFailure = { error ->

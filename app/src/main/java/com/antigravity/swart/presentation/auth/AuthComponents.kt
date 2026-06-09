@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
@@ -21,9 +22,62 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.antigravity.swart.presentation.theme.*
+
+/**
+ * Logo "SWART" dinámico:
+ *  - Interesado seleccionado → letras SW/RT en azul, A+icono en rosa
+ *  - Artista seleccionado   → letras SW/RT en rosa, A+icono en azul
+ */
+@Composable
+fun SwartLogo(
+    activeRole: String,
+    fontSize: TextUnit = 48.sp
+) {
+    val mainColor   = if (activeRole == "artista") ArtistaGradientStart else InteresadoGradientStart
+    val accentColor = if (activeRole == "artista") InteresadoGradientStart else ArtistaGradientStart
+    val iconSize    = (fontSize.value * 0.28f).dp
+
+    Row(
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "SW",
+            color = mainColor,
+            fontSize = fontSize,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 0.sp
+        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = null,
+                tint = accentColor,
+                modifier = Modifier.size(iconSize)
+            )
+            Text(
+                text = "A",
+                color = accentColor,
+                fontSize = fontSize,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 0.sp
+            )
+        }
+        Text(
+            text = "RT",
+            color = mainColor,
+            fontSize = fontSize,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 0.sp
+        )
+    }
+}
 
 @Composable
 fun AuthField(

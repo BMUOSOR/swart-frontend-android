@@ -60,12 +60,22 @@ fun MyExhibitionsScreen(
 
     // Color definitions
     val DeepNavyBackground = Color(0xFF0B0D17) // Fondo azul marino casi negro
-    val LilaAccent = Color(0xFF8B5CF6) // Morado/lila neón
+    val LilaAccent = Color(0xFFEC4899) // Rosa
     val CardNavyBackground = Color(0xFF161925) // Fondo oscuro de las tarjetas
     val TextGrayLight = Color(0xFFA0A0AB) // Gris claro para los subtítulos
 
     Scaffold(
         containerColor = DeepNavyBackground,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToCreate,
+                containerColor = Color(0xFFEC4899),
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Nueva exposición")
+            }
+        },
         bottomBar = {
             SwartBottomNav(
                 userType = UserType.ARTIST,
@@ -78,8 +88,7 @@ fun MyExhibitionsScreen(
                         "perfil" -> onNavigateToProfile()
                         "mensajes" -> onNavigateToMensajes()
                     }
-                },
-                onFabClick = onNavigateToCreate
+                }
             )
         }
     ) { paddingValues ->
@@ -161,23 +170,24 @@ fun MyExhibitionsScreen(
                         }
                     } else {
                         exhibitions.forEach { exhibition ->
-                            val isActive = remember(exhibition.fechaFin) {
-                                val fechaFinStr = exhibition.fechaFin
-                                if (fechaFinStr == null) {
-                                    true
-                                } else {
-                                    try {
-                                        val endDate = LocalDate.parse(fechaFinStr)
-                                        !endDate.isBefore(LocalDate.now())
-                                    } catch (e: Exception) {
-                                        true
+                            val status = remember(exhibition.fechaInicio, exhibition.fechaFin) {
+                                try {
+                                    val today = LocalDate.now()
+                                    val start = exhibition.fechaInicio?.let { LocalDate.parse(it) }
+                                    val end   = exhibition.fechaFin?.let   { LocalDate.parse(it) }
+                                    when {
+                                        start != null && today.isBefore(start) -> "PRÓXIMA"
+                                        end   != null && today.isAfter(end)    -> "FINALIZADA"
+                                        else -> "ACTIVA"
                                     }
+                                } catch (e: Exception) {
+                                    "ACTIVA"
                                 }
                             }
 
                             ExhibitionItemCard(
                                 exhibition = exhibition,
-                                isActive = isActive,
+                                status = status,
                                 lilaAccent = LilaAccent,
                                 cardBackground = CardNavyBackground,
                                 textGrayLight = TextGrayLight,
@@ -201,7 +211,7 @@ fun MyExhibitionsScreen(
             text = { Text(successMessage, color = Color(0xFF8B8FA8)) },
             confirmButton = {
                 TextButton(onClick = onClearSuccessMessage) {
-                    Text("Aceptar", color = Color(0xFF8B5CF6), fontWeight = FontWeight.Bold)
+                    Text("Aceptar", color = Color(0xFFEC4899), fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -211,7 +221,7 @@ fun MyExhibitionsScreen(
 @Composable
 fun ExhibitionItemCard(
     exhibition: Exhibition,
-    isActive: Boolean,
+    status: String,
     lilaAccent: Color,
     cardBackground: Color,
     textGrayLight: Color,
@@ -220,10 +230,21 @@ fun ExhibitionItemCard(
 ) {
     val dateText = "${exhibition.fechaInicio ?: ""} - ${exhibition.fechaFin ?: ""} • ${exhibition.nombreLugar ?: "Galería Sol"}"
 
+    val badgeColor = when (status) {
+        "ACTIVA"     -> Color(0xFF10B981) // verde
+        "PRÓXIMA"    -> Color(0xFF6366F1) // índigo
+        else         -> Color(0xFF6B7280) // gris (FINALIZADA)
+    }
+    val cardBorder = when (status) {
+        "ACTIVA"  -> BorderStroke(1.dp, lilaAccent.copy(alpha = 0.5f))
+        "PRÓXIMA" -> BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.5f))
+        else      -> null
+    }
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = cardBackground),
-        border = if (isActive) BorderStroke(1.dp, lilaAccent.copy(alpha = 0.5f)) else null,
+        border = cardBorder,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -267,12 +288,12 @@ fun ExhibitionItemCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isActive) Color(0xFF10B981) else Color(0xFF6B7280))
+                            .background(badgeColor)
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (isActive) "ACTIVA" else "FINALIZADA",
+                            text = status,
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
@@ -347,39 +368,18 @@ fun ExhibitionItemCard(
                             )
                     )
 
-                    // Texto superpuesto inferior izquierdo + lápiz edición translúcido
-                    Row(
+                    // Texto superpuesto inferior izquierdo
+                    Text(
+                        text = artwork1?.title ?: "Obra 1",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = artwork1?.title ?: "Obra 1",
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.5f))
-                                .clickable { /* Editar obra 1 */ },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Editar obra",
-                                tint = Color.White.copy(alpha = 0.8f),
-                                modifier = Modifier.size(8.dp)
-                            )
-                        }
-                    }
+                            .padding(6.dp)
+                    )
                 }
 
                 // Imagen Centro (obra 2 de la expo)
@@ -432,24 +432,6 @@ fun ExhibitionItemCard(
                             .padding(6.dp)
                     )
 
-                    // Icono de lápiz translúcido en esquina superior derecha
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(6.dp)
-                            .size(14.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.5f))
-                            .clickable { /* Editar obra 2 */ },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Editar obra",
-                            tint = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.size(8.dp)
-                        )
-                    }
                 }
 
                 // Bloque Derecho (Texto centrado verticalmente)

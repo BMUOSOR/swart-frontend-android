@@ -15,6 +15,8 @@ interface ExhibitionRepository {
     suspend fun getFeed(): Result<List<Exhibition>>
     suspend fun getMapPins(): Result<List<MapPin>>
     suspend fun getDiscoverFeed(userId: Long): Result<List<DiscoverArtwork>>
+    suspend fun getLikedArtworks(userId: Long): Result<List<DiscoverArtwork>>
+    suspend fun removeLike(userId: Long, obraId: Long): Result<Unit>
     suspend fun recordSwipe(userId: Long, artworkId: Long, liked: Boolean, matchScore: Double): Result<Unit>
     suspend fun getArtistProfile(id: Long): Result<ArtistProfile>
     suspend fun followArtist(artistId: Long, userId: Long): Result<Boolean>
@@ -33,9 +35,16 @@ interface ExhibitionRepository {
     suspend fun respondInvitation(invitationId: Long, accept: Boolean): Result<Boolean>
     suspend fun getArtists(userId: Long): Result<List<com.antigravity.swart.data.remote.dto.ArtistFollowDto>>
     suspend fun uploadImage(filePart: MultipartBody.Part): Result<String>
-    suspend fun startChat(senderId: Long, receiverId: Long, initialMessage: String, urlImagenObra: String?): Result<Long>
+    suspend fun updateAvatar(userId: Long, imageUrl: String): Result<Unit>
+    suspend fun startChat(senderId: Long, receiverId: Long, initialMessage: String? = null, urlImagenObra: String? = null): Result<Long>
     suspend fun getConversations(userId: Long): Result<List<com.antigravity.swart.domain.model.Conversation>>
     suspend fun getChatMessages(chatId: Long): Result<List<com.antigravity.swart.domain.model.Message>>
     suspend fun sendChatMessage(chatId: Long, senderId: Long, contenido: String): Result<Boolean>
+    suspend fun reverseGeocode(lat: Double, lon: Double): Result<com.antigravity.swart.domain.model.GeocodingResult>
+    suspend fun getEmptyBalizas(): Result<List<com.antigravity.swart.domain.model.EmptyBaliza>>
+    suspend fun createEmptyBaliza(lat: Double, lon: Double): Result<com.antigravity.swart.domain.model.EmptyBaliza>
+    suspend fun deleteEmptyBaliza(id: Long): Result<Boolean>
+    suspend fun updateArtistProfile(id: Long, bio: String?, instagram: String?, twitter: String?, correo: String?): Result<Boolean>
+    suspend fun incrementExhibitionView(id: Long): Result<Boolean>
 }
 

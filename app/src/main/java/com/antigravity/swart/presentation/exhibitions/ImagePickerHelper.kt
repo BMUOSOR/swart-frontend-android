@@ -78,7 +78,7 @@ fun ImageSourceSelectorDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Galería de fotos", color = Color(0xFF7B2FFF), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("Galería de fotos", color = Color(0xFFEC4899), fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
                 TextButton(
                     onClick = {
@@ -88,7 +88,7 @@ fun ImageSourceSelectorDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Hacer foto (Cámara)", color = Color(0xFF7B2FFF), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("Hacer foto (Cámara)", color = Color(0xFFEC4899), fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
             }
         },

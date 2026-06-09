@@ -17,6 +17,7 @@ import com.antigravity.swart.presentation.home.components.ExhibitionCard
 import com.antigravity.swart.presentation.home.components.ExhibitionMasonryGrid
 import com.antigravity.swart.presentation.home.components.HomeTopBar
 import com.antigravity.swart.presentation.home.components.SearchBarComponent
+import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 import com.antigravity.swart.presentation.theme.DarkBackground
 import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
@@ -30,6 +31,7 @@ fun HomeScreen(
     onNavigateToMap: (String) -> Unit = {},
     onNavigateToObras: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
+    onNavigateToFavoritos: () -> Unit = {},
     onNavigateToCreate: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
@@ -61,6 +63,8 @@ fun HomeScreen(
                         onNavigateToObras()
                     } else if (it == "mensajes") {
                         onNavigateToMensajes()
+                    } else if (it == "favoritos") {
+                        onNavigateToFavoritos()
                     } else if (it == "perfil") {
                         onLogout()
                     }
@@ -80,7 +84,8 @@ fun HomeScreen(
             SearchBarComponent(
                 query = searchQuery,
                 onQueryChange = { viewModel.onSearchQueryChanged(it) },
-                onFilterClick = { showFilterSheet = true }
+                onFilterClick = { showFilterSheet = true },
+                accentColor = if (userType == UserType.ARTIST) ArtistaGradientStart else InteresadoGradientStart
             )
             
             if (showFilterSheet) {
@@ -90,6 +95,7 @@ fun HomeScreen(
                     initialArtistName = filterArtistName,
                     initialSelectedTag = selectedTag,
                     initialArtworkTag = filterArtworkTag,
+                    accentColor = if (userType == UserType.ARTIST) ArtistaGradientStart else InteresadoGradientStart,
                     onDismissRequest = { showFilterSheet = false },
                     onApplyFilters = { startDate, endDate, artistName, tag, artworkTag ->
                         viewModel.applyFilters(startDate, endDate, artistName, tag, artworkTag)

@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 import com.antigravity.swart.presentation.theme.CardBackground
 import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
@@ -45,6 +46,7 @@ fun SwartBottomNav(
                     label = "Inicio",
                     selected = currentRoute == "home",
                     onClick = { onNavigate("home") },
+                    selectedColor = ArtistaGradientStart,
                     modifier = Modifier.weight(1f)
                 )
                 BottomNavItem(
@@ -52,17 +54,25 @@ fun SwartBottomNav(
                     label = "Obras",
                     selected = currentRoute == "obras",
                     onClick = { onNavigate("obras") },
+                    selectedColor = ArtistaGradientStart,
                     modifier = Modifier.weight(1f)
                 )
-                
-                // Espacio vacío para el FAB central
-                Spacer(modifier = Modifier.weight(1f))
-                
+
+                BottomNavItem(
+                    icon = Icons.Filled.Place,
+                    label = "Mapa",
+                    selected = currentRoute == "mapa",
+                    onClick = { onNavigate("mapa") },
+                    selectedColor = ArtistaGradientStart,
+                    modifier = Modifier.weight(1f)
+                )
+
                 BottomNavItem(
                     icon = Icons.Outlined.Email,
                     label = "Mensajes",
                     selected = currentRoute == "mensajes",
                     onClick = { onNavigate("mensajes") },
+                    selectedColor = ArtistaGradientStart,
                     modifier = Modifier.weight(1f)
                 )
                 BottomNavItem(
@@ -70,6 +80,7 @@ fun SwartBottomNav(
                     label = "Perfil",
                     selected = currentRoute == "perfil",
                     onClick = { onNavigate("perfil") },
+                    selectedColor = ArtistaGradientStart,
                     modifier = Modifier.weight(1f)
                 )
             } else {
@@ -100,7 +111,6 @@ fun SwartBottomNav(
                     label = "Favoritos",
                     selected = currentRoute == "favoritos",
                     onClick = { onNavigate("favoritos") },
-                    tint = Color.Red, // Favoritos en rojo según la imagen
                     modifier = Modifier.weight(1f)
                 )
                 BottomNavItem(
@@ -113,21 +123,6 @@ fun SwartBottomNav(
             }
         }
 
-        // FAB Central (Solo para Artistas)
-        if (userType == UserType.ARTIST) {
-            FloatingActionButton(
-                onClick = onFabClick,
-                modifier = Modifier
-                    .align(Alignment.TopCenter) // Flota sobre la barra
-                    .offset(y = (-24).dp) // Lo subimos un poco
-                    .size(56.dp),
-                shape = CircleShape,
-                containerColor = InteresadoGradientStart,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Artwork")
-            }
-        }
     }
 }
 
@@ -138,8 +133,9 @@ fun BottomNavItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tint: Color = if (selected) InteresadoGradientStart else Color.Gray
+    selectedColor: Color = InteresadoGradientStart
 ) {
+    val tint = if (selected) selectedColor else Color.Gray
     Column(
         modifier = modifier.padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

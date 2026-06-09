@@ -16,8 +16,10 @@ import retrofit2.http.Body
 import com.antigravity.swart.data.remote.dto.UpdateExhibitionRequest
 import com.antigravity.swart.data.remote.dto.ArtworkDetailDto
 import com.antigravity.swart.data.remote.dto.UpdateArtworkRequest
+import com.antigravity.swart.data.remote.dto.UpdateArtistProfileRequest
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -35,6 +37,15 @@ interface SwartApi {
 
     @GET("api/users/{id}/discover")
     suspend fun getDiscoverFeed(@Path("id") userId: Long): List<DiscoverArtworkDto>
+
+    @GET("api/users/{id}/likes")
+    suspend fun getLikedArtworks(@Path("id") userId: Long): List<DiscoverArtworkDto>
+
+    @DELETE("api/users/{userId}/likes/{obraId}")
+    suspend fun removeLike(
+        @Path("userId") userId: Long,
+        @Path("obraId") obraId: Long
+    ): Response<Map<String, Boolean>>
 
     @POST("api/swipes")
     suspend fun recordSwipe(@Body request: SwipeRequestDto): Response<Map<String, String>>
@@ -57,8 +68,17 @@ interface SwartApi {
         @Query("userId") userId: Long
     ): Map<String, Boolean>
 
+    @PATCH("api/artists/{id}")
+    suspend fun updateArtistProfile(
+        @Path("id") artistId: Long,
+        @Body body: UpdateArtistProfileRequest
+    ): Map<String, Boolean>
+
     @GET("api/artists/{id}/mutuals")
     suspend fun getMutuals(@Path("id") artistId: Long): List<MutualArtistDto>
+
+    @POST("api/exhibitions/{id}/view")
+    suspend fun incrementExhibitionView(@Path("id") id: Long): Map<String, Boolean>
 
     @GET("api/exhibitions/{id}")
     suspend fun getExhibitionDetail(@Path("id") id: Long): ExhibitionDetailDto
@@ -95,6 +115,12 @@ interface SwartApi {
         @Query("address") address: String
     ): com.antigravity.swart.data.remote.dto.GeocodingResultDto
 
+    @GET("api/map/reverse-geocode")
+    suspend fun reverseGeocode(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double
+    ): com.antigravity.swart.data.remote.dto.GeocodingResultDto
+
     @GET("api/invitations/{userId}")
     suspend fun getInvitations(@Path("userId") userId: Long): List<InvitationDto>
 
@@ -122,4 +148,21 @@ interface SwartApi {
     @Multipart
     @POST("api/upload")
     suspend fun uploadImage(@Part file: MultipartBody.Part): Map<String, String>
+
+    @PUT("api/users/{id}/avatar")
+    suspend fun updateAvatar(
+        @Path("id") userId: Long,
+        @Body body: Map<String, String>
+    ): Map<String, String>
+
+    @GET("api/map/balizas-vacias")
+    suspend fun getEmptyBalizas(): List<com.antigravity.swart.data.remote.dto.EmptyBalizaDto>
+
+    @POST("api/map/baliza-vacia")
+    suspend fun createEmptyBaliza(
+        @Body body: com.antigravity.swart.data.remote.dto.EmptyBalizaRequest
+    ): com.antigravity.swart.data.remote.dto.EmptyBalizaDto
+
+    @DELETE("api/map/baliza-vacia/{id}")
+    suspend fun deleteEmptyBaliza(@Path("id") id: Long): Map<String, Boolean>
 }

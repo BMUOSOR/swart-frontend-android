@@ -49,15 +49,13 @@ fun SwapScreen(
     onNavigateToMap: () -> Unit,
     onNavigateToObras: () -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
+    onNavigateToFavoritos: () -> Unit = {},
     onNavigateToCreate: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val artworks = uiState.artworks
-
-
-    var currentIndex by remember { mutableStateOf(0) }
 
     Scaffold(
         containerColor = DarkBackground,
@@ -74,6 +72,7 @@ fun SwapScreen(
                         "mapa" -> onNavigateToMap()
                         "obras" -> onNavigateToObras()
                         "mensajes" -> onNavigateToMensajes()
+                        "favoritos" -> onNavigateToFavoritos()
                         "perfil" -> onLogout()
                     }
                 },
@@ -90,17 +89,19 @@ fun SwapScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = ArtistaGradientStart)
                 }
-            } else if (currentIndex < artworks.size) {
-                val artwork = artworks[currentIndex]
+            } else if (artworks.isNotEmpty()) {
+                // Siempre mostramos artworks[0]. El ViewModel elimina la obra cuando se swipea,
+                // de modo que el "siguiente" pasa a ser el nuevo índice 0 sin resetear estado.
+                val artwork = artworks[0]
 
                 val offsetX = remember { Animatable(0f) }
                 val offsetY = remember { Animatable(0f) }
                 val rotation = remember { Animatable(0f) }
                 val scope = rememberCoroutineScope()
 
-                // Animación de opacidad para el nombre del artista
-                val alpha = remember(currentIndex) { Animatable(0f) }
-                LaunchedEffect(currentIndex) {
+                // Animación de opacidad — se resetea cada vez que cambia la obra mostrada
+                val alpha = remember(artwork.id) { Animatable(0f) }
+                LaunchedEffect(artwork.id) {
                     alpha.animateTo(1f, animationSpec = tween(800))
                 }
 
@@ -113,20 +114,15 @@ fun SwapScreen(
                 // Función de helper para avanzar la carta
                 fun swipeCard(isRight: Boolean) {
                     scope.launch {
-                        // Animamos la tarjeta primero para que la UI responda de inmediato
+                        // 1. Animar la tarjeta fuera de pantalla
                         val targetX = if (isRight) 1000f else -1000f
                         offsetX.animateTo(targetX)
-                        
-                        // Grabamos el swipe y ESPERAMOS a que termine en el backend
+
+                        // 2. El ViewModel elimina la obra de la lista, registra en servidor
+                        //    y carga más si quedan pocas — todo en orden garantizado
                         viewModel.recordSwipe(artwork, isRight)
-                        
-                        currentIndex++
-                        
-                        // LUEGO pedimos más feed, garantizando que el backend ya consideró el swipe anterior
-                        if (currentIndex >= artworks.size - 3) {
-                            viewModel.loadMoreFeed()
-                        }
-                        
+
+                        // 3. Resetear animación para la nueva carta (que ya es artworks[0])
                         offsetX.snapTo(0f)
                         offsetY.snapTo(0f)
                         rotation.snapTo(0f)
@@ -146,7 +142,7 @@ fun SwapScreen(
                         .graphicsLayer {
                             rotationZ = rotation.value
                         }
-                        .pointerInput(currentIndex) {
+                        .pointerInput(artwork.id) {
                             detectDragGestures(
                                 onDragEnd = {
                                     scope.launch {
@@ -458,10 +454,7 @@ fun SwapScreen(
                         Text("No hay más obras por descubrir.", color = Color.White)
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { 
-                                viewModel.loadFeed()
-                                currentIndex = 0
-                            },
+                            onClick = { viewModel.loadFeed() },
                             colors = ButtonDefaults.buttonColors(containerColor = ArtistaGradientStart)
                         ) {
                             Text("Buscar más obras")

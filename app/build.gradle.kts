@@ -66,6 +66,9 @@ dependencies {
     // Coil
     implementation("io.coil-kt:coil-compose:2.5.0")
 
+    // uCrop — image cropper
+    implementation("com.github.yalantis:ucrop:2.2.9")
+
     // Material Icons Extended (for icons like Explore, Whatshot, etc.)
     implementation("androidx.compose.material:material-icons-extended")
     

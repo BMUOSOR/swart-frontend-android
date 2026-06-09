@@ -25,6 +25,7 @@ import androidx.navigation.navArgument
 import com.antigravity.swart.presentation.exhibitions.EditExhibitionScreen
 import com.antigravity.swart.presentation.exhibitions.EditArtworkScreen
 import com.antigravity.swart.presentation.chat.ChatScreen
+import com.antigravity.swart.presentation.favorites.FavoritosScreen
 
 @Composable
 fun AppNavigation() {
@@ -96,7 +97,14 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateToMensajes = {
-                    navController.navigate("mensajes") {
+                    navController.navigate("mensajes/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToFavoritos = {
+                    navController.navigate("favoritos/$role") {
                         popUpTo("home/$role") { saveState = true }
                         launchSingleTop = true
                         restoreState = true
@@ -133,10 +141,13 @@ fun AppNavigation() {
                     navController.navigate("mapa/$role?exhibitionId=$id")
                 },
                 onNavigate = { target ->
-                    navController.navigate("$target/$role") {
-                        popUpTo("home/$role") { saveState = true }
+                    val route = when (target) {
+                        "descubrir" -> "swap"
+                        else        -> target
+                    }
+                    navController.navigate("$route/$role") {
+                        popUpTo("home/$role") { inclusive = false }
                         launchSingleTop = true
-                        restoreState = true
                     }
                 }
             )
@@ -183,7 +194,14 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateToMensajes = {
-                    navController.navigate("mensajes") {
+                    navController.navigate("mensajes/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToFavoritos = {
+                    navController.navigate("favoritos/$role") {
                         popUpTo("home/$role") { saveState = true }
                         launchSingleTop = true
                         restoreState = true
@@ -236,7 +254,14 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateToMensajes = {
-                    navController.navigate("mensajes") {
+                    navController.navigate("mensajes/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToFavoritos = {
+                    navController.navigate("favoritos/$role") {
                         popUpTo("home/$role") { saveState = true }
                         launchSingleTop = true
                         restoreState = true
@@ -247,6 +272,9 @@ fun AppNavigation() {
                 },
                 onNavigateToCreate = {
                     navController.navigate("create_exhibition")
+                },
+                onNavigateToCreateExhibition = { lat, lon, balizaId ->
+                    navController.navigate("create_exhibition?lat=$lat&lon=$lon&balizaId=$balizaId")
                 },
                 exhibitionIdToSelect = exhibitionId
             )
@@ -262,33 +290,35 @@ fun AppNavigation() {
                 },
                 onNavigateToSwap = {
                     navController.navigate("swap/$role") {
-                        popUpTo("home/$role") { saveState = true }
+                        popUpTo("home/$role") { inclusive = false }
                         launchSingleTop = true
-                        restoreState = true
                     }
                 },
                 onNavigateToMap = {
                     navController.navigate("mapa/$role") {
-                        popUpTo("home/$role") { saveState = true }
+                        popUpTo("home/$role") { inclusive = false }
                         launchSingleTop = true
-                        restoreState = true
                     }
                 },
                 onNavigateToObras = {
                     navController.navigate("obras/$role") {
-                        popUpTo("home/$role") { saveState = true }
+                        popUpTo("home/$role") { inclusive = false }
                         launchSingleTop = true
-                        restoreState = true
                     }
                 },
                 onNavigateToFavorites = {
+                    navController.navigate("favoritos/$role") {
+                        popUpTo("home/$role") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToArtistas = {
                     navController.navigate("artistas")
                 },
                 onNavigateToMensajes = {
-                    navController.navigate("mensajes") {
-                        popUpTo("home/$role") { saveState = true }
+                    navController.navigate("mensajes/$role") {
+                        popUpTo("home/$role") { inclusive = false }
                         launchSingleTop = true
-                        restoreState = true
                     }
                 },
                 onNavigateToArtistProfile = { artistId ->
@@ -340,7 +370,7 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateToMensajes = {
-                    navController.navigate("mensajes") {
+                    navController.navigate("mensajes/$role") {
                         popUpTo("home/$role") { saveState = true }
                         launchSingleTop = true
                         restoreState = true
@@ -459,7 +489,14 @@ fun AppNavigation() {
         }
 
         // ─── NUEVA EXPO ───────────────────────────────────────────────────────
-        composable("create_exhibition") {
+        composable(
+            route = "create_exhibition?lat={lat}&lon={lon}&balizaId={balizaId}",
+            arguments = listOf(
+                navArgument("lat") { type = NavType.StringType; defaultValue = "" },
+                navArgument("lon") { type = NavType.StringType; defaultValue = "" },
+                navArgument("balizaId") { type = NavType.StringType; defaultValue = "-1" }
+            )
+        ) {
             val role = "artista"
             com.antigravity.swart.presentation.exhibitions.CreateExhibitionScreen(
                 onBack = { navController.popBackStack() },
@@ -483,7 +520,7 @@ fun AppNavigation() {
                     navController.navigate("obras/$role") { popUpTo("obras/$role") { inclusive = true } }
                 },
                 onNavigateToMensajes = {
-                    navController.navigate("mensajes") {
+                    navController.navigate("mensajes/$role") {
                         popUpTo("home/$role") { saveState = true }
                         launchSingleTop = true
                         restoreState = true
@@ -522,10 +559,14 @@ fun AppNavigation() {
             )
         }
 
-        // ─── INVITACIONES ─────────────────────────────────────────────────────
-        composable("mensajes") {
-            val role = "artista"
+        // ─── MENSAJES / INVITACIONES ──────────────────────────────────────────
+        composable(
+            route = "mensajes/{role}",
+            arguments = listOf(navArgument("role") { type = NavType.StringType; defaultValue = "artista" })
+        ) { backStackEntry ->
+            val role = backStackEntry.arguments?.getString("role") ?: "artista"
             com.antigravity.swart.presentation.exhibitions.InvitationsScreen(
+                role = role,
                 onBack = { navController.popBackStack() },
                 onNavigateHome = {
                     navController.navigate("home/$role") { popUpTo("home/$role") { inclusive = true } }
@@ -541,6 +582,9 @@ fun AppNavigation() {
                 },
                 onNavigateToObras = {
                     navController.navigate("obras/$role") { popUpTo("obras/$role") { inclusive = true } }
+                },
+                onNavigateToFavoritos = {
+                    navController.navigate("favoritos/$role") { popUpTo("home/$role") { saveState = true }; launchSingleTop = true; restoreState = true }
                 },
                 onNavigateToCreate = {
                     navController.navigate("create_exhibition")
@@ -565,7 +609,60 @@ fun AppNavigation() {
         // ─── ARTISTAS SEGUIDOS ───────────────────────────────────────────────
         composable("artistas") {
             ArtistsListScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToArtistProfile = { artistId ->
+                    navController.navigate("artist_profile/$artistId")
+                },
+                onNavigateToChat = { chatId ->
+                    navController.navigate("chat/$chatId")
+                }
+            )
+        }
+
+        // ─── FAVORITOS ────────────────────────────────────────────────────────
+        composable("favoritos/{role}") { backStackEntry ->
+            val role = backStackEntry.arguments?.getString("role") ?: "interesado"
+            FavoritosScreen(
+                role = role,
+                onNavigateHome = {
+                    navController.navigate("home/$role") {
+                        popUpTo("home/$role") { inclusive = true }
+                    }
+                },
+                onNavigateToSwap = {
+                    navController.navigate("swap/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToMap = {
+                    navController.navigate("mapa/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToDetail = { exhibitionId ->
+                    navController.navigate("detail/$exhibitionId?role=$role")
+                },
+                onNavigateToChat = { chatId ->
+                    navController.navigate("chat/$chatId")
+                },
+                onNavigateToMensajes = {
+                    navController.navigate("mensajes/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onLogout = {
+                    navController.navigate("perfil/$role") {
+                        popUpTo("home/$role") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             )
         }
     }

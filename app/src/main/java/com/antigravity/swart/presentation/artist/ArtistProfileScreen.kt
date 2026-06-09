@@ -1,5 +1,7 @@
 package com.antigravity.swart.presentation.artist
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -51,6 +53,9 @@ fun ArtistProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isFollowing by viewModel.isFollowing.collectAsState()
+    val isSavingProfile by viewModel.isSavingProfile.collectAsState()
+
+    var showEditProfileDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = NavyBackground
@@ -88,6 +93,7 @@ fun ArtistProfileScreen(
                         onBack = onBack,
                         onNavigateToDetail = onNavigateToDetail,
                         onFollowToggle = { viewModel.toggleFollow() },
+                        onEditProfileClick = { showEditProfileDialog = true },
                         onInquiryClick = { work ->
                             selectedWorkForInquiry = work
                             showInquiryDialog = true
@@ -98,6 +104,108 @@ fun ArtistProfileScreen(
                             }
                         }
                     )
+
+                    // Diálogo de edición de perfil
+                    if (showEditProfileDialog) {
+                        var bioInput       by remember { mutableStateOf(state.profile.bio ?: "") }
+                        var instagramInput by remember { mutableStateOf(state.profile.instagram ?: "") }
+                        var twitterInput   by remember { mutableStateOf(state.profile.twitter ?: "") }
+                        var correoInput    by remember { mutableStateOf(state.profile.correo ?: "") }
+
+                        AlertDialog(
+                            onDismissRequest = { if (!isSavingProfile) showEditProfileDialog = false },
+                            containerColor = Color(0xFF161925),
+                            title = {
+                                Text("Editar perfil", color = Color.White, fontWeight = FontWeight.Bold)
+                            },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    OutlinedTextField(
+                                        value = bioInput,
+                                        onValueChange = { bioInput = it },
+                                        label = { Text("Biografía", color = Color(0xFF9CA3AF)) },
+                                        minLines = 3,
+                                        maxLines = 5,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            focusedBorderColor = PremiumPink,
+                                            unfocusedBorderColor = Color(0xFF374151)
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    OutlinedTextField(
+                                        value = instagramInput,
+                                        onValueChange = { instagramInput = it },
+                                        label = { Text("Instagram (@usuario)", color = Color(0xFF9CA3AF)) },
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            focusedBorderColor = PremiumPink,
+                                            unfocusedBorderColor = Color(0xFF374151)
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    OutlinedTextField(
+                                        value = twitterInput,
+                                        onValueChange = { twitterInput = it },
+                                        label = { Text("Twitter / X (@usuario)", color = Color(0xFF9CA3AF)) },
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            focusedBorderColor = PremiumPink,
+                                            unfocusedBorderColor = Color(0xFF374151)
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    OutlinedTextField(
+                                        value = correoInput,
+                                        onValueChange = { correoInput = it },
+                                        label = { Text("Correo de contacto", color = Color(0xFF9CA3AF)) },
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            focusedBorderColor = PremiumPink,
+                                            unfocusedBorderColor = Color(0xFF374151)
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        viewModel.updateProfile(
+                                            bio       = bioInput.ifBlank { null },
+                                            instagram = instagramInput.ifBlank { null },
+                                            twitter   = twitterInput.ifBlank { null },
+                                            correo    = correoInput.ifBlank { null }
+                                        )
+                                        showEditProfileDialog = false
+                                    },
+                                    enabled = !isSavingProfile
+                                ) {
+                                    if (isSavingProfile) {
+                                        CircularProgressIndicator(
+                                            color = PremiumPink,
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Text("Guardar", color = PremiumPink, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showEditProfileDialog = false }) {
+                                    Text("Cancelar", color = Color.Gray)
+                                }
+                            }
+                        )
+                    }
 
                     if (showInquiryDialog && selectedWorkForInquiry != null) {
                         val work = selectedWorkForInquiry!!
@@ -159,6 +267,7 @@ fun ArtistProfileContent(
     onBack: () -> Unit,
     onNavigateToDetail: (Long) -> Unit = {},
     onFollowToggle: () -> Unit,
+    onEditProfileClick: () -> Unit = {},
     onInquiryClick: (ArtworkForSale) -> Unit = {},
     onChatClick: () -> Unit = {}
 ) {
@@ -197,7 +306,21 @@ fun ArtistProfileContent(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconButton(
-                    onClick = { /* Compartir */ },
+                    onClick = {
+                        val nombreCompleto = "${profile.nombre} ${profile.apellidos ?: ""}".trim()
+                        val sb = StringBuilder()
+                        sb.appendLine("¡Mira este artista en SWART!")
+                        sb.appendLine(nombreCompleto)
+                        profile.bio?.let { sb.appendLine("\"$it\"") }
+                        profile.instagram?.let { sb.appendLine("Instagram: @${it.trimStart('@')}") }
+                        profile.twitter?.let { sb.appendLine("Twitter/X: @${it.trimStart('@')}") }
+                        profile.correo?.let { sb.appendLine("Correo: $it") }
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, sb.toString().trimEnd())
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Compartir artista"))
+                    },
                     modifier = Modifier
                         .size(44.dp)
                         .background(NavyCardBackground, CircleShape)
@@ -210,7 +333,20 @@ fun ArtistProfileContent(
                     )
                 }
 
-                if (!isOwnProfile) {
+                if (isOwnProfile) {
+                    IconButton(
+                        onClick = onEditProfileClick,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(PremiumPink, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar perfil",
+                            tint = Color.White
+                        )
+                    }
+                } else {
                     IconButton(
                         onClick = onFollowToggle,
                         modifier = Modifier
@@ -238,41 +374,21 @@ fun ArtistProfileContent(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
-                modifier = Modifier.size(130.dp),
-                contentAlignment = Alignment.BottomEnd
+                modifier = Modifier
+                    .size(130.dp)
+                    .border(4.dp, accentGradient, CircleShape)
+                    .padding(4.dp)
+                    .clip(CircleShape)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .border(4.dp, accentGradient, CircleShape)
-                        .padding(4.dp)
-                        .clip(CircleShape)
-                ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(profile.avatarUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Foto de perfil",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(accentGradient, CircleShape)
-                        .border(2.dp, NavyBackground, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Verificado",
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(profile.avatarUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Foto de perfil",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -420,18 +536,46 @@ fun ArtistProfileContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         // 5. Redes Sociales
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            profile.instagram?.let { SocialMediaButton(icon = Icons.Default.CameraAlt, description = "Instagram") }
-            Spacer(modifier = Modifier.width(16.dp))
-            profile.twitter?.let { SocialMediaButton(icon = Icons.Default.AlternateEmail, description = "Twitter") }
-            Spacer(modifier = Modifier.width(16.dp))
-            SocialMediaButton(icon = Icons.Default.Public, description = "Web")
-            Spacer(modifier = Modifier.width(16.dp))
-            profile.correo?.let { SocialMediaButton(icon = Icons.Default.Email, description = "Correo") }
+        val hasAnySocial = profile.instagram != null || profile.twitter != null || profile.correo != null
+        if (hasAnySocial) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                profile.instagram?.let { handle ->
+                    val url = if (handle.startsWith("http")) handle
+                              else "https://www.instagram.com/${handle.trimStart('@')}"
+                    SocialMediaButton(
+                        icon = Icons.Default.CameraAlt,
+                        description = "Instagram",
+                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                }
+                profile.twitter?.let { handle ->
+                    val url = if (handle.startsWith("http")) handle
+                              else "https://x.com/${handle.trimStart('@')}"
+                    SocialMediaButton(
+                        icon = Icons.Default.AlternateEmail,
+                        description = "Twitter / X",
+                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                }
+                profile.correo?.let { email ->
+                    SocialMediaButton(
+                        icon = Icons.Default.Email,
+                        description = "Correo",
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:$email")
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Enviar correo"))
+                        }
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -439,6 +583,9 @@ fun ArtistProfileContent(
         // 6. Exposiciones activas
         val allExpos = profile.activeExhibitions
         if (allExpos.isNotEmpty()) {
+            var showAllExpos by remember { mutableStateOf(false) }
+            val visibleExpos = if (showAllExpos || allExpos.size <= 2) allExpos else allExpos.take(2)
+
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
@@ -453,18 +600,20 @@ fun ArtistProfileContent(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        text = "Ver todas",
-                        color = PremiumPurple,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.clickable { /* Ver todas */ }
-                    )
+                    if (allExpos.size > 2) {
+                        Text(
+                            text = if (showAllExpos) "Ver menos" else "Ver todas (${allExpos.size})",
+                            color = PremiumPurple,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable { showAllExpos = !showAllExpos }
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                allExpos.forEach { exhibition ->
+                visibleExpos.forEach { exhibition ->
                     ExhibitionCardSpanish(
                         exhibition = exhibition,
                         context = context,
@@ -495,21 +644,6 @@ fun ArtistProfileContent(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
-                if (profile.worksForSale.isNotEmpty()) {
-                    IconButton(
-                        onClick = { /* Filtrar */ },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(NavyCardBackground, CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = "Filtro",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -553,14 +687,15 @@ fun ArtistProfileContent(
 @Composable
 fun SocialMediaButton(
     icon: ImageVector,
-    description: String
+    description: String,
+    onClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
             .size(48.dp)
             .background(NavyCardBackground, RoundedCornerShape(12.dp))
             .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
-            .clickable { /* Acción social */ },
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -695,13 +830,10 @@ fun ExhibitionCardSpanish(
 
                 if (isOwnProfile) {
                     Spacer(modifier = Modifier.height(12.dp))
-                    val interactions = (exhibition.id * 17 % 100) + 120
-                    val favorites = (exhibition.id * 11 % 50) + 30
-                    val tickets = (exhibition.id * 7 % 30) + 10
                     ExhibitionStatsRow(
-                        interactions = interactions.toInt(),
-                        favorites = favorites.toInt(),
-                        tickets = tickets.toInt()
+                        visitantes = exhibition.visitantes,
+                        favoritos = exhibition.favoritosCount,
+                        obras = exhibition.artworksCount
                     )
                 }
             }
@@ -786,9 +918,9 @@ fun WorkCardSpanish(
 
 @Composable
 fun ExhibitionStatsRow(
-    interactions: Int,
-    favorites: Int,
-    tickets: Int
+    visitantes: Long,
+    favoritos: Int,
+    obras: Int
 ) {
     Row(
         modifier = Modifier
@@ -800,61 +932,65 @@ fun ExhibitionStatsRow(
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Interacciones (Eye icon)
+        // Visitantes
+        StatItem(
+            icon = Icons.Default.RemoveRedEye,
+            label = "Visitas",
+            value = visitantes.toString(),
+            tint = PremiumPink
+        )
+
+        // Favoritos (likes en obras)
+        StatItem(
+            icon = Icons.Default.Favorite,
+            label = "Favoritos",
+            value = favoritos.toString(),
+            tint = PremiumPink
+        )
+
+        // Obras
+        StatItem(
+            icon = Icons.Default.Brush,
+            label = "Obras",
+            value = obras.toString(),
+            tint = PremiumPurple
+        )
+    }
+}
+
+@Composable
+private fun StatItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    tint: Color
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.RemoveRedEye,
-                contentDescription = "Interacciones",
-                tint = PremiumPink,
-                modifier = Modifier.size(18.dp)
+                imageVector = icon,
+                contentDescription = label,
+                tint = tint,
+                modifier = Modifier.size(16.dp)
             )
             Text(
-                text = "$interactions",
+                text = value,
                 color = Color.White,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
         }
-        
-        // Favoritos (Heart icon)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "Favoritos",
-                tint = PremiumPink,
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = "$favorites",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        
-        // Entradas compradas (Ticket/Confirmation icon)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ConfirmationNumber,
-                contentDescription = "Entradas",
-                tint = PremiumPurple,
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = "$tickets",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        Text(
+            text = label,
+            color = GrayTextDark,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium
+        )
     }
 }

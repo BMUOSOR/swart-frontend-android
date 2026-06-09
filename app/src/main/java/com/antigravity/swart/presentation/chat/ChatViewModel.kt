@@ -29,6 +29,7 @@ class ChatViewModel @Inject constructor(
     val chatId: Long get() = _chatId.value
 
     val currentUserId: Long = sessionManager.getUserId()
+    val currentUserRole: String = sessionManager.getRole()
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()

@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.antigravity.swart.domain.model.Message
+import com.antigravity.swart.presentation.theme.ArtistaGradientStart
+import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
 private val ChatNavyBg = Color(0xFF0B0D17)
 private val ChatCardBg = Color(0xFF161925)
@@ -49,6 +51,12 @@ fun ChatScreen(
     val otherUserNombre by viewModel.otherUserNombre.collectAsState()
     val otherUserAvatar by viewModel.otherUserAvatar.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+
+    // Colores de burbuja y botón según el rol del usuario actual
+    val isInteresado = viewModel.currentUserRole != "artista"
+    val myBubbleColor    = if (isInteresado) InteresadoGradientStart else ArtistaGradientStart
+    val otherBubbleColor = if (isInteresado) ArtistaGradientStart    else InteresadoGradientStart
+    val sendButtonColor  = myBubbleColor
 
     var typedMessage by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -160,7 +168,12 @@ fun ChatScreen(
                     ) {
                         items(messages) { message ->
                             val isOutgoing = message.idSender == viewModel.currentUserId
-                            MessageBubble(message = message, isOutgoing = isOutgoing)
+                            MessageBubble(
+                                message = message,
+                                isOutgoing = isOutgoing,
+                                outgoingColor = myBubbleColor,
+                                incomingColor = otherBubbleColor
+                            )
                         }
                     }
                 }
@@ -189,7 +202,7 @@ fun ChatScreen(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = ChatInputBg,
                             unfocusedContainerColor = ChatInputBg,
-                            focusedBorderColor = ChatNeonPurple.copy(alpha = 0.5f),
+                            focusedBorderColor = sendButtonColor.copy(alpha = 0.5f),
                             unfocusedBorderColor = Color.Transparent,
                             focusedTextColor = ChatTextLight,
                             unfocusedTextColor = ChatTextLight
@@ -206,7 +219,7 @@ fun ChatScreen(
                         },
                         modifier = Modifier
                             .size(48.dp)
-                            .background(ChatNeonPurple, CircleShape)
+                            .background(sendButtonColor, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Send,
@@ -224,16 +237,18 @@ fun ChatScreen(
 @Composable
 fun MessageBubble(
     message: Message,
-    isOutgoing: Boolean
+    isOutgoing: Boolean,
+    outgoingColor: Color = ChatNeonPurple,
+    incomingColor: Color = ChatCardBg
 ) {
     val alignment = if (isOutgoing) Alignment.CenterEnd else Alignment.CenterStart
-    val bubbleBgColor = if (isOutgoing) ChatNeonPurple else ChatCardBg
+    val bubbleBgColor = if (isOutgoing) outgoingColor else incomingColor
     val bubbleShape = if (isOutgoing) {
         RoundedCornerShape(16.dp, 16.dp, 0.dp, 16.dp)
     } else {
         RoundedCornerShape(16.dp, 16.dp, 16.dp, 0.dp)
     }
-    
+
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = alignment

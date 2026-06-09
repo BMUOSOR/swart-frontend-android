@@ -26,8 +26,11 @@ class DiscoverViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DiscoverUiState())
     val uiState: StateFlow<DiscoverUiState> = _uiState.asStateFlow()
 
-    private val currentUserId: Long 
+    private val currentUserId: Long
         get() = sessionManager.getUserId()
+
+    /** IDs ya likeados: nunca vuelven a aparecer en el mazo aunque el backend los devuelva. */
+    private val localLikedIds = mutableSetOf<Long>()
 
     init {
         loadFeed()
@@ -40,53 +43,68 @@ class DiscoverViewModel @Inject constructor(
                 onSuccess = { artworks ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        artworks = artworks
+                        artworks = artworks.filter { it.id !in localLikedIds }
                     )
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = error.message ?: "Error al cargar el feed de descubrimiento"
+                        error = error.message ?: "Error al cargar el feed"
                     )
                 }
             )
         }
     }
 
-    fun loadMoreFeed() {
-        // Prevent concurrent loads
+    private fun loadMoreFeed() {
         if (_uiState.value.isLoading) return
-        
-        // Don't show full loading spinner, just background load
         viewModelScope.launch {
             repository.getDiscoverFeed(currentUserId).fold(
                 onSuccess = { newArtworks ->
                     val currentIds = _uiState.value.artworks.map { it.id }.toSet()
-                    val uniqueNew = newArtworks.filter { it.id !in currentIds }
-                    
+                    val uniqueNew = newArtworks.filter {
+                        it.id !in currentIds && it.id !in localLikedIds
+                    }
                     if (uniqueNew.isNotEmpty()) {
                         _uiState.value = _uiState.value.copy(
                             artworks = _uiState.value.artworks + uniqueNew
                         )
                     }
                 },
-                onFailure = { 
-                    // Silent failure for background pagination
-                }
+                onFailure = { /* silent */ }
             )
         }
     }
 
+    /**
+     * Registra el swipe:
+     *  1. Elimina la obra de la lista de inmediato (el composable siempre mostrará artworks[0]).
+     *  2. Si es like, la añade a localLikedIds para que no reaparezca.
+     *  3. Envía el evento al servidor.
+     *  4. Si la lista queda pequeña, carga más en background.
+     */
     suspend fun recordSwipe(artwork: DiscoverArtwork, liked: Boolean) {
+        // 1. Eliminar de la lista local ANTES de esperar al servidor
+        _uiState.value = _uiState.value.copy(
+            artworks = _uiState.value.artworks.filter { it.id != artwork.id }
+        )
+        if (liked) localLikedIds.add(artwork.id)
+
+        // 2. Registrar en el servidor (await para que loadMore no devuelva la misma obra)
         repository.recordSwipe(currentUserId, artwork.id, liked, artwork.matchScore).fold(
             onSuccess = {
-                android.util.Log.d("DiscoverVM", "Swipe recorded successfully for artwork ${artwork.id}")
+                android.util.Log.d("DiscoverVM", "Swipe OK: ${artwork.id} liked=$liked")
             },
-            onFailure = { error ->
-                android.util.Log.e("DiscoverVM", "Failed to record swipe: ${error.message}", error)
+            onFailure = { e ->
+                android.util.Log.e("DiscoverVM", "Swipe failed: ${e.message}")
+                // Si el servidor falló, revertir el filtro local (no el like visual)
+                if (liked) localLikedIds.remove(artwork.id)
             }
         )
+
+        // 3. Si quedan pocas obras, cargar más
+        if (_uiState.value.artworks.size <= 2) {
+            loadMoreFeed()
+        }
     }
 }
-
-

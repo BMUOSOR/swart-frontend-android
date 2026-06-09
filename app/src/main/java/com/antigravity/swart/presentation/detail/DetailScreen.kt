@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import java.time.LocalDate
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -50,8 +51,12 @@ fun DetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val exhibition = uiState.exhibitions.find { it.id == exhibitionId }
-    
-    var isLiked by remember { mutableStateOf(false) }
+
+    // Incrementa el contador de visitantes una sola vez al entrar
+    LaunchedEffect(exhibitionId) {
+        viewModel.incrementView(exhibitionId)
+    }
+
     var showTicketsSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -124,31 +129,38 @@ fun DetailScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
                     }
                     
-                    Row {
-                        IconButton(
-                            onClick = { /* Share */ },
-                            modifier = Modifier
-                                .background(Color.White, CircleShape)
-                                .size(40.dp)
-                        ) {
-                            Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.Black)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
-                            onClick = { isLiked = !isLiked },
-                            modifier = Modifier
-                                .background(Color.White, CircleShape)
-                                .size(40.dp)
-                        ) {
-                            Icon(if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Like", tint = if (isLiked) Color.Red else Color.Black)
-                        }
-                    }
+                    Spacer(modifier = Modifier.size(40.dp))
                 }
             }
 
             // Main Content
             Column(modifier = Modifier.padding(16.dp)) {
-                // Title and "En curso" badge
+                // Title and status badge
+                val exhibitionStatus = remember(exhibition.fechaInicio, exhibition.fechaFin) {
+                    try {
+                        val today = LocalDate.now()
+                        val start = exhibition.fechaInicio?.let { LocalDate.parse(it) }
+                        val end   = exhibition.fechaFin?.let   { LocalDate.parse(it) }
+                        when {
+                            start != null && today.isBefore(start) -> "PRÓXIMA"
+                            end   != null && today.isAfter(end)    -> "FINALIZADA"
+                            else -> "ACTIVA"
+                        }
+                    } catch (e: Exception) {
+                        "ACTIVA"
+                    }
+                }
+                val badgeTextColor = when (exhibitionStatus) {
+                    "ACTIVA"     -> Color(0xFF10B981) // verde
+                    "PRÓXIMA"    -> Color(0xFF818CF8) // índigo claro
+                    else         -> Color(0xFF9CA3AF) // gris (FINALIZADA)
+                }
+                val badgeBgColor = when (exhibitionStatus) {
+                    "ACTIVA"     -> Color(0xFF052E16)
+                    "PRÓXIMA"    -> Color(0xFF1E1B4B)
+                    else         -> Color(0xFF1F2937)
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -162,16 +174,15 @@ fun DetailScreen(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    
-                    // En curso badge
+
                     Box(
                         modifier = Modifier
-                            .background(Color(0xFF3B2A50), RoundedCornerShape(16.dp))
+                            .background(badgeBgColor, RoundedCornerShape(16.dp))
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "En curso",
-                            color = ArtistaGradientStart,
+                            text = exhibitionStatus,
+                            color = badgeTextColor,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         )
@@ -312,7 +323,15 @@ fun DetailScreen(
                         // Precio
                         Text(text = "Precio", color = Color.White, fontWeight = FontWeight.Bold)
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text(text = "${exhibition.precio ?: "Gratis"}€", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (exhibition.precio != null && exhibition.precio != 0.0)
+                                    "${"%.2f".format(exhibition.precio)} €"
+                                else
+                                    "Gratis",
+                                color = Color.White,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

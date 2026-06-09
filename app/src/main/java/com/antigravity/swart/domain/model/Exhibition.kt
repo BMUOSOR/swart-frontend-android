@@ -24,7 +24,9 @@ data class Exhibition(
     val ubicacion: String?,
     val precio: Double?,
     val score: Double?,
-    val tags: List<String>
+    val tags: List<String>,
+    val visitantes: Long = 0,
+    val favoritosCount: Int = 0
 )
 
 data class Artwork(
@@ -45,5 +47,6 @@ data class DiscoverArtwork(
     val locationName: String?,
     val locationAddress: String?,
     val artistName: String,
-    val artistAvatarUrl: String
+    val artistAvatarUrl: String,
+    val artistId: Long = 0L
 )
