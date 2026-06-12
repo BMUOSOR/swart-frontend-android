@@ -121,147 +121,85 @@ fun roundedBitmap(bmp: Bitmap, size: Int, cornerRadius: Float): Bitmap {
 }
 
 // --------------------------------------------------------------------------
-// Main stacked-cards marker bitmap
+// Main single marker bitmap (circular)
 // --------------------------------------------------------------------------
 /**
- * Draws a stacked 3-card marker:
- *  - Back card  (pink/beige tint)  : leftmost, same Y as front
- *  - Middle card (grey tint)       : middle X, same Y as front
- *  - Front card (full color, img1) : rightmost, top
- *  - Pill badge "+N" bottom-right of front card
- *  - Category icon centered over all 3 cards
- *  - scale: driven by match score (0.5f..1.2f)
+ * Creates a circular marker for the map with a gradient border.
  */
-fun createStackedMarkerBitmap(
-    context: Context,
+fun createMarkerBitmap(
     tag: String,
-    img1: Bitmap?,
-    img2: Bitmap?,
-    img3: Bitmap?,
-    extraObras: Int,  // obras beyond the 3 shown  (totalObras - 3, clamped >= 0)
-    scale: Float = 1f
+    match: Int,
+    context: Context,
+    scaleFactor: Float = 1f
 ): Bitmap {
-    // ── Dimensions ──────────────────────────────────────────────────────────
-    val cardSize   = 160          // side of each square card (px)
-    val radius     = 32f          // corner radius
-    val offset     = 26           // horizontal offset between cards (X only)
-    val totalW     = cardSize + offset * 2 + 24   // extra margin for shadow
-    val totalH     = cardSize + 24
-    val bitmap     = Bitmap.createBitmap(totalW, totalH, Bitmap.Config.ARGB_8888)
-    val canvas     = Canvas(bitmap)
-
-    // Apply match-score scale from the center of the bitmap
-    canvas.scale(scale, scale, totalW / 2f, totalH / 2f)
-
+    val baseSize = 140
+    val strokeWidth = 10f
+    
+    // Scale everything
+    val scaledSize = (baseSize * scaleFactor).toInt()
+    val scaledStroke = strokeWidth * scaleFactor
+    
+    val totalSize = scaledSize + (scaledStroke * 2).toInt()
+    val bitmap = Bitmap.createBitmap(totalSize, totalSize, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    // ── Helper: draw a tinted rounded card ──────────────────────────────────
-    fun drawCard(left: Float, top: Float, photoBmp: Bitmap?, tintColor: Int) {
-        val rect = RectF(left, top, left + cardSize, top + cardSize)
-        // shadow
-        paint.color = 0x40000000; paint.style = Paint.Style.FILL
-        canvas.drawRoundRect(RectF(rect).apply { offset(4f, 4f) }, radius, radius, paint)
-        // card base
-        paint.color = if (photoBmp == null) 0xFF2D2D3A.toInt() else 0xFFFFFFFF.toInt()
-        canvas.drawRoundRect(rect, radius, radius, paint)
+    // Shadow
+    paint.color = 0x40000000
+    paint.style = Paint.Style.FILL
+    canvas.drawCircle(totalSize / 2f, totalSize / 2f + 4f * scaleFactor, totalSize / 2f - scaledStroke, paint)
 
-        if (photoBmp != null) {
-            // clip photo to rounded rect
-            val saveCount = canvas.saveLayer(rect, null)
-            paint.color = 0xFFFFFFFF.toInt()
-            canvas.drawRoundRect(rect, radius, radius, paint)
-            paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
-            val scaled = Bitmap.createScaledBitmap(photoBmp, cardSize, cardSize, true)
-            canvas.drawBitmap(scaled, left, top, paint)
-            paint.xfermode = null
-            canvas.restoreToCount(saveCount)
-        }
-
-        // tint overlay
-        if (tintColor != 0) {
-            paint.color = tintColor
-            canvas.drawRoundRect(rect, radius, radius, paint)
-        }
-    }
-
-    // All cards share the same Y — depth effect comes purely from X offset
-    val cardY = 8f  // small top margin for shadow
-
-    // ── Back card: pink/beige tint, furthest left ────────────────────────────
-    val back3x = 0f
-    val back3y = cardY
-    drawCard(back3x, back3y, img3, 0xAAF3E8D8.toInt())
-
-    // ── Middle card: grey tint ───────────────────────────────────────────────
-    val mid2x = offset.toFloat()
-    val mid2y = cardY
-    drawCard(mid2x, mid2y, img2, 0x88B0B0B0.toInt())
-
-    // ── Front card: no tint (full photo) ────────────────────────────────────
-    val frontX = (offset * 2).toFloat()
-    val frontY = cardY
-    drawCard(frontX, frontY, img1, 0)
-
-    // ── Pill badge "+N" ──────────────────────────────────────────────────────
-    if (extraObras > 0) {
-        val badgeText  = "+$extraObras"
-        val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        badgePaint.textSize   = 22f
-        badgePaint.typeface   = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        badgePaint.color      = 0xFF222222.toInt()
-        val textW  = badgePaint.measureText(badgeText)
-        val padH   = 10f; val padV = 6f
-        val bW     = textW + padH * 2
-        val bH     = 28f
-        val bLeft  = frontX + cardSize - bW - 10f
-        val bTop   = frontY + cardSize - bH - 10f
-        val bRect  = RectF(bLeft, bTop, bLeft + bW, bTop + bH)
-        // white background
-        badgePaint.color = 0xFFFFFFFF.toInt()
-        canvas.drawRoundRect(bRect, bH / 2f, bH / 2f, badgePaint)
-        // text
-        badgePaint.color = 0xFF111111.toInt()
-        val fontMetrics = badgePaint.fontMetrics
-        val textY = bTop + bH / 2f - (fontMetrics.ascent + fontMetrics.descent) / 2f
-        canvas.drawText(badgeText, bLeft + padH, textY, badgePaint)
-    }
-
-    // ── Category icon centered over all 3 cards ──────────────────────────────
-    val iconSize   = 44
-    val iconRadius = iconSize / 2f
-    // All cards same Y: geometric center is mid-X, mid-card-height
-    val allLeft    = back3x; val allRight = frontX + cardSize
-    val iconCx     = (allLeft + allRight) / 2f
-    val iconCy     = cardY + cardSize / 2f
-
-    // gradient pill bg
+    // Gradient border
     val (gradStart, gradEnd) = when (tag.lowercase()) {
         "escultura"  -> 0xFFEC4899.toInt() to 0xFF8B5CF6.toInt()
         "fotografía" -> 0xFF6366F1.toInt() to 0xFF3B82F6.toInt()
         else         -> 0xFF6366F1.toInt() to 0xFF3B82F6.toInt()
     }
-    val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    // shadow
-    iconPaint.color = 0x55000000
-    canvas.drawCircle(iconCx + 2f, iconCy + 2f, iconRadius + 2f, iconPaint)
-    // gradient circle
-    iconPaint.shader = LinearGradient(
-        iconCx - iconRadius, iconCy - iconRadius,
-        iconCx + iconRadius, iconCy + iconRadius,
+    paint.style = Paint.Style.STROKE
+    paint.strokeWidth = scaledStroke
+    paint.shader = LinearGradient(
+        0f, 0f, totalSize.toFloat(), totalSize.toFloat(),
         gradStart, gradEnd, Shader.TileMode.CLAMP
     )
-    canvas.drawCircle(iconCx, iconCy, iconRadius.toFloat(), iconPaint)
-    iconPaint.shader = null
+    val radius = (totalSize - scaledStroke) / 2f
+    val cx = totalSize / 2f
+    val cy = totalSize / 2f
+    canvas.drawCircle(cx, cy, radius, paint)
 
-    // draw icon path (white)
+    // Base background
+    paint.shader = null
+    paint.style = Paint.Style.FILL
+    paint.color = 0xFF2D2D3A.toInt()
+    canvas.drawCircle(cx, cy, radius - scaledStroke / 2f, paint)
+
+    // Match overlay and text
+    val overlayColor = android.graphics.Color.argb(
+        (0.6f * 255).toInt(),
+        android.graphics.Color.red(gradStart),
+        android.graphics.Color.green(gradStart),
+        android.graphics.Color.blue(gradStart)
+    )
+    paint.color = overlayColor
+    canvas.drawCircle(cx, cy, radius - scaledStroke / 2f, paint)
+
+    val text = "$match%"
+    paint.color = 0xFFFFFFFF.toInt()
+    paint.textSize = 36f * scaleFactor
+    paint.typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+    val textWidth = paint.measureText(text)
+    val textY = cy - (paint.fontMetrics.ascent + paint.fontMetrics.descent) / 2f
+    canvas.drawText(text, cx - textWidth / 2f, textY, paint)
+
+    // Category icon
+    val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     iconPaint.color = 0xFFFFFFFF.toInt()
     iconPaint.style = Paint.Style.FILL
+    val iconSize = (radius * 0.9f)
     val s  = iconSize / 22f
-    val cx = iconCx; val cy = iconCy; val off = 11f
-    val mainPath = Path()
+    val off = 11f
+    val mainPath = android.graphics.Path()
     when (tag.lowercase()) {
         "fotografía" -> {
-            // camera outline
             mainPath.moveTo(cx+(21f-off)*s, cy+(19f-off)*s); mainPath.lineTo(cx+(21f-off)*s, cy+(5f-off)*s)
             mainPath.cubicTo(cx+(21f-off)*s, cy+(3.9f-off)*s, cx+(20.1f-off)*s, cy+(3f-off)*s, cx+(19f-off)*s, cy+(3f-off)*s)
             mainPath.lineTo(cx+(5f-off)*s, cy+(3f-off)*s)
@@ -273,16 +211,15 @@ fun createStackedMarkerBitmap(
             mainPath.close()
         }
         "escultura" -> {
-            mainPath.addRect(cx+(2f-off)*s, cy+(19f-off)*s, cx+(21f-off)*s, cy+(22f-off)*s, Path.Direction.CW)
-            mainPath.addRect(cx+(4f-off)*s, cy+(10f-off)*s, cx+(7f-off)*s, cy+(17f-off)*s, Path.Direction.CW)
-            mainPath.addRect(cx+(10f-off)*s, cy+(10f-off)*s, cx+(13f-off)*s, cy+(17f-off)*s, Path.Direction.CW)
-            mainPath.addRect(cx+(16f-off)*s, cy+(10f-off)*s, cx+(19f-off)*s, cy+(17f-off)*s, Path.Direction.CW)
+            mainPath.addRect(cx+(2f-off)*s, cy+(19f-off)*s, cx+(21f-off)*s, cy+(22f-off)*s, android.graphics.Path.Direction.CW)
+            mainPath.addRect(cx+(4f-off)*s, cy+(10f-off)*s, cx+(7f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
+            mainPath.addRect(cx+(10f-off)*s, cy+(10f-off)*s, cx+(13f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
+            mainPath.addRect(cx+(16f-off)*s, cy+(10f-off)*s, cx+(19f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
             mainPath.moveTo(cx+(11.5f-off)*s, cy+(2f-off)*s); mainPath.lineTo(cx+(2f-off)*s, cy+(6f-off)*s)
             mainPath.lineTo(cx+(2f-off)*s, cy+(8f-off)*s); mainPath.lineTo(cx+(21f-off)*s, cy+(8f-off)*s)
             mainPath.lineTo(cx+(21f-off)*s, cy+(6f-off)*s); mainPath.close()
         }
         else -> {
-            // palette
             mainPath.moveTo(cx+(12f-off)*s, cy+(2f-off)*s)
             mainPath.cubicTo(cx+(6.48f-off)*s, cy+(2f-off)*s, cx+(2f-off)*s, cy+(6.48f-off)*s, cx+(2f-off)*s, cy+(12f-off)*s)
             mainPath.cubicTo(cx+(2f-off)*s, cy+(17.52f-off)*s, cx+(6.48f-off)*s, cy+(22f-off)*s, cx+(12f-off)*s, cy+(22f-off)*s)
@@ -294,13 +231,9 @@ fun createStackedMarkerBitmap(
             mainPath.cubicTo(cx+(18.76f-off)*s, cy+(17f-off)*s, cx+(21f-off)*s, cy+(14.76f-off)*s, cx+(21f-off)*s, cy+(12f-off)*s)
             mainPath.cubicTo(cx+(21f-off)*s, cy+(6.48f-off)*s, cx+(16.52f-off)*s, cy+(2f-off)*s, cx+(12f-off)*s, cy+(2f-off)*s)
             mainPath.close()
-            // palette holes  (drawn in gradient color)
+            
             val holePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-            holePaint.shader = LinearGradient(
-                iconCx - iconRadius, iconCy - iconRadius,
-                iconCx + iconRadius, iconCy + iconRadius,
-                gradStart, gradEnd, Shader.TileMode.CLAMP
-            )
+            holePaint.color = 0xFF2D2D3A.toInt()
             canvas.drawPath(mainPath, iconPaint)
             canvas.drawCircle(cx+(6.5f-off)*s,  cy+(10.5f-off)*s, 1.8f*s, holePaint)
             canvas.drawCircle(cx+(9.5f-off)*s,  cy+(6.5f-off)*s,  1.8f*s, holePaint)
@@ -505,21 +438,9 @@ fun MapScreen(
                         if (style.getStyleImage(imgId) == null) {
                             val factor = if (matchRange > 0f) ((pin.match - effectiveMin) / matchRange).coerceIn(0f, 1f) else 0.5f
                             val markerScale = 0.6f + factor * 0.6f  // range: 0.6 → 1.2
-                            // Load images asynchronously (network); update style on main thread
-                            Thread {
-                                val img1 = pin.imagen?.let { loadBitmapFromUrl(it) }
-                                val img2 = pin.imagen2?.let { loadBitmapFromUrl(it) }
-                                val img3 = pin.imagen3?.let { loadBitmapFromUrl(it) }
-                                val extraObras = (pin.totalObras - 3).coerceAtLeast(0)
-                                val bmp = createStackedMarkerBitmap(
-                                    context, pin.mainTag, img1, img2, img3, extraObras, markerScale
-                                )
-                                mv.post {
-                                    if (style.getStyleImage(imgId) == null) {
-                                        style.addImage(imgId, bmp)
-                                    }
-                                }
-                            }.start()
+                            
+                            val bmp = createMarkerBitmap(pin.mainTag, pin.match, context, markerScale)
+                            style.addImage(imgId, bmp)
                         }
                     }
 
