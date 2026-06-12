@@ -1,0 +1,78 @@
+INSTRUMENTATION_STATUS: class=com.antigravity.swart.benchmark.MapScreenBenchmark
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+com.antigravity.swart.benchmark.MapScreenBenchmark:
+INSTRUMENTATION_STATUS: test=benchmarkMapNavigationAndFilter
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: additionalTestOutputFile_MapScreenBenchmark_benchmarkMapNavigationAndFilter_iter000_2026-06-06-12-07-33.perfetto-trace=/sdcard/Android/media/com.antigravity.swart.benchmark/additional_test_output/MapScreenBenchmark_benchmarkMapNavigationAndFilter_iter000_2026-06-06-12-07-33.perfetto-trace
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: additionalTestOutputFile_MapScreenBenchmark_benchmarkMapNavigationAndFilter_iter001_2026-06-06-12-08-02.perfetto-trace=/sdcard/Android/media/com.antigravity.swart.benchmark/additional_test_output/MapScreenBenchmark_benchmarkMapNavigationAndFilter_iter001_2026-06-06-12-08-02.perfetto-trace
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: additionalTestOutputFile_MapScreenBenchmark_benchmarkMapNavigationAndFilter_iter002_2026-06-06-12-08-20.perfetto-trace=/sdcard/Android/media/com.antigravity.swart.benchmark/additional_test_output/MapScreenBenchmark_benchmarkMapNavigationAndFilter_iter002_2026-06-06-12-08-20.perfetto-trace
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: class=com.antigravity.swart.benchmark.MapScreenBenchmark
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stack=java.lang.IllegalArgumentException: Failed requirement.
+at androidx.benchmark.macro.perfetto.FrameTimingQuery.getFrameData$benchmark_macro_release(FrameTimingQuery.kt:185)
+at androidx.benchmark.macro.FrameTimingMetric.getResult$benchmark_macro_release(Metric.kt:196)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1$1$measurementList$1.invoke(Macrobenchmark.kt:314)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1$1$measurementList$1.invoke(Macrobenchmark.kt:308)
+at androidx.benchmark.perfetto.PerfettoTraceProcessor.loadTrace(PerfettoTraceProcessor.kt:132)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1.invoke(Macrobenchmark.kt:308)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1.invoke(Macrobenchmark.kt:241)
+at androidx.benchmark.perfetto.PerfettoTraceProcessor$Companion.runServer(PerfettoTraceProcessor.kt:105)
+at androidx.benchmark.macro.MacrobenchmarkKt.macrobenchmark(Macrobenchmark.kt:241)
+at androidx.benchmark.macro.MacrobenchmarkKt.macrobenchmarkWithStartupMode(Macrobenchmark.kt:422)
+at androidx.benchmark.macro.junit4.MacrobenchmarkRule.measureRepeated(MacrobenchmarkRule.kt:107)
+at androidx.benchmark.macro.junit4.MacrobenchmarkRule.measureRepeated$default(MacrobenchmarkRule.kt:97)
+at com.antigravity.swart.benchmark.MapScreenBenchmark.benchmarkMapNavigationAndFilter(MapScreenBenchmark.kt:23)
+
+INSTRUMENTATION_STATUS: stream=
+Error in benchmarkMapNavigationAndFilter(com.antigravity.swart.benchmark.MapScreenBenchmark):
+java.lang.IllegalArgumentException: Failed requirement.
+at androidx.benchmark.macro.perfetto.FrameTimingQuery.getFrameData$benchmark_macro_release(FrameTimingQuery.kt:185)
+at androidx.benchmark.macro.FrameTimingMetric.getResult$benchmark_macro_release(Metric.kt:196)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1$1$measurementList$1.invoke(Macrobenchmark.kt:314)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1$1$measurementList$1.invoke(Macrobenchmark.kt:308)
+at androidx.benchmark.perfetto.PerfettoTraceProcessor.loadTrace(PerfettoTraceProcessor.kt:132)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1.invoke(Macrobenchmark.kt:308)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1.invoke(Macrobenchmark.kt:241)
+at androidx.benchmark.perfetto.PerfettoTraceProcessor$Companion.runServer(PerfettoTraceProcessor.kt:105)
+at androidx.benchmark.macro.MacrobenchmarkKt.macrobenchmark(Macrobenchmark.kt:241)
+at androidx.benchmark.macro.MacrobenchmarkKt.macrobenchmarkWithStartupMode(Macrobenchmark.kt:422)
+at androidx.benchmark.macro.junit4.MacrobenchmarkRule.measureRepeated(MacrobenchmarkRule.kt:107)
+at androidx.benchmark.macro.junit4.MacrobenchmarkRule.measureRepeated$default(MacrobenchmarkRule.kt:97)
+at com.antigravity.swart.benchmark.MapScreenBenchmark.benchmarkMapNavigationAndFilter(MapScreenBenchmark.kt:23)
+
+INSTRUMENTATION_STATUS: test=benchmarkMapNavigationAndFilter
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 78,33
+There was 1 failure:
+1) benchmarkMapNavigationAndFilter(com.antigravity.swart.benchmark.MapScreenBenchmark)
+java.lang.IllegalArgumentException: Failed requirement.
+at androidx.benchmark.macro.perfetto.FrameTimingQuery.getFrameData$benchmark_macro_release(FrameTimingQuery.kt:185)
+at androidx.benchmark.macro.FrameTimingMetric.getResult$benchmark_macro_release(Metric.kt:196)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1$1$measurementList$1.invoke(Macrobenchmark.kt:314)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1$1$measurementList$1.invoke(Macrobenchmark.kt:308)
+at androidx.benchmark.perfetto.PerfettoTraceProcessor.loadTrace(PerfettoTraceProcessor.kt:132)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1.invoke(Macrobenchmark.kt:308)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1.invoke(Macrobenchmark.kt:241)
+at androidx.benchmark.perfetto.PerfettoTraceProcessor$Companion.runServer(PerfettoTraceProcessor.kt:105)
+at androidx.benchmark.macro.MacrobenchmarkKt.macrobenchmark(Macrobenchmark.kt:241)
+at androidx.benchmark.macro.MacrobenchmarkKt.macrobenchmarkWithStartupMode(Macrobenchmark.kt:422)
+at androidx.benchmark.macro.junit4.MacrobenchmarkRule.measureRepeated(MacrobenchmarkRule.kt:107)
+at androidx.benchmark.macro.junit4.MacrobenchmarkRule.measureRepeated$default(MacrobenchmarkRule.kt:97)
+at com.antigravity.swart.benchmark.MapScreenBenchmark.benchmarkMapNavigationAndFilter(MapScreenBenchmark.kt:23)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1
+

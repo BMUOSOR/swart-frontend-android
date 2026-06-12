@@ -321,7 +321,7 @@ fun EditExhibitionScreen(
                     shape = RoundedCornerShape(14.dp),
                     colors = outlinedTextFieldColors(),
                     singleLine = true,
-                    placeholder = { Text("Ej. Calle Mayor 1, Madrid", color = TextGray) },
+                    placeholder = { Text("Ej. Calle de la Paz 1, Valencia", color = TextGray) },
                     trailingIcon = {
                         if (isVerifying) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp), color = NeonPurple, strokeWidth = 2.dp)

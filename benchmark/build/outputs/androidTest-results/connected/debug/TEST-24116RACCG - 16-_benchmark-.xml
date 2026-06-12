@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.antigravity.swart.benchmark.MapScreenBenchmark" tests="1" failures="1" errors="0" skipped="0" time="80.531" timestamp="2026-06-06T12:08:24" hostname="localhost">
+  <properties>
+    <property name="device" value="24116RACCG - 16" />
+    <property name="flavor" value="" />
+    <property name="project" value=":benchmark" />
+  </properties>
+  <testcase name="benchmarkMapNavigationAndFilter" classname="com.antigravity.swart.benchmark.MapScreenBenchmark" time="78.324">
+    <failure>java.lang.IllegalArgumentException: Failed requirement.
+at androidx.benchmark.macro.perfetto.FrameTimingQuery.getFrameData$benchmark_macro_release(FrameTimingQuery.kt:185)
+at androidx.benchmark.macro.FrameTimingMetric.getResult$benchmark_macro_release(Metric.kt:196)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1$1$measurementList$1.invoke(Macrobenchmark.kt:314)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1$1$measurementList$1.invoke(Macrobenchmark.kt:308)
+at androidx.benchmark.perfetto.PerfettoTraceProcessor.loadTrace(PerfettoTraceProcessor.kt:132)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1.invoke(Macrobenchmark.kt:308)
+at androidx.benchmark.macro.MacrobenchmarkKt$macrobenchmark$measurements$1.invoke(Macrobenchmark.kt:241)
+at androidx.benchmark.perfetto.PerfettoTraceProcessor$Companion.runServer(PerfettoTraceProcessor.kt:105)
+at androidx.benchmark.macro.MacrobenchmarkKt.macrobenchmark(Macrobenchmark.kt:241)
+at androidx.benchmark.macro.MacrobenchmarkKt.macrobenchmarkWithStartupMode(Macrobenchmark.kt:422)
+at androidx.benchmark.macro.junit4.MacrobenchmarkRule.measureRepeated(MacrobenchmarkRule.kt:107)
+at androidx.benchmark.macro.junit4.MacrobenchmarkRule.measureRepeated$default(MacrobenchmarkRule.kt:97)
+at com.antigravity.swart.benchmark.MapScreenBenchmark.benchmarkMapNavigationAndFilter(MapScreenBenchmark.kt:23)</failure>
+  </testcase>
+</testsuite>

@@ -21,7 +21,7 @@ data class UserProfileUiState(
     val nombre: String = "",
     val apellidos: String = "",
     val imgUrl: String = "",
-    val location: String = "Madrid, España",
+    val location: String = "Valencia, España",
     val role: String = "",
     val pendingInvitationsCount: Int = 0,
     val isLoading: Boolean = false,

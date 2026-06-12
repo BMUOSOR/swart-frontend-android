@@ -417,7 +417,7 @@ fun CreateExhibitionScreen(
                     readOnly = isFromMap,
                     placeholder = {
                         if (isLoadingAddress) Text("Obteniendo dirección...", color = CETextGray)
-                        else Text("Ej. Calle Mayor 1, Madrid", color = CETextGray)
+                        else Text("Ej. Calle de la Paz 1, Valencia", color = CETextGray)
                     },
                     trailingIcon = {
                         when {
