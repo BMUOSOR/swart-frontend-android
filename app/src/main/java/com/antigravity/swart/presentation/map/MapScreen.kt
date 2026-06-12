@@ -172,7 +172,7 @@ fun createMarkerBitmap(
     paint.color = 0xFF2D2D3A.toInt()
     canvas.drawCircle(cx, cy, radius - scaledStroke / 2f, paint)
 
-    // Match overlay and text
+    // Match overlay
     val overlayColor = android.graphics.Color.argb(
         (0.6f * 255).toInt(),
         android.graphics.Color.red(gradStart),
@@ -182,13 +182,6 @@ fun createMarkerBitmap(
     paint.color = overlayColor
     canvas.drawCircle(cx, cy, radius - scaledStroke / 2f, paint)
 
-    val text = "$match%"
-    paint.color = 0xFFFFFFFF.toInt()
-    paint.textSize = 36f * scaleFactor
-    paint.typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
-    val textWidth = paint.measureText(text)
-    val textY = cy - (paint.fontMetrics.ascent + paint.fontMetrics.descent) / 2f
-    canvas.drawText(text, cx - textWidth / 2f, textY, paint)
 
     // Category icon
     val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
