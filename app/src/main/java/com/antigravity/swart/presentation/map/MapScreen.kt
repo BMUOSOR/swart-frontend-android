@@ -2,16 +2,10 @@ package com.antigravity.swart.presentation.map
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
-import android.graphics.RectF
 import android.graphics.Shader
-import android.graphics.Typeface
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -71,193 +65,81 @@ import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.bindgen.Value
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 
 
 // --------------------------------------------------------------------------
-// In-memory bitmap URL cache to avoid repeated network calls
+// Marker bitmap helpers (identical visual to the original osmdroid version)
 // --------------------------------------------------------------------------
-private val bitmapUrlCache = java.util.concurrent.ConcurrentHashMap<String, Bitmap?>()
-
-fun loadBitmapFromUrl(url: String): Bitmap? {
-    if (bitmapUrlCache.containsKey(url)) return bitmapUrlCache[url]
-    return try {
-        val connection = URL(url).openConnection() as HttpURLConnection
-        connection.connectTimeout = 5000
-        connection.readTimeout = 5000
-        connection.doInput = true
-        connection.connect()
-        val input: InputStream = connection.inputStream
-        val raw = BitmapFactory.decodeStream(input)
-        bitmapUrlCache[url] = raw
-        raw
-    } catch (_: Exception) {
-        bitmapUrlCache[url] = null
-        null
-    }
-}
-
-fun cropSquare(bmp: Bitmap): Bitmap {
-    val side = minOf(bmp.width, bmp.height)
-    val x = (bmp.width - side) / 2
-    val y = (bmp.height - side) / 2
-    return Bitmap.createBitmap(bmp, x, y, side, side)
-}
-
-fun roundedBitmap(bmp: Bitmap, size: Int, cornerRadius: Float): Bitmap {
-    val scaled = Bitmap.createScaledBitmap(bmp, size, size, true)
-    val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(output)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    val rect = RectF(0f, 0f, size.toFloat(), size.toFloat())
-    canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
-    paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
-    canvas.drawBitmap(scaled, 0f, 0f, paint)
-    return output
-}
-
-// --------------------------------------------------------------------------
-// Main single marker bitmap (circular)
-// --------------------------------------------------------------------------
-/**
- * Creates a circular marker for the map with a gradient border.
- */
-fun createMarkerBitmap(
-    tag: String,
-    match: Int,
-    context: Context,
-    scaleFactor: Float = 1f
-): Bitmap {
-    val baseSize = 140
-    val strokeWidth = 10f
-    
-    // Scale everything
-    val scaledSize = (baseSize * scaleFactor).toInt()
-    val scaledStroke = strokeWidth * scaleFactor
-    
-    val totalSize = scaledSize + (scaledStroke * 2).toInt()
-    val bitmap = Bitmap.createBitmap(totalSize, totalSize, Bitmap.Config.ARGB_8888)
+fun createMarkerBitmap(context: Context, tag: String, scale: Float): Bitmap {
+    val size = 200
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
+    canvas.scale(scale, scale, size / 2f, size / 2f)
+
+    val startColor = if (tag.lowercase() == "escultura") 0xFFEC4899.toInt() else 0xFF6366F1.toInt()
+    val endColor   = if (tag.lowercase() == "escultura") 0xFF8B5CF6.toInt() else 0xFF3B82F6.toInt()
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    val gradient = LinearGradient(0f, 0f, size.toFloat(), size.toFloat(), startColor, endColor, Shader.TileMode.CLAMP)
 
-    // Shadow
-    paint.color = 0x40000000
-    paint.style = Paint.Style.FILL
-    canvas.drawCircle(totalSize / 2f, totalSize / 2f + 4f * scaleFactor, totalSize / 2f - scaledStroke, paint)
+    paint.color = 0x44000000
+    canvas.drawCircle(size / 2f, size / 2f, size / 2.1f, paint)
+    paint.shader = gradient
+    canvas.drawCircle(size / 2f, size / 2f, size / 2.4f, paint)
+    paint.shader = null; paint.color = 0xFF13131A.toInt()
+    canvas.drawCircle(size / 2f, size / 2f, size / 2.8f, paint)
+    paint.shader = gradient
+    canvas.drawCircle(size / 2f, size / 2f, size / 3.2f, paint)
+    paint.shader = null; paint.color = 0xFFFFFFFF.toInt(); paint.style = Paint.Style.FILL
 
-    // Gradient border
-    val (gradStart, gradEnd) = when (tag.lowercase()) {
-        "escultura"  -> 0xFFEC4899.toInt() to 0xFF8B5CF6.toInt()
-        "fotografía" -> 0xFF6366F1.toInt() to 0xFF3B82F6.toInt()
-        else         -> 0xFF6366F1.toInt() to 0xFF3B82F6.toInt()
-    }
-    paint.style = Paint.Style.STROKE
-    paint.strokeWidth = scaledStroke
-    paint.shader = LinearGradient(
-        0f, 0f, totalSize.toFloat(), totalSize.toFloat(),
-        gradStart, gradEnd, Shader.TileMode.CLAMP
-    )
-    val radius = (totalSize - scaledStroke) / 2f
-    val cx = totalSize / 2f
-    val cy = totalSize / 2f
-    canvas.drawCircle(cx, cy, radius, paint)
-
-    // Base background
-    paint.shader = null
-    paint.style = Paint.Style.FILL
-    paint.color = 0xFF2D2D3A.toInt()
-    canvas.drawCircle(cx, cy, radius - scaledStroke / 2f, paint)
-
-    // Match overlay
-    val overlayColor = android.graphics.Color.argb(
-        (0.6f * 255).toInt(),
-        android.graphics.Color.red(gradStart),
-        android.graphics.Color.green(gradStart),
-        android.graphics.Color.blue(gradStart)
-    )
-    paint.color = overlayColor
-    canvas.drawCircle(cx, cy, radius - scaledStroke / 2f, paint)
-
-
-    // Category icon
-    val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    iconPaint.color = 0xFFFFFFFF.toInt()
-    iconPaint.style = Paint.Style.FILL
-    val holePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    holePaint.color = 0xFF2D2D3A.toInt() // Dark background color to act as a "hole"
-    holePaint.style = Paint.Style.FILL
-
-    val iconSize = (radius * 0.9f)
-    val s  = iconSize / 22f
-    val off = 11f
-    val mainPath = android.graphics.Path()
-    val holePath = android.graphics.Path()
-
+    val cx = size / 2f; val cy = size / 2f; val s = size / 55f; val off = 12f
+    val main = android.graphics.Path(); val hole = android.graphics.Path()
     when (tag.lowercase()) {
         "fotografía" -> {
-            // Camera
-            mainPath.moveTo(cx+(20f-off)*s, cy+(4f-off)*s)
-            mainPath.lineTo(cx+(16.83f-off)*s, cy+(4f-off)*s)
-            mainPath.lineTo(cx+(15f-off)*s, cy+(2f-off)*s)
-            mainPath.lineTo(cx+(9f-off)*s, cy+(2f-off)*s)
-            mainPath.lineTo(cx+(7.17f-off)*s, cy+(4f-off)*s)
-            mainPath.lineTo(cx+(4f-off)*s, cy+(4f-off)*s)
-            mainPath.cubicTo(cx+(2.9f-off)*s, cy+(4f-off)*s, cx+(2f-off)*s, cy+(4.9f-off)*s, cx+(2f-off)*s, cy+(6f-off)*s)
-            mainPath.lineTo(cx+(2f-off)*s, cy+(18f-off)*s)
-            mainPath.cubicTo(cx+(2f-off)*s, cy+(19.1f-off)*s, cx+(2.9f-off)*s, cy+(20f-off)*s, cx+(4f-off)*s, cy+(20f-off)*s)
-            mainPath.lineTo(cx+(20f-off)*s, cy+(20f-off)*s)
-            mainPath.cubicTo(cx+(21.1f-off)*s, cy+(20f-off)*s, cx+(22f-off)*s, cy+(19.1f-off)*s, cx+(22f-off)*s, cy+(18f-off)*s)
-            mainPath.lineTo(cx+(22f-off)*s, cy+(6f-off)*s)
-            mainPath.cubicTo(cx+(22f-off)*s, cy+(4.9f-off)*s, cx+(21.1f-off)*s, cy+(4f-off)*s, cx+(20f-off)*s, cy+(4f-off)*s)
-            mainPath.close()
-            
-            // Camera lens hole
-            holePath.addCircle(cx+(12f-off)*s, cy+(12f-off)*s, 3.2f*s, android.graphics.Path.Direction.CW)
+            main.moveTo(cx+(21f-off)*s, cy+(19f-off)*s); main.lineTo(cx+(21f-off)*s, cy+(5f-off)*s)
+            main.cubicTo(cx+(21f-off)*s, cy+(3.9f-off)*s, cx+(20.1f-off)*s, cy+(3f-off)*s, cx+(19f-off)*s, cy+(3f-off)*s)
+            main.lineTo(cx+(5f-off)*s, cy+(3f-off)*s)
+            main.cubicTo(cx+(3.9f-off)*s, cy+(3f-off)*s, cx+(3f-off)*s, cy+(3.9f-off)*s, cx+(3f-off)*s, cy+(5f-off)*s)
+            main.lineTo(cx+(3f-off)*s, cy+(19f-off)*s)
+            main.cubicTo(cx+(3f-off)*s, cy+(20.1f-off)*s, cx+(3.9f-off)*s, cy+(21f-off)*s, cx+(5f-off)*s, cy+(21f-off)*s)
+            main.lineTo(cx+(19f-off)*s, cy+(21f-off)*s)
+            main.cubicTo(cx+(20.1f-off)*s, cy+(21f-off)*s, cx+(21f-off)*s, cy+(20.1f-off)*s, cx+(21f-off)*s, cy+(19f-off)*s)
+            main.close()
+            hole.moveTo(cx+(8.5f-off)*s, cy+(13.5f-off)*s); hole.lineTo(cx+(5f-off)*s, cy+(18f-off)*s)
+            hole.lineTo(cx+(19f-off)*s, cy+(18f-off)*s); hole.lineTo(cx+(14.5f-off)*s, cy+(12f-off)*s)
+            hole.lineTo(cx+(11f-off)*s, cy+(16.51f-off)*s); hole.close()
         }
         "escultura" -> {
-            // Museum
-            mainPath.addRect(cx+(2f-off)*s, cy+(19f-off)*s, cx+(21f-off)*s, cy+(22f-off)*s, android.graphics.Path.Direction.CW)
-            mainPath.addRect(cx+(4f-off)*s, cy+(10f-off)*s, cx+(7f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
-            mainPath.addRect(cx+(10f-off)*s, cy+(10f-off)*s, cx+(13f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
-            mainPath.addRect(cx+(16f-off)*s, cy+(10f-off)*s, cx+(19f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
-            mainPath.moveTo(cx+(11.5f-off)*s, cy+(2f-off)*s); mainPath.lineTo(cx+(2f-off)*s, cy+(6f-off)*s)
-            mainPath.lineTo(cx+(2f-off)*s, cy+(8f-off)*s); mainPath.lineTo(cx+(21f-off)*s, cy+(8f-off)*s)
-            mainPath.lineTo(cx+(21f-off)*s, cy+(6f-off)*s); mainPath.close()
+            main.addRect(cx+(2f-off)*s, cy+(19f-off)*s, cx+(21f-off)*s, cy+(22f-off)*s, android.graphics.Path.Direction.CW)
+            main.addRect(cx+(4f-off)*s, cy+(10f-off)*s, cx+(7f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
+            main.addRect(cx+(10f-off)*s, cy+(10f-off)*s, cx+(13f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
+            main.addRect(cx+(16f-off)*s, cy+(10f-off)*s, cx+(19f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
+            main.moveTo(cx+(11.5f-off)*s, cy+(2f-off)*s); main.lineTo(cx+(2f-off)*s, cy+(6f-off)*s)
+            main.lineTo(cx+(2f-off)*s, cy+(8f-off)*s); main.lineTo(cx+(21f-off)*s, cy+(8f-off)*s)
+            main.lineTo(cx+(21f-off)*s, cy+(6f-off)*s); main.close()
         }
         else -> {
-            // Palette
-            mainPath.moveTo(cx+(12f-off)*s, cy+(2f-off)*s)
-            mainPath.cubicTo(cx+(6.48f-off)*s, cy+(2f-off)*s, cx+(2f-off)*s, cy+(6.48f-off)*s, cx+(2f-off)*s, cy+(12f-off)*s)
-            mainPath.cubicTo(cx+(2f-off)*s, cy+(17.52f-off)*s, cx+(6.48f-off)*s, cy+(22f-off)*s, cx+(12f-off)*s, cy+(22f-off)*s)
-            mainPath.cubicTo(cx+(12.83f-off)*s, cy+(22f-off)*s, cx+(13.5f-off)*s, cy+(21.33f-off)*s, cx+(13.5f-off)*s, cy+(20.5f-off)*s)
-            mainPath.cubicTo(cx+(13.5f-off)*s, cy+(20.11f-off)*s, cx+(13.35f-off)*s, cy+(19.76f-off)*s, cx+(13.11f-off)*s, cy+(19.49f-off)*s)
-            mainPath.cubicTo(cx+(12.88f-off)*s, cy+(19.23f-off)*s, cx+(12.73f-off)*s, cy+(18.88f-off)*s, cx+(12.73f-off)*s, cy+(18.5f-off)*s)
-            mainPath.cubicTo(cx+(12.73f-off)*s, cy+(17.67f-off)*s, cx+(13.4f-off)*s, cy+(17f-off)*s, cx+(14.23f-off)*s, cy+(17f-off)*s)
-            mainPath.lineTo(cx+(16f-off)*s, cy+(17f-off)*s)
-            mainPath.cubicTo(cx+(18.76f-off)*s, cy+(17f-off)*s, cx+(21f-off)*s, cy+(14.76f-off)*s, cx+(21f-off)*s, cy+(12f-off)*s)
-            mainPath.cubicTo(cx+(21f-off)*s, cy+(6.48f-off)*s, cx+(16.52f-off)*s, cy+(2f-off)*s, cx+(12f-off)*s, cy+(2f-off)*s)
-            mainPath.close()
-            
-            // Palette holes
-            holePath.addCircle(cx+(6.5f-off)*s, cy+(10.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
-            holePath.addCircle(cx+(9.5f-off)*s, cy+(6.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
-            holePath.addCircle(cx+(14.5f-off)*s, cy+(6.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
-            holePath.addCircle(cx+(17.5f-off)*s, cy+(10.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
+            main.moveTo(cx+(12f-off)*s, cy+(2f-off)*s)
+            main.cubicTo(cx+(6.48f-off)*s, cy+(2f-off)*s, cx+(2f-off)*s, cy+(6.48f-off)*s, cx+(2f-off)*s, cy+(12f-off)*s)
+            main.cubicTo(cx+(2f-off)*s, cy+(17.52f-off)*s, cx+(6.48f-off)*s, cy+(22f-off)*s, cx+(12f-off)*s, cy+(22f-off)*s)
+            main.cubicTo(cx+(12.83f-off)*s, cy+(22f-off)*s, cx+(13.5f-off)*s, cy+(21.33f-off)*s, cx+(13.5f-off)*s, cy+(20.5f-off)*s)
+            main.cubicTo(cx+(13.5f-off)*s, cy+(20.11f-off)*s, cx+(13.35f-off)*s, cy+(19.76f-off)*s, cx+(13.11f-off)*s, cy+(19.49f-off)*s)
+            main.cubicTo(cx+(12.88f-off)*s, cy+(19.23f-off)*s, cx+(12.73f-off)*s, cy+(18.88f-off)*s, cx+(12.73f-off)*s, cy+(18.5f-off)*s)
+            main.cubicTo(cx+(12.73f-off)*s, cy+(17.67f-off)*s, cx+(13.4f-off)*s, cy+(17f-off)*s, cx+(14.23f-off)*s, cy+(17f-off)*s)
+            main.lineTo(cx+(16f-off)*s, cy+(17f-off)*s)
+            main.cubicTo(cx+(18.76f-off)*s, cy+(17f-off)*s, cx+(21f-off)*s, cy+(14.76f-off)*s, cx+(21f-off)*s, cy+(12f-off)*s)
+            main.cubicTo(cx+(21f-off)*s, cy+(6.48f-off)*s, cx+(16.52f-off)*s, cy+(2f-off)*s, cx+(12f-off)*s, cy+(2f-off)*s)
+            main.close()
+            hole.addCircle(cx+(6.5f-off)*s, cy+(10.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
+            hole.addCircle(cx+(9.5f-off)*s, cy+(6.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
+            hole.addCircle(cx+(14.5f-off)*s, cy+(6.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
+            hole.addCircle(cx+(17.5f-off)*s, cy+(10.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
         }
     }
-    
-    // Draw the main shape
-    canvas.drawPath(mainPath, iconPaint)
-    
-    // Draw the "holes" using the dark background color
-    if (!holePath.isEmpty) {
-        canvas.drawPath(holePath, holePaint)
-    }
-
+    paint.shader = null; paint.color = 0xFFFFFFFF.toInt()
+    canvas.drawPath(main, paint)
+    if (!hole.isEmpty) { paint.shader = gradient; canvas.drawPath(hole, paint) }
     return bitmap
 }
 
@@ -444,20 +326,18 @@ fun MapScreen(
                     val minMatch = uiState.filteredPins.minOfOrNull { it.match } ?: 50
                     val maxMatch = uiState.filteredPins.maxOfOrNull { it.match } ?: 100
                     val effectiveMin = minOf(minMatch.toFloat(), maxMatch.toFloat() - 15f)
-                    val matchRange = maxMatch.toFloat() - effectiveMin
+                    val range = maxMatch.toFloat() - effectiveMin
 
                     // ── Register exhibition bitmaps in style ──────────────
                     uiState.filteredPins.forEach { pin ->
-                        val imgId = "marker-${pin.idExposicion}"
+                        val factor = if (range > 0f) ((pin.match - effectiveMin) / range).coerceIn(0f, 1f) else 0.5f
+                        val scale  = 0.5f + factor * 0.7f
+                        val bmp    = createMarkerBitmap(context, pin.mainTag, scale)
+                        val imgId  = "marker-${pin.idExposicion}"
                         if (style.getStyleImage(imgId) == null) {
-                            val factor = if (matchRange > 0f) ((pin.match - effectiveMin) / matchRange).coerceIn(0f, 1f) else 0.5f
-                            val markerScale = 0.6f + factor * 0.6f  // range: 0.6 → 1.2
-                            
-                            val bmp = createMarkerBitmap(pin.mainTag, pin.match, context, markerScale)
                             style.addImage(imgId, bmp)
                         }
                     }
-
 
                     // Register empty-baliza bitmap
                     val balizaBmp = createEmptyBalizaMarker(context)
