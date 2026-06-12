@@ -187,23 +187,39 @@ fun createMarkerBitmap(
     val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     iconPaint.color = 0xFFFFFFFF.toInt()
     iconPaint.style = Paint.Style.FILL
+    val holePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    holePaint.color = 0xFF2D2D3A.toInt() // Dark background color to act as a "hole"
+    holePaint.style = Paint.Style.FILL
+
     val iconSize = (radius * 0.9f)
     val s  = iconSize / 22f
     val off = 11f
     val mainPath = android.graphics.Path()
+    val holePath = android.graphics.Path()
+
     when (tag.lowercase()) {
         "fotografía" -> {
-            mainPath.moveTo(cx+(21f-off)*s, cy+(19f-off)*s); mainPath.lineTo(cx+(21f-off)*s, cy+(5f-off)*s)
-            mainPath.cubicTo(cx+(21f-off)*s, cy+(3.9f-off)*s, cx+(20.1f-off)*s, cy+(3f-off)*s, cx+(19f-off)*s, cy+(3f-off)*s)
-            mainPath.lineTo(cx+(5f-off)*s, cy+(3f-off)*s)
-            mainPath.cubicTo(cx+(3.9f-off)*s, cy+(3f-off)*s, cx+(3f-off)*s, cy+(3.9f-off)*s, cx+(3f-off)*s, cy+(5f-off)*s)
-            mainPath.lineTo(cx+(3f-off)*s, cy+(19f-off)*s)
-            mainPath.cubicTo(cx+(3f-off)*s, cy+(20.1f-off)*s, cx+(3.9f-off)*s, cy+(21f-off)*s, cx+(5f-off)*s, cy+(21f-off)*s)
-            mainPath.lineTo(cx+(19f-off)*s, cy+(21f-off)*s)
-            mainPath.cubicTo(cx+(20.1f-off)*s, cy+(21f-off)*s, cx+(21f-off)*s, cy+(20.1f-off)*s, cx+(21f-off)*s, cy+(19f-off)*s)
+            // Camera
+            mainPath.moveTo(cx+(20f-off)*s, cy+(4f-off)*s)
+            mainPath.lineTo(cx+(16.83f-off)*s, cy+(4f-off)*s)
+            mainPath.lineTo(cx+(15f-off)*s, cy+(2f-off)*s)
+            mainPath.lineTo(cx+(9f-off)*s, cy+(2f-off)*s)
+            mainPath.lineTo(cx+(7.17f-off)*s, cy+(4f-off)*s)
+            mainPath.lineTo(cx+(4f-off)*s, cy+(4f-off)*s)
+            mainPath.cubicTo(cx+(2.9f-off)*s, cy+(4f-off)*s, cx+(2f-off)*s, cy+(4.9f-off)*s, cx+(2f-off)*s, cy+(6f-off)*s)
+            mainPath.lineTo(cx+(2f-off)*s, cy+(18f-off)*s)
+            mainPath.cubicTo(cx+(2f-off)*s, cy+(19.1f-off)*s, cx+(2.9f-off)*s, cy+(20f-off)*s, cx+(4f-off)*s, cy+(20f-off)*s)
+            mainPath.lineTo(cx+(20f-off)*s, cy+(20f-off)*s)
+            mainPath.cubicTo(cx+(21.1f-off)*s, cy+(20f-off)*s, cx+(22f-off)*s, cy+(19.1f-off)*s, cx+(22f-off)*s, cy+(18f-off)*s)
+            mainPath.lineTo(cx+(22f-off)*s, cy+(6f-off)*s)
+            mainPath.cubicTo(cx+(22f-off)*s, cy+(4.9f-off)*s, cx+(21.1f-off)*s, cy+(4f-off)*s, cx+(20f-off)*s, cy+(4f-off)*s)
             mainPath.close()
+            
+            // Camera lens hole
+            holePath.addCircle(cx+(12f-off)*s, cy+(12f-off)*s, 3.2f*s, android.graphics.Path.Direction.CW)
         }
         "escultura" -> {
+            // Museum
             mainPath.addRect(cx+(2f-off)*s, cy+(19f-off)*s, cx+(21f-off)*s, cy+(22f-off)*s, android.graphics.Path.Direction.CW)
             mainPath.addRect(cx+(4f-off)*s, cy+(10f-off)*s, cx+(7f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
             mainPath.addRect(cx+(10f-off)*s, cy+(10f-off)*s, cx+(13f-off)*s, cy+(17f-off)*s, android.graphics.Path.Direction.CW)
@@ -213,6 +229,7 @@ fun createMarkerBitmap(
             mainPath.lineTo(cx+(21f-off)*s, cy+(6f-off)*s); mainPath.close()
         }
         else -> {
+            // Palette
             mainPath.moveTo(cx+(12f-off)*s, cy+(2f-off)*s)
             mainPath.cubicTo(cx+(6.48f-off)*s, cy+(2f-off)*s, cx+(2f-off)*s, cy+(6.48f-off)*s, cx+(2f-off)*s, cy+(12f-off)*s)
             mainPath.cubicTo(cx+(2f-off)*s, cy+(17.52f-off)*s, cx+(6.48f-off)*s, cy+(22f-off)*s, cx+(12f-off)*s, cy+(22f-off)*s)
@@ -225,17 +242,21 @@ fun createMarkerBitmap(
             mainPath.cubicTo(cx+(21f-off)*s, cy+(6.48f-off)*s, cx+(16.52f-off)*s, cy+(2f-off)*s, cx+(12f-off)*s, cy+(2f-off)*s)
             mainPath.close()
             
-            val holePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-            holePaint.color = 0xFF2D2D3A.toInt()
-            canvas.drawPath(mainPath, iconPaint)
-            canvas.drawCircle(cx+(6.5f-off)*s,  cy+(10.5f-off)*s, 1.8f*s, holePaint)
-            canvas.drawCircle(cx+(9.5f-off)*s,  cy+(6.5f-off)*s,  1.8f*s, holePaint)
-            canvas.drawCircle(cx+(14.5f-off)*s, cy+(6.5f-off)*s,  1.8f*s, holePaint)
-            canvas.drawCircle(cx+(17.5f-off)*s, cy+(10.5f-off)*s, 1.8f*s, holePaint)
-            return bitmap
+            // Palette holes
+            holePath.addCircle(cx+(6.5f-off)*s, cy+(10.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
+            holePath.addCircle(cx+(9.5f-off)*s, cy+(6.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
+            holePath.addCircle(cx+(14.5f-off)*s, cy+(6.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
+            holePath.addCircle(cx+(17.5f-off)*s, cy+(10.5f-off)*s, 1.8f*s, android.graphics.Path.Direction.CW)
         }
     }
+    
+    // Draw the main shape
     canvas.drawPath(mainPath, iconPaint)
+    
+    // Draw the "holes" using the dark background color
+    if (!holePath.isEmpty) {
+        canvas.drawPath(holePath, holePaint)
+    }
 
     return bitmap
 }
