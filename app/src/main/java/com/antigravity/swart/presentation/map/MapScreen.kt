@@ -125,11 +125,12 @@ fun roundedBitmap(bmp: Bitmap, size: Int, cornerRadius: Float): Bitmap {
 // --------------------------------------------------------------------------
 /**
  * Draws a stacked 3-card marker:
- *  - Back card  (pink/beige tint)  : offset left+up
- *  - Middle card (grey tint)       : offset left+up slightly
- *  - Front card (full color, img1) : top-right, sharp
+ *  - Back card  (pink/beige tint)  : leftmost, same Y as front
+ *  - Middle card (grey tint)       : middle X, same Y as front
+ *  - Front card (full color, img1) : rightmost, top
  *  - Pill badge "+N" bottom-right of front card
  *  - Category icon centered over all 3 cards
+ *  - scale: driven by match score (0.5f..1.2f)
  */
 fun createStackedMarkerBitmap(
     context: Context,
@@ -137,16 +138,20 @@ fun createStackedMarkerBitmap(
     img1: Bitmap?,
     img2: Bitmap?,
     img3: Bitmap?,
-    extraObras: Int   // obras beyond the 3 shown  (totalObras - 3, clamped >= 0)
+    extraObras: Int,  // obras beyond the 3 shown  (totalObras - 3, clamped >= 0)
+    scale: Float = 1f
 ): Bitmap {
     // ── Dimensions ──────────────────────────────────────────────────────────
     val cardSize   = 160          // side of each square card (px)
     val radius     = 32f          // corner radius
-    val offset     = 22           // horizontal/vertical offset between cards
-    val totalW     = cardSize + offset * 2 + 20   // extra right margin for shadow
-    val totalH     = cardSize + offset * 2 + 20
+    val offset     = 26           // horizontal offset between cards (X only)
+    val totalW     = cardSize + offset * 2 + 24   // extra margin for shadow
+    val totalH     = cardSize + 24
     val bitmap     = Bitmap.createBitmap(totalW, totalH, Bitmap.Config.ARGB_8888)
     val canvas     = Canvas(bitmap)
+
+    // Apply match-score scale from the center of the bitmap
+    canvas.scale(scale, scale, totalW / 2f, totalH / 2f)
 
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -155,8 +160,7 @@ fun createStackedMarkerBitmap(
         val rect = RectF(left, top, left + cardSize, top + cardSize)
         // shadow
         paint.color = 0x40000000; paint.style = Paint.Style.FILL
-        canvas.drawRoundRect(rect.apply { offset(4f, 4f) }, radius, radius, paint)
-        rect.offset(-4f, -4f)
+        canvas.drawRoundRect(RectF(rect).apply { offset(4f, 4f) }, radius, radius, paint)
         // card base
         paint.color = if (photoBmp == null) 0xFF2D2D3A.toInt() else 0xFFFFFFFF.toInt()
         canvas.drawRoundRect(rect, radius, radius, paint)
@@ -180,19 +184,22 @@ fun createStackedMarkerBitmap(
         }
     }
 
+    // All cards share the same Y — depth effect comes purely from X offset
+    val cardY = 8f  // small top margin for shadow
+
     // ── Back card: pink/beige tint, furthest left ────────────────────────────
     val back3x = 0f
-    val back3y = offset * 2f
+    val back3y = cardY
     drawCard(back3x, back3y, img3, 0xAAF3E8D8.toInt())
 
-    // ── Middle card: grey tint, slightly left ────────────────────────────────
+    // ── Middle card: grey tint ───────────────────────────────────────────────
     val mid2x = offset.toFloat()
-    val mid2y = offset.toFloat()
+    val mid2y = cardY
     drawCard(mid2x, mid2y, img2, 0x88B0B0B0.toInt())
 
     // ── Front card: no tint (full photo) ────────────────────────────────────
     val frontX = (offset * 2).toFloat()
-    val frontY = 0f
+    val frontY = cardY
     drawCard(frontX, frontY, img1, 0)
 
     // ── Pill badge "+N" ──────────────────────────────────────────────────────
@@ -222,11 +229,10 @@ fun createStackedMarkerBitmap(
     // ── Category icon centered over all 3 cards ──────────────────────────────
     val iconSize   = 44
     val iconRadius = iconSize / 2f
-    // geometric center of the three cards bounding box
+    // All cards same Y: geometric center is mid-X, mid-card-height
     val allLeft    = back3x; val allRight = frontX + cardSize
-    val allTop     = frontY; val allBottom = back3y + cardSize
     val iconCx     = (allLeft + allRight) / 2f
-    val iconCy     = (allTop + allBottom) / 2f
+    val iconCy     = cardY + cardSize / 2f
 
     // gradient pill bg
     val (gradStart, gradEnd) = when (tag.lowercase()) {
@@ -487,11 +493,18 @@ fun MapScreen(
                         }
                     }
 
+                    // ── Scale markers by match score ──────────────────────
+                    val minMatch = uiState.filteredPins.minOfOrNull { it.match } ?: 50
+                    val maxMatch = uiState.filteredPins.maxOfOrNull { it.match } ?: 100
+                    val effectiveMin = minOf(minMatch.toFloat(), maxMatch.toFloat() - 15f)
+                    val matchRange = maxMatch.toFloat() - effectiveMin
 
                     // ── Register exhibition bitmaps in style ──────────────
                     uiState.filteredPins.forEach { pin ->
                         val imgId = "marker-${pin.idExposicion}"
                         if (style.getStyleImage(imgId) == null) {
+                            val factor = if (matchRange > 0f) ((pin.match - effectiveMin) / matchRange).coerceIn(0f, 1f) else 0.5f
+                            val markerScale = 0.6f + factor * 0.6f  // range: 0.6 → 1.2
                             // Load images asynchronously (network); update style on main thread
                             Thread {
                                 val img1 = pin.imagen?.let { loadBitmapFromUrl(it) }
@@ -499,7 +512,7 @@ fun MapScreen(
                                 val img3 = pin.imagen3?.let { loadBitmapFromUrl(it) }
                                 val extraObras = (pin.totalObras - 3).coerceAtLeast(0)
                                 val bmp = createStackedMarkerBitmap(
-                                    context, pin.mainTag, img1, img2, img3, extraObras
+                                    context, pin.mainTag, img1, img2, img3, extraObras, markerScale
                                 )
                                 mv.post {
                                     if (style.getStyleImage(imgId) == null) {
