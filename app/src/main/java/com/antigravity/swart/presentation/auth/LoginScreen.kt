@@ -79,7 +79,7 @@ fun LoginScreen(
         Image(
             painter = painterResource(id = R.drawable.dise_o_de_la_ui_logotipo__1_),
             contentDescription = "Logo",
-            modifier = Modifier.size(200.dp)
+            modifier = Modifier.size(160.dp)
         )
 
         Spacer(modifier = Modifier.height(0.2.dp))

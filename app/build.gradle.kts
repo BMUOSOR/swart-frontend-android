@@ -27,6 +27,12 @@ android {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        create("benchmark") {
+            initWith(getByName("release"))
+            matchingFallbacks.add("release")
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -90,4 +96,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    
+    // Requerido por Jetpack Macrobenchmark para compilar Baseline Profiles (CompilationMode.Partial)
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
 }

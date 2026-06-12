@@ -179,11 +179,19 @@ fun AppNavigation() {
                         popUpTo("home/$role") { inclusive = true }
                     }
                 },
-                onNavigateToMap = {
-                    navController.navigate("mapa/$role") {
-                        popUpTo("home/$role") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+                onNavigateToMap = { exhibitionId ->
+                    if (exhibitionId >= 0L) {
+                        navController.navigate("mapa/$role?exhibitionId=$exhibitionId") {
+                            popUpTo("home/$role") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    } else {
+                        navController.navigate("mapa/$role") {
+                            popUpTo("home/$role") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 },
                 onNavigateToObras = {

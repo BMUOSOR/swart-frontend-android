@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Swart"
 include(":app")
+include(":benchmark")
