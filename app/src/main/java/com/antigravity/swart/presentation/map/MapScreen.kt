@@ -389,6 +389,17 @@ fun MapScreen(
                         })
                     }
 
+                    if (!style.styleLayerExists("layer-pins")) {
+                        style.addLayer(
+                            symbolLayer("layer-pins", exhibSource) {
+                                iconImage(get("markerImage"))
+                                iconAnchor(IconAnchor.BOTTOM)
+                                iconAllowOverlap(true)
+                                iconIgnorePlacement(true)
+                            }
+                        )
+                    }
+
                     // ── Build GeoJSON for empty balizas ───────────────────
                     val balizaFeatures = uiState.emptyBalizas.map { baliza ->
                         Feature.fromGeometry(
