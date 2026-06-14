@@ -159,12 +159,17 @@ class CreateExhibitionViewModel @Inject constructor(
             _verificationError.value = null
             _verificationSuccess.value = null
             repository.verifyAddress(query).fold(
-                onSuccess = { result ->
-                    _ubicacion.value = result.displayName
-                    if (!fromAddressField && _nombreLugar.value.isBlank()) {
-                        _nombreLugar.value = result.displayName
+                onSuccess = { results ->
+                    val result = results.firstOrNull()
+                    if (result != null) {
+                        _ubicacion.value = result.displayName
+                        if (!fromAddressField && _nombreLugar.value.isBlank()) {
+                            _nombreLugar.value = result.displayName
+                        }
+                        _verificationSuccess.value = "Dirección encontrada y verificada"
+                    } else {
+                        _verificationError.value = "Lugar no encontrado."
                     }
-                    _verificationSuccess.value = "Dirección encontrada y verificada"
                     _isVerifying.value = false
                 },
                 onFailure = {

@@ -226,8 +226,14 @@ class MapViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSearchingAddress = true, addressSearchError = null)
             repository.verifyAddress(query).fold(
-                onSuccess = { result ->
-                    val suggestions = listOf(AddressSuggestion(result.displayName, result.lat, result.lon))
+                onSuccess = { results ->
+                    val suggestions = results.map { result ->
+                        AddressSuggestion(
+                            displayName = result.displayName,
+                            lat = result.lat,
+                            lon = result.lon
+                        )
+                    }
                     _uiState.value = _uiState.value.copy(
                         addressSuggestions = suggestions,
                         isSearchingAddress = false

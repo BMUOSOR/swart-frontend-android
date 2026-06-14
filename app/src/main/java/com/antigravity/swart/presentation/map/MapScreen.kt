@@ -29,6 +29,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -1046,17 +1051,20 @@ fun AddressSearchDialog(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Resultados:", color = TextWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    suggestions.forEach { suggestion ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onSuggestionSelected(suggestion) }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Place, contentDescription = null, tint = TextGray, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(suggestion.displayName, color = TextWhite, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    LazyColumn(modifier = Modifier.heightIn(min = 100.dp, max = 250.dp)) {
+                        items(suggestions) { suggestion ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSuggestionSelected(suggestion) }
+                                    .padding(vertical = 12.dp), // slightly more padding for touch targets
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Place, contentDescription = null, tint = TextGray, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(suggestion.displayName, color = TextWhite, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                            }
+                            Divider(color = Color.White.copy(alpha = 0.1f))
                         }
                     }
                 }

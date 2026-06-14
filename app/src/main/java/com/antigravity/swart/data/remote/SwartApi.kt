@@ -113,7 +113,7 @@ interface SwartApi {
     @GET("api/map/verify-address")
     suspend fun verifyAddress(
         @Query("address") address: String
-    ): com.antigravity.swart.data.remote.dto.GeocodingResultDto
+    ): List<com.antigravity.swart.data.remote.dto.GeocodingResultDto>
 
     @GET("api/map/reverse-geocode")
     suspend fun reverseGeocode(
