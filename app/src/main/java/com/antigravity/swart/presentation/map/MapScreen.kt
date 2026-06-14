@@ -457,7 +457,7 @@ fun MapScreen(
                         mapboxMap.queryRenderedFeatures(
                             com.mapbox.maps.RenderedQueryGeometry(com.mapbox.maps.ScreenCoordinate(screenPoint.x, screenPoint.y)),
                             com.mapbox.maps.RenderedQueryOptions(
-                                listOf(exhibLayer, balizaLayer, govLayer), null
+                                listOf("layer-pins", "layer-balizas", "layer-gov"), null
                             )
                         ) { result ->
                             result.value?.firstOrNull()?.queriedFeature?.feature?.let { feature ->
@@ -522,8 +522,7 @@ fun MapScreen(
             }
 
             // ── Selected Exhibition Card ──────────────────────────────────
-            if (!uiState.isPlacingMode) {
-                uiState.selectedPin?.let { pin ->
+            uiState.selectedPin?.let { pin ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -572,7 +571,6 @@ fun MapScreen(
                         }
                     }
                 }
-            }
             
             // ── Gov Baliza Overlay ────────────────────────────────────────
             uiState.selectedGovBalizaId?.let { govId ->
@@ -613,7 +611,6 @@ fun MapScreen(
                 )
             }
 
-            }
 
             if (uiState.isLoading) {
                 CircularProgressIndicator(color = InteresadoGradientStart, modifier = Modifier.align(Alignment.Center))
