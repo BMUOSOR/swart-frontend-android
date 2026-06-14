@@ -165,4 +165,25 @@ interface SwartApi {
 
     @DELETE("api/map/baliza-vacia/{id}")
     suspend fun deleteEmptyBaliza(@Path("id") id: Long): Map<String, Boolean>
+
+    @POST("api/map/baliza-vacia/{id}/propuesta")
+    suspend fun createPropuestaBaliza(
+        @Path("id") balizaId: Long,
+        @Body request: com.antigravity.swart.data.remote.dto.PropuestaRequest
+    ): Map<String, Long>
+
+    @GET("api/map/baliza-vacia/{id}/propuestas")
+    suspend fun getPropuestasByBaliza(@Path("id") balizaId: Long): List<com.antigravity.swart.data.remote.dto.PropuestaDto>
+
+    @GET("api/map/propuestas/artista/{idArtista}")
+    suspend fun getPropuestasByArtista(@Path("idArtista") artistaId: Long): List<com.antigravity.swart.data.remote.dto.PropuestaDto>
+
+    @PUT("api/map/propuesta/{id}/estado")
+    suspend fun respondPropuesta(
+        @Path("id") propuestaId: Long,
+        @Body request: com.antigravity.swart.data.remote.dto.PropuestaEstadoRequest
+    ): Map<String, Boolean>
+
+    @GET("api/map/balizas-gubernamentales")
+    suspend fun getBalizasGubernamentales(): List<com.antigravity.swart.data.remote.dto.GovBalizaDto>
 }

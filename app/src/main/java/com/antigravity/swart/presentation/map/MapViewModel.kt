@@ -2,13 +2,19 @@ package com.antigravity.swart.presentation.map
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.model.MapPin
+import com.antigravity.swart.domain.model.GovBaliza
+import com.antigravity.swart.domain.model.PropuestaBaliza
+import com.antigravity.swart.domain.model.GeocodingResult
 import com.antigravity.swart.domain.repository.ExhibitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class AddressSuggestion(val displayName: String, val lat: Double, val lon: Double)
 
 data class MapUiState(
     val pins: List<MapPin> = emptyList(),
@@ -27,16 +33,28 @@ data class MapUiState(
     val selectedEmptyBaliza: com.antigravity.swart.domain.model.EmptyBaliza? = null,
     val selectedEmptyBalizaAddress: String? = null,
     val isLoadingBalizaAddress: Boolean = false,
-    val isPlacingMode: Boolean = false,
+    val isAddressSearchOpen: Boolean = false,
+    val addressQuery: String = "",
+    val addressSuggestions: List<AddressSuggestion> = emptyList(),
+    val isSearchingAddress: Boolean = false,
+    val addressSearchError: String? = null,
     val isCreatingEmptyBaliza: Boolean = false,
+    // Propuestas
+    val isProposalFormOpen: Boolean = false,
+    // Gov balizas
+    val govBalizas: List<GovBaliza> = emptyList(),
+    val isGovPanelOpen: Boolean = false,
+    val selectedGovBalizaId: Long? = null,
+    val currentUserId: Long = -1L
 )
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
-    private val repository: ExhibitionRepository
+    private val repository: ExhibitionRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MapUiState())
+    private val _uiState = MutableStateFlow(MapUiState(currentUserId = sessionManager.getUserId()))
     val uiState = _uiState.asStateFlow()
     
     private var pendingExhibitionId: Long? = null
@@ -158,17 +176,60 @@ class MapViewModel @Inject constructor(
                 onSuccess = { list -> _uiState.value = _uiState.value.copy(emptyBalizas = list) },
                 onFailure = { /* silently ignore */ }
             )
+            repository.getBalizasGubernamentales().fold(
+                onSuccess = { list -> _uiState.value = _uiState.value.copy(govBalizas = list) },
+                onFailure = { /* silently ignore */ }
+            )
+        }
+    }
+
+    fun toggleAddressSearch(open: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            isAddressSearchOpen = open,
+            addressQuery = "",
+            addressSuggestions = emptyList(),
+            addressSearchError = null,
+            isSearchingAddress = false,
+            selectedPin = null,
+            selectedEmptyBaliza = null
+        )
+    }
+
+    fun onAddressQueryChange(query: String) {
+        _uiState.value = _uiState.value.copy(addressQuery = query, addressSearchError = null)
+    }
+
+    fun searchAddress(query: String) {
+        if (query.isBlank()) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSearchingAddress = true, addressSearchError = null)
+            repository.verifyAddress(query).fold(
+                onSuccess = { result ->
+                    val suggestions = listOf(AddressSuggestion(result.displayName, result.lat, result.lon))
+                    _uiState.value = _uiState.value.copy(
+                        addressSuggestions = suggestions,
+                        isSearchingAddress = false
+                    )
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(
+                        isSearchingAddress = false,
+                        addressSearchError = "No se encontró la dirección."
+                    )
+                }
+            )
         }
     }
 
     fun placeEmptyBaliza(lat: Double, lon: Double) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isCreatingEmptyBaliza = true, isPlacingMode = false)
-            repository.createEmptyBaliza(lat, lon).fold(
+            _uiState.value = _uiState.value.copy(isCreatingEmptyBaliza = true)
+            repository.createEmptyBaliza(lat, lon, sessionManager.getUserId()).fold(
                 onSuccess = { baliza ->
                     _uiState.value = _uiState.value.copy(
                         emptyBalizas = _uiState.value.emptyBalizas + baliza,
-                        isCreatingEmptyBaliza = false
+                        isCreatingEmptyBaliza = false,
+                        isAddressSearchOpen = false
                     )
                 },
                 onFailure = {
@@ -227,11 +288,44 @@ class MapViewModel @Inject constructor(
         }
     }
 
-    fun togglePlacingMode() {
+    // Propuestas
+    fun toggleProposalForm(open: Boolean) {
+        _uiState.value = _uiState.value.copy(isProposalFormOpen = open)
+    }
+
+    fun sendProposal(titulo: String, descrip: String, start: String, end: String, category: String, price: Double?) {
+        val baliza = _uiState.value.selectedEmptyBaliza ?: return
+        viewModelScope.launch {
+            val req = com.antigravity.swart.data.remote.dto.PropuestaRequest(
+                idArtista = sessionManager.getUserId(),
+                titulo = titulo,
+                descrip = descrip,
+                fechaInicio = start,
+                fechaFin = end,
+                precio = price,
+                categoria = category
+            )
+            repository.createPropuestaBaliza(baliza.id, req).fold(
+                onSuccess = {
+                    toggleProposalForm(false)
+                    dismissEmptyBaliza()
+                },
+                onFailure = { /* show error */ }
+            )
+        }
+    }
+
+    // Gov Balizas
+    fun onGovBalizaClick(id: Long) {
         _uiState.value = _uiState.value.copy(
-            isPlacingMode = !_uiState.value.isPlacingMode,
+            isGovPanelOpen = true,
+            selectedGovBalizaId = id,
             selectedPin = null,
             selectedEmptyBaliza = null
         )
+    }
+
+    fun dismissGovPanel() {
+        _uiState.value = _uiState.value.copy(isGovPanelOpen = false, selectedGovBalizaId = null)
     }
 }

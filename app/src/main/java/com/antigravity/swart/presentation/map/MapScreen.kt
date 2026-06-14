@@ -160,6 +160,23 @@ fun createEmptyBalizaMarker(context: Context): Bitmap {
     return bitmap
 }
 
+fun createGovBalizaMarker(context: Context): Bitmap {
+    val size = 140
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    paint.color = 0x33000000; canvas.drawCircle(size/2f, size/2f, size/2.1f, paint)
+    paint.color = 0xFF10B981.toInt(); canvas.drawCircle(size/2f, size/2f, size/2.4f, paint) // Emerald green
+    paint.color = 0xFF047857.toInt(); canvas.drawCircle(size/2f, size/2f, size/2.8f, paint)
+    paint.color = 0xFF34D399.toInt(); canvas.drawCircle(size/2f, size/2f, size/3.5f, paint)
+    paint.shader = null; paint.color = 0xFFFFFFFF.toInt(); paint.style = Paint.Style.STROKE
+    paint.strokeWidth = size/15f; paint.strokeCap = Paint.Cap.ROUND
+    // Draw an 'i' for info
+    canvas.drawLine(size/2f, size/2f - size/10f, size/2f, size/2f + size/5f, paint)
+    canvas.drawPoint(size/2f, size/2f - size/4f, paint)
+    return bitmap
+}
+
 // --------------------------------------------------------------------------
 // MapScreen
 // --------------------------------------------------------------------------
@@ -345,6 +362,12 @@ fun MapScreen(
                         style.addImage("marker-baliza", balizaBmp)
                     }
 
+                    // Register gov-baliza bitmap
+                    val govBmp = createGovBalizaMarker(context)
+                    if (style.getStyleImage("marker-gov") == null) {
+                        style.addImage("marker-gov", govBmp)
+                    }
+
                     // ── Build GeoJSON for exhibitions ─────────────────────
                     val exhibFeatures = uiState.filteredPins.map { pin ->
                         Feature.fromGeometry(
@@ -384,43 +407,6 @@ fun MapScreen(
                         })
                     }
 
-                    // ── Exhibition symbol layer ───────────────────────────
-                    val exhibLayer = "layer-exhibitions"
-                    if (!style.styleLayerExists(exhibLayer)) {
-                        style.addLayer(
-                            symbolLayer(exhibLayer, exhibSource) {
-                                iconImage(get("markerImage"))
-                                iconAnchor(IconAnchor.CENTER)
-                                iconAllowOverlap(true)
-                                iconIgnorePlacement(true)
-                            }
-                        )
-                        // Click handler
-                        mv.gestures.addOnMapClickListener { clickPoint ->
-                            val screenPoint = mapboxMap.pixelForCoordinate(clickPoint)
-                            mapboxMap.queryRenderedFeatures(
-                                com.mapbox.maps.RenderedQueryGeometry(com.mapbox.maps.ScreenCoordinate(screenPoint.x, screenPoint.y)),
-                                com.mapbox.maps.RenderedQueryOptions(
-                                    listOf(exhibLayer, "layer-balizas"), null
-                                )
-                            ) { result ->
-                                result.value?.firstOrNull()?.queriedFeature?.feature?.let { feature ->
-                                    val pinIdStr    = feature.getStringProperty("pinId")
-                                    val balizaIdStr = feature.getStringProperty("balizaId")
-                                    if (pinIdStr != null) {
-                                        uiState.filteredPins.find { it.idExposicion.toString() == pinIdStr }
-                                            ?.let { viewModel.onPinClick(it) }
-                                    } else if (balizaIdStr != null) {
-                                        uiState.emptyBalizas.find { it.id.toString() == balizaIdStr }
-                                            ?.let { viewModel.onEmptyBalizaClick(it) }
-                                    }
-                                    Unit
-                                }
-                            }
-                            false
-                        }
-                    }
-
                     // ── Empty-baliza symbol layer ─────────────────────────
                     val balizaLayer = "layer-balizas"
                     if (!style.styleLayerExists(balizaLayer)) {
@@ -432,6 +418,65 @@ fun MapScreen(
                                 iconIgnorePlacement(true)
                             }
                         )
+                    }
+
+                    // ── Build GeoJSON for gov balizas ───────────────────
+                    val govFeatures = uiState.govBalizas.map { baliza ->
+                        Feature.fromGeometry(
+                            Point.fromLngLat(baliza.lon, baliza.lat),
+                            null,
+                            "gov-${baliza.id}"
+                        ).also { it.addStringProperty("govId", baliza.id.toString()) }
+                    }
+                    val govSource = "source-gov"
+                    if (style.styleSourceExists(govSource)) {
+                        style.getSourceAs<com.mapbox.maps.extension.style.sources.generated.GeoJsonSource>(govSource)
+                            ?.featureCollection(FeatureCollection.fromFeatures(govFeatures))
+                    } else {
+                        style.addSource(geoJsonSource(govSource) {
+                            featureCollection(FeatureCollection.fromFeatures(govFeatures))
+                        })
+                    }
+
+                    // ── Gov-baliza symbol layer ─────────────────────────
+                    val govLayer = "layer-gov"
+                    if (!style.styleLayerExists(govLayer)) {
+                        style.addLayer(
+                            symbolLayer(govLayer, govSource) {
+                                iconImage(literal("marker-gov"))
+                                iconAnchor(IconAnchor.CENTER)
+                                iconAllowOverlap(true)
+                                iconIgnorePlacement(true)
+                            }
+                        )
+                    }
+
+                    // Click handler
+                    mv.gestures.addOnMapClickListener { clickPoint ->
+                        val screenPoint = mapboxMap.pixelForCoordinate(clickPoint)
+                        mapboxMap.queryRenderedFeatures(
+                            com.mapbox.maps.RenderedQueryGeometry(com.mapbox.maps.ScreenCoordinate(screenPoint.x, screenPoint.y)),
+                            com.mapbox.maps.RenderedQueryOptions(
+                                listOf(exhibLayer, balizaLayer, govLayer), null
+                            )
+                        ) { result ->
+                            result.value?.firstOrNull()?.queriedFeature?.feature?.let { feature ->
+                                val pinIdStr    = feature.getStringProperty("pinId")
+                                val balizaIdStr = feature.getStringProperty("balizaId")
+                                val govIdStr    = feature.getStringProperty("govId")
+                                if (pinIdStr != null) {
+                                    uiState.filteredPins.find { it.idExposicion.toString() == pinIdStr }
+                                        ?.let { viewModel.onPinClick(it) }
+                                } else if (balizaIdStr != null) {
+                                    uiState.emptyBalizas.find { it.id.toString() == balizaIdStr }
+                                        ?.let { viewModel.onEmptyBalizaClick(it) }
+                                } else if (govIdStr != null) {
+                                    viewModel.onGovBalizaClick(govIdStr.toLong())
+                                }
+                                Unit
+                            }
+                        }
+                        false
                     }
 
                     // ── Fly to selected pin ───────────────────────────────
@@ -464,17 +509,15 @@ fun MapScreen(
                     onQueryChange = viewModel::onSearchQueryChange,
                     onFilterClick = { viewModel.toggleFilterSheet(true) }
                 )
-                if (!uiState.isPlacingMode) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    FloatingActionButton(
-                        onClick = { viewModel.togglePlacingMode() },
-                        containerColor = Color(0xFF374151),
-                        contentColor = Color.White,
-                        shape = CircleShape,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(imageVector = Icons.Default.AddLocation, contentDescription = "Colocar baliza vacía")
-                    }
+                Spacer(modifier = Modifier.height(12.dp))
+                FloatingActionButton(
+                    onClick = { viewModel.toggleAddressSearch(true) },
+                    containerColor = Color(0xFF374151),
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Search, contentDescription = "Buscar dirección para baliza")
                 }
             }
 
@@ -503,15 +546,18 @@ fun MapScreen(
                             .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
                             .align(Alignment.BottomCenter)
                     ) {
+                        val isOwner = baliza.idPropietario == uiState.currentUserId
                         if (isArtist) {
                             ArtistEmptyBalizaCard(
                                 baliza = baliza,
                                 address = uiState.selectedEmptyBalizaAddress,
                                 isLoadingAddress = uiState.isLoadingBalizaAddress,
+                                isOwner = isOwner,
                                 onCreateExhibition = {
                                     viewModel.dismissEmptyBaliza()
                                     onNavigateToCreateExhibition(baliza.lat, baliza.lon, baliza.id)
                                 },
+                                onSendProposal = { viewModel.toggleProposalForm(true) },
                                 onDelete  = { viewModel.deleteEmptyBaliza(baliza.id) },
                                 onDismiss = { viewModel.dismissEmptyBaliza() }
                             )
@@ -519,6 +565,7 @@ fun MapScreen(
                             InteresadoEmptyBalizaCard(
                                 address = uiState.selectedEmptyBalizaAddress,
                                 isLoadingAddress = uiState.isLoadingBalizaAddress,
+                                isOwner = isOwner,
                                 onDelete  = { viewModel.deleteEmptyBaliza(baliza.id) },
                                 onDismiss = { viewModel.dismissEmptyBaliza() }
                             )
@@ -526,69 +573,46 @@ fun MapScreen(
                     }
                 }
             }
-
-            // ── Placing Mode Overlay ──────────────────────────────────────
-            if (uiState.isPlacingMode) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 152.dp, start = 16.dp, end = 16.dp)
-                        .align(Alignment.TopCenter)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xCC1F2937),
-                        tonalElevation = 8.dp
+            
+            // ── Gov Baliza Overlay ────────────────────────────────────────
+            uiState.selectedGovBalizaId?.let { govId ->
+                val govBaliza = uiState.govBalizas.find { it.id == govId }
+                if (govBaliza != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .fillMaxHeight()
+                            .background(CardBackground)
+                            .align(Alignment.CenterStart)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Icon(Icons.Default.Place, contentDescription = null, tint = Color(0xFF9CA3AF), modifier = Modifier.size(20.dp))
-                            Text("Mueve el mapa para posicionar la baliza", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                        }
+                        GovBalizaPanel(govBaliza = govBaliza, onDismiss = viewModel::dismissGovPanel)
                     }
                 }
+            }
 
-                Box(modifier = Modifier.size(48.dp).align(Alignment.Center)) {
-                    Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(Color.White.copy(alpha = 0.9f)).align(Alignment.Center))
-                    Box(modifier = Modifier.width(2.dp).fillMaxHeight().background(Color.White.copy(alpha = 0.9f)).align(Alignment.Center))
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF6B7280)).align(Alignment.Center))
-                }
+            // ── Dialogs ───────────────────────────────────────────────────
+            if (uiState.isAddressSearchOpen) {
+                AddressSearchDialog(
+                    query = uiState.addressQuery,
+                    suggestions = uiState.addressSuggestions,
+                    isSearching = uiState.isSearchingAddress,
+                    error = uiState.addressSearchError,
+                    onQueryChange = viewModel::onAddressQueryChange,
+                    onSearch = viewModel::searchAddress,
+                    onSuggestionSelected = { suggestion ->
+                        viewModel.placeEmptyBaliza(suggestion.lat, suggestion.lon)
+                    },
+                    onDismiss = { viewModel.toggleAddressSearch(false) }
+                )
+            }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp, start = 24.dp, end = 24.dp)
-                        .align(Alignment.BottomCenter),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { viewModel.togglePlacingMode() },
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, Color(0xFF6B7280))
-                    ) {
-                        Text("Cancelar", color = Color(0xFF9CA3AF), fontWeight = FontWeight.Bold)
-                    }
-                    Button(
-                        onClick = {
-                            val center = mapViewRef?.mapboxMap?.cameraState?.center
-                            if (center != null) viewModel.placeEmptyBaliza(center.latitude(), center.longitude())
-                        },
-                        enabled = !uiState.isCreatingEmptyBaliza,
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF374151))
-                    ) {
-                        if (uiState.isCreatingEmptyBaliza) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text("Colocar aquí", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
+            if (uiState.isProposalFormOpen) {
+                ProposalFormDialog(
+                    onSend = { t, d, s, e, c, p -> viewModel.sendProposal(t, d, s, e, c, p) },
+                    onDismiss = { viewModel.toggleProposalForm(false) }
+                )
+            }
+
             }
 
             if (uiState.isLoading) {
@@ -885,7 +909,9 @@ fun ArtistEmptyBalizaCard(
     baliza: com.antigravity.swart.domain.model.EmptyBaliza,
     address: String?,
     isLoadingAddress: Boolean,
+    isOwner: Boolean,
     onCreateExhibition: () -> Unit,
+    onSendProposal: () -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -897,7 +923,7 @@ fun ArtistEmptyBalizaCard(
                         Icon(Icons.Default.Place, contentDescription = null, tint = Color(0xFF9CA3AF), modifier = Modifier.size(20.dp))
                     }
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Baliza vacía", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(if (isOwner) "Tu baliza vacía" else "Baliza disponible", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         if (isLoadingAddress) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 CircularProgressIndicator(modifier = Modifier.size(10.dp), color = TextGray, strokeWidth = 1.5.dp)
@@ -909,13 +935,23 @@ fun ArtistEmptyBalizaCard(
                     }
                 }
                 Row {
-                    IconButton(onClick = onDelete,  modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp)) }
+                    if (isOwner) {
+                        IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp)) }
+                    }
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Close,  contentDescription = "Cerrar",   tint = TextGray,           modifier = Modifier.size(18.dp)) }
                 }
             }
-            Button(onClick = onCreateExhibition, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues(0.dp)) {
-                Box(modifier = Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(ArtistaGradientStart, ArtistaGradientEnd))), contentAlignment = Alignment.Center) {
-                    Text("Crear exposición aquí", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            if (isOwner) {
+                Button(onClick = onCreateExhibition, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues(0.dp)) {
+                    Box(modifier = Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(ArtistaGradientStart, ArtistaGradientEnd))), contentAlignment = Alignment.Center) {
+                        Text("Crear exposición aquí", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                }
+            } else {
+                Button(onClick = onSendProposal, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues(0.dp)) {
+                    Box(modifier = Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFF8B5CF6), Color(0xFF3B82F6)))), contentAlignment = Alignment.Center) {
+                        Text("Proponer exposición", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
                 }
             }
         }
@@ -923,14 +959,14 @@ fun ArtistEmptyBalizaCard(
 }
 
 @Composable
-fun InteresadoEmptyBalizaCard(address: String?, isLoadingAddress: Boolean, onDelete: () -> Unit, onDismiss: () -> Unit) {
+fun InteresadoEmptyBalizaCard(address: String?, isLoadingAddress: Boolean, isOwner: Boolean, onDelete: () -> Unit, onDismiss: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = CardBackground.copy(alpha = 0.97f), tonalElevation = 12.dp) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF374151)), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.Place, contentDescription = null, tint = Color(0xFF6B7280), modifier = Modifier.size(28.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text("Baliza vacía", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(if (isOwner) "Tu baliza vacía" else "Baliza vacía", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 if (isLoadingAddress) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         CircularProgressIndicator(modifier = Modifier.size(10.dp), color = TextGray, strokeWidth = 1.5.dp)
@@ -940,8 +976,191 @@ fun InteresadoEmptyBalizaCard(address: String?, isLoadingAddress: Boolean, onDel
                     Text(address ?: "Sin exposición asignada todavía", color = TextGray, fontSize = 13.sp, maxLines = 2)
                 }
             }
-            IconButton(onClick = onDelete,  modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp)) }
+            if (isOwner) {
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp)) }
+            }
             IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Close,  contentDescription = "Cerrar",   tint = TextGray,           modifier = Modifier.size(18.dp)) }
         }
+    }
+}
+
+@Composable
+fun AddressSearchDialog(
+    query: String,
+    suggestions: List<AddressSuggestion>,
+    isSearching: Boolean,
+    error: String?,
+    onQueryChange: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    onSuggestionSelected: (AddressSuggestion) -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = CardBackground,
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Buscar dirección", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Ej: Calle Larios, Málaga") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextWhite, unfocusedTextColor = TextGray,
+                        focusedLabelColor = ArtistaGradientStart, cursorColor = ArtistaGradientStart,
+                        focusedBorderColor = ArtistaGradientStart, unfocusedBorderColor = TextGray
+                    ),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { onSearch(query) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = query.isNotBlank() && !isSearching
+                ) {
+                    if (isSearching) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Buscar")
+                    }
+                }
+
+                if (error != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(error, color = Color.Red, fontSize = 14.sp)
+                }
+
+                if (suggestions.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Resultados:", color = TextWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    suggestions.forEach { suggestion ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSuggestionSelected(suggestion) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Place, contentDescription = null, tint = TextGray, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(suggestion.displayName, color = TextWhite, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProposalFormDialog(
+    onSend: (titulo: String, descrip: String, start: String, end: String, category: String, price: Double?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var titulo by remember { mutableStateOf("") }
+    var descrip by remember { mutableStateOf("") }
+    var categoria by remember { mutableStateOf("") }
+    var fechaInicio by remember { mutableStateOf("") }
+    var fechaFin by remember { mutableStateOf("") }
+    var precioStr by remember { mutableStateOf("") }
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = CardBackground,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Proponer Exposición", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = titulo, onValueChange = { titulo = it },
+                    label = { Text("Título de la exposición") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = categoria, onValueChange = { categoria = it },
+                    label = { Text("Categoría (e.g., Pintura)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = descrip, onValueChange = { descrip = it },
+                    label = { Text("Descripción breve") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = fechaInicio, onValueChange = { fechaInicio = it },
+                        label = { Text("Inicio (YYYY-MM-DD)") },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
+                    )
+                    OutlinedTextField(
+                        value = fechaFin, onValueChange = { fechaFin = it },
+                        label = { Text("Fin (YYYY-MM-DD)") },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                    TextButton(onClick = onDismiss) { Text("Cancelar", color = TextGray) }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { onSend(titulo, descrip, fechaInicio, fechaFin, categoria, precioStr.toDoubleOrNull()) }) {
+                        Text("Enviar Propuesta")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GovBalizaPanel(
+    govBaliza: com.antigravity.swart.domain.model.GovBaliza,
+    onDismiss: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Text("Espacio Gubernamental", color = Color(0xFF34D399), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, tint = TextWhite, contentDescription = "Cerrar") }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(govBaliza.nombre, color = TextWhite, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Place, contentDescription = null, tint = TextGray, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(govBaliza.direccion, color = TextGray, fontSize = 14.sp)
+        }
+        if (govBaliza.telefono != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Phone, contentDescription = null, tint = TextGray, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(govBaliza.telefono, color = TextGray, fontSize = 14.sp)
+            }
+        }
+        if (govBaliza.email != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Email, contentDescription = null, tint = TextGray, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(govBaliza.email, color = TextGray, fontSize = 14.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("Nota: Este espacio pertenece a la administración pública. No puedes reservar exposiciones a través de Swart para este lugar. Contacta directamente para más información.", color = Color(0xFF9CA3AF), fontSize = 12.sp, lineHeight = 18.sp)
     }
 }

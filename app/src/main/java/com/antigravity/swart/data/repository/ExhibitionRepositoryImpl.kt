@@ -341,10 +341,10 @@ class ExhibitionRepositoryImpl(
         }
     }
 
-    override suspend fun createEmptyBaliza(lat: Double, lon: Double): Result<com.antigravity.swart.domain.model.EmptyBaliza> {
+    override suspend fun createEmptyBaliza(lat: Double, lon: Double, idPropietario: Long): Result<com.antigravity.swart.domain.model.EmptyBaliza> {
         return try {
             val response = api.createEmptyBaliza(
-                com.antigravity.swart.data.remote.dto.EmptyBalizaRequest(lat, lon)
+                com.antigravity.swart.data.remote.dto.EmptyBalizaRequest(lat, lon, idPropietario)
             )
             Result.success(response.toDomain())
         } catch (e: Exception) {
@@ -380,6 +380,53 @@ class ExhibitionRepositoryImpl(
     override suspend fun incrementExhibitionView(id: Long): Result<Boolean> {
         return try {
             val response = api.incrementExhibitionView(id)
+            Result.success(response["success"] ?: false)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // New map mechanics
+
+    override suspend fun getBalizasGubernamentales(): Result<List<com.antigravity.swart.domain.model.GovBaliza>> {
+        return try {
+            val response = api.getBalizasGubernamentales()
+            Result.success(response.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createPropuestaBaliza(balizaId: Long, request: com.antigravity.swart.data.remote.dto.PropuestaRequest): Result<Long> {
+        return try {
+            val response = api.createPropuestaBaliza(balizaId, request)
+            Result.success(response["idPropuesta"] ?: -1L)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getPropuestasByBaliza(balizaId: Long): Result<List<com.antigravity.swart.domain.model.PropuestaBaliza>> {
+        return try {
+            val response = api.getPropuestasByBaliza(balizaId)
+            Result.success(response.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getPropuestasByArtista(artistaId: Long): Result<List<com.antigravity.swart.domain.model.PropuestaBaliza>> {
+        return try {
+            val response = api.getPropuestasByArtista(artistaId)
+            Result.success(response.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun respondPropuesta(propuestaId: Long, estado: String): Result<Boolean> {
+        return try {
+            val response = api.respondPropuesta(propuestaId, com.antigravity.swart.data.remote.dto.PropuestaEstadoRequest(estado))
             Result.success(response["success"] ?: false)
         } catch (e: Exception) {
             Result.failure(e)

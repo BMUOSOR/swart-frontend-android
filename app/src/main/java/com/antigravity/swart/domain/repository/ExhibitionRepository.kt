@@ -42,9 +42,16 @@ interface ExhibitionRepository {
     suspend fun sendChatMessage(chatId: Long, senderId: Long, contenido: String): Result<Boolean>
     suspend fun reverseGeocode(lat: Double, lon: Double): Result<com.antigravity.swart.domain.model.GeocodingResult>
     suspend fun getEmptyBalizas(): Result<List<com.antigravity.swart.domain.model.EmptyBaliza>>
-    suspend fun createEmptyBaliza(lat: Double, lon: Double): Result<com.antigravity.swart.domain.model.EmptyBaliza>
+    suspend fun createEmptyBaliza(lat: Double, lon: Double, idPropietario: Long): Result<com.antigravity.swart.domain.model.EmptyBaliza>
     suspend fun deleteEmptyBaliza(id: Long): Result<Boolean>
     suspend fun updateArtistProfile(id: Long, bio: String?, instagram: String?, twitter: String?, correo: String?): Result<Boolean>
     suspend fun incrementExhibitionView(id: Long): Result<Boolean>
+
+    // New map mechanics
+    suspend fun getBalizasGubernamentales(): Result<List<com.antigravity.swart.domain.model.GovBaliza>>
+    suspend fun createPropuestaBaliza(balizaId: Long, request: com.antigravity.swart.data.remote.dto.PropuestaRequest): Result<Long>
+    suspend fun getPropuestasByBaliza(balizaId: Long): Result<List<com.antigravity.swart.domain.model.PropuestaBaliza>>
+    suspend fun getPropuestasByArtista(artistaId: Long): Result<List<com.antigravity.swart.domain.model.PropuestaBaliza>>
+    suspend fun respondPropuesta(propuestaId: Long, estado: String): Result<Boolean>
 }
 

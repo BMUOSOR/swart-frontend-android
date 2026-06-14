@@ -13,3 +13,27 @@ data class MapPinDto(
     val startDate: Long? = null,
     val endDate: Long? = null
 )
+
+data class GovBalizaDto(
+    val id: Long,
+    val nombre: String,
+    val direccion: String,
+    val telefono: String?,
+    val email: String?,
+    val lat: Double,
+    val lon: Double
+)
+
+data class PropuestaDto(
+    val id: Long,
+    val idBaliza: Long,
+    val idArtista: Long,
+    val titulo: String,
+    val descrip: String?,
+    val fechaInicio: String?,
+    val fechaFin: String?,
+    val precio: Double?,
+    val categoria: String?,
+    val estado: String,
+    val fechaCreacion: String
+)
