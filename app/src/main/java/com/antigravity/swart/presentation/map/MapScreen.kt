@@ -528,7 +528,7 @@ fun MapScreen(
                     shape = CircleShape,
                     modifier = Modifier.size(48.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Search, contentDescription = "Buscar dirección para baliza")
+                    Icon(imageVector = Icons.Default.Place, contentDescription = "Colocar baliza vacía")
                 }
             }
 

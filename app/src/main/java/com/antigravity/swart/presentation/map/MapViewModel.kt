@@ -58,10 +58,12 @@ class MapViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
     
     private var pendingExhibitionId: Long? = null
+    private var searchJob: kotlinx.coroutines.Job? = null
 
     init {
         getMapPins()
         loadEmptyBalizas()
+        loadGovBalizas()
     }
 
     fun getMapPins() {
@@ -195,8 +197,28 @@ class MapViewModel @Inject constructor(
         )
     }
 
+    private fun loadGovBalizas() {
+        viewModelScope.launch {
+            repository.getBalizasGubernamentales().fold(
+                onSuccess = { balizas ->
+                    _uiState.value = _uiState.value.copy(govBalizas = balizas)
+                },
+                onFailure = { /* ignore or log */ }
+            )
+        }
+    }
+
     fun onAddressQueryChange(query: String) {
         _uiState.value = _uiState.value.copy(addressQuery = query, addressSearchError = null)
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(500)
+            if (query.isNotBlank()) {
+                searchAddress(query)
+            } else {
+                _uiState.value = _uiState.value.copy(addressSuggestions = emptyList())
+            }
+        }
     }
 
     fun searchAddress(query: String) {
@@ -233,7 +255,10 @@ class MapViewModel @Inject constructor(
                     )
                 },
                 onFailure = {
-                    _uiState.value = _uiState.value.copy(isCreatingEmptyBaliza = false)
+                    _uiState.value = _uiState.value.copy(
+                        isCreatingEmptyBaliza = false,
+                        addressSearchError = "Error al colocar la baliza. Comprueba tu sesión o conexión."
+                    )
                 }
             )
         }
