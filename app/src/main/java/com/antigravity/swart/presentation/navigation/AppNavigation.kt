@@ -284,6 +284,9 @@ fun AppNavigation() {
                 onNavigateToCreateExhibition = { lat, lon, balizaId ->
                     navController.navigate("create_exhibition?lat=$lat&lon=$lon&balizaId=$balizaId")
                 },
+                onNavigateToArtistProfile = { artistId ->
+                    navController.navigate("artist_profile/$artistId")
+                },
                 exhibitionIdToSelect = exhibitionId
             )
         }

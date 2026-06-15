@@ -9,7 +9,12 @@ import android.graphics.Shader
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -196,6 +201,7 @@ fun MapScreen(
     onNavigateToFavoritos: () -> Unit = {},
     onNavigateToCreate: () -> Unit = {},
     onNavigateToCreateExhibition: (lat: Double, lon: Double, balizaId: Long) -> Unit = { _, _, _ -> },
+    onNavigateToArtistProfile: (Long) -> Unit = {},
     onLogout: () -> Unit = {},
     exhibitionIdToSelect: Long = -1L,
     viewModel: MapViewModel = hiltViewModel()
@@ -206,6 +212,7 @@ fun MapScreen(
 
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     var lastCenteredPinId by remember { mutableStateOf<Long?>(null) }
+    var lastCenteredBalizaId by remember { mutableStateOf<Long?>(null) }
 
     var locationPermissionGranted by remember { mutableStateOf(false) }
 
@@ -508,6 +515,20 @@ fun MapScreen(
                             )
                         }
                     } ?: run { lastCenteredPinId = null }
+
+                    // ── Fly to selected empty baliza ───────────────────────────────
+                    uiState.selectedEmptyBaliza?.let { baliza ->
+                        if (lastCenteredBalizaId != baliza.id) {
+                            lastCenteredBalizaId = baliza.id
+                            mapboxMap.flyTo(
+                                cameraOptions {
+                                    center(Point.fromLngLat(baliza.lon, baliza.lat))
+                                    zoom(16.0)
+                                    pitch(55.0)
+                                }
+                            )
+                        }
+                    } ?: run { lastCenteredBalizaId = null }
                 }
             )
 
@@ -622,7 +643,9 @@ fun MapScreen(
 
             if (uiState.isProposalFormOpen) {
                 ProposalFormDialog(
+                    propietarioId = uiState.selectedEmptyBaliza?.idPropietario ?: -1L,
                     onSend = { t, d, s, e, c, p -> viewModel.sendProposal(t, d, s, e, c, p) },
+                    onNavigateToArtistProfile = onNavigateToArtistProfile,
                     onDismiss = { viewModel.toggleProposalForm(false) }
                 )
             }
@@ -1073,68 +1096,206 @@ fun AddressSearchDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProposalFormDialog(
+    propietarioId: Long,
     onSend: (titulo: String, descrip: String, start: String, end: String, category: String, price: Double?) -> Unit,
+    onNavigateToArtistProfile: (Long) -> Unit,
     onDismiss: () -> Unit
 ) {
     var titulo by remember { mutableStateOf("") }
-    var descrip by remember { mutableStateOf("") }
-    var categoria by remember { mutableStateOf("") }
+    var categoria by remember { mutableStateOf("Pintura") }
+    
+    val categorias = listOf("Pintura", "Escultura", "Fotografía", "Arte Digital", "Ilustración", "Otro")
+
+    // Date pickers
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+    
     var fechaInicio by remember { mutableStateOf("") }
     var fechaFin by remember { mutableStateOf("") }
-    var precioStr by remember { mutableStateOf("") }
 
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+    if (showStartDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showStartDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val date = Date(millis)
+                        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        fechaInicio = format.format(date)
+                    }
+                    showStartDatePicker = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStartDatePicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showEndDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showEndDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val date = Date(millis)
+                        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        fechaFin = format.format(date)
+                    }
+                    showEndDatePicker = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndDatePicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = CardBackground,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .padding(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Proponer Exposición", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
+            Column(modifier = Modifier.padding(20.dp)) {
+                // Header with Avatar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Proponer Exposición", color = TextWhite, fontSize = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    
+                    // Avatar (Clickable to artist profile)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color.Gray)
+                            .clickable {
+                                onDismiss()
+                                onNavigateToArtistProfile(propietarioId)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Person, contentDescription = "Perfil Propietario", tint = Color.White)
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+
                 OutlinedTextField(
                     value = titulo, onValueChange = { titulo = it },
                     label = { Text("Título de la exposición") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Categoría", color = TextGray, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = categoria, onValueChange = { categoria = it },
-                    label = { Text("Categoría (e.g., Pintura)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = descrip, onValueChange = { descrip = it },
-                    label = { Text("Descripción breve") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
-                )
+                // Categories Pills
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    categorias.forEach { cat ->
+                        val isSelected = categoria == cat
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = if (isSelected) InteresadoGradientStart else Color.Transparent,
+                            border = BorderStroke(1.dp, if (isSelected) InteresadoGradientStart else TextGray),
+                            modifier = Modifier.clickable { categoria = cat }
+                        ) {
+                            Text(
+                                text = cat,
+                                color = if (isSelected) Color.White else TextGray,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Fechas", color = TextGray, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = fechaInicio, onValueChange = { fechaInicio = it },
-                        label = { Text("Inicio (YYYY-MM-DD)") },
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
-                    )
-                    OutlinedTextField(
-                        value = fechaFin, onValueChange = { fechaFin = it },
-                        label = { Text("Fin (YYYY-MM-DD)") },
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
-                    )
+                    Box(modifier = Modifier.weight(1f).clickable { showStartDatePicker = true }) {
+                        OutlinedTextField(
+                            value = fechaInicio, onValueChange = { },
+                            label = { Text("Inicio") },
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledTextColor = TextWhite,
+                                disabledBorderColor = TextGray,
+                                disabledLabelColor = TextGray
+                            ),
+                            trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = TextGray) }
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f).clickable { showEndDatePicker = true }) {
+                        OutlinedTextField(
+                            value = fechaFin, onValueChange = { },
+                            label = { Text("Fin") },
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledTextColor = TextWhite,
+                                disabledBorderColor = TextGray,
+                                disabledLabelColor = TextGray
+                            ),
+                            trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = TextGray) }
+                        )
+                    }
                 }
+                
                 Spacer(modifier = Modifier.height(16.dp))
+                Text("Propuesta (PDF)", color = TextGray, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // PDF Upload Placeholder
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .background(Color(0xFF2A2A2A), RoundedCornerShape(8.dp))
+                        .border(1.dp, Color(0xFF4A4A4A), RoundedCornerShape(8.dp))
+                        .clickable { /* placeholder action */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Add, contentDescription = null, tint = TextGray, modifier = Modifier.size(32.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Sube tu propuesta (PDF)", color = TextGray, fontSize = 14.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
                 Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                     TextButton(onClick = onDismiss) { Text("Cancelar", color = TextGray) }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { onSend(titulo, descrip, fechaInicio, fechaFin, categoria, precioStr.toDoubleOrNull()) }) {
-                        Text("Enviar Propuesta")
+                    Button(
+                        onClick = { onSend(titulo, "Propuesta generada", fechaInicio, fechaFin, categoria, null) },
+                        colors = ButtonDefaults.buttonColors(containerColor = InteresadoGradientStart)
+                    ) {
+                        Text("Enviar Propuesta", color = Color.White)
                     }
                 }
             }
