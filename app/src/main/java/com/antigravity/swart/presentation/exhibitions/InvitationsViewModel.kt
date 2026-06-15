@@ -18,11 +18,19 @@ class InvitationsViewModel @Inject constructor(
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
+    // Invitaciones a exposiciones colaborativas (tipo == "invitacion")
     private val _invitations = MutableStateFlow<List<InvitationDto>>(emptyList())
     val invitations: StateFlow<List<InvitationDto>> = _invitations.asStateFlow()
 
+    // Propuestas recibidas para balizas vacías (tipo == "propuesta")
+    private val _propuestasEspacios = MutableStateFlow<List<InvitationDto>>(emptyList())
+    val propuestasEspacios: StateFlow<List<InvitationDto>> = _propuestasEspacios.asStateFlow()
+
     private val _conversations = MutableStateFlow<List<com.antigravity.swart.domain.model.Conversation>>(emptyList())
     val conversations: StateFlow<List<com.antigravity.swart.domain.model.Conversation>> = _conversations.asStateFlow()
+
+    private val _unreadCount = MutableStateFlow(0L)
+    val unreadCount: StateFlow<Long> = _unreadCount.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -35,11 +43,18 @@ class InvitationsViewModel @Inject constructor(
             val userId = sessionManager.getUserId()
             if (userId != -1L) {
                 repository.getInvitations(userId).fold(
-                    onSuccess = { _invitations.value = it },
+                    onSuccess = { all ->
+                        _invitations.value = all.filter { it.tipo != "propuesta" }
+                        _propuestasEspacios.value = all.filter { it.tipo == "propuesta" }
+                    },
                     onFailure = { }
                 )
                 repository.getConversations(userId).fold(
                     onSuccess = { _conversations.value = it },
+                    onFailure = { }
+                )
+                repository.getUnreadCount(userId).fold(
+                    onSuccess = { _unreadCount.value = it },
                     onFailure = { }
                 )
             }

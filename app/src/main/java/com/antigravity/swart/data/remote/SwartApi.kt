@@ -163,6 +163,15 @@ interface SwartApi {
         @Body body: com.antigravity.swart.data.remote.dto.EmptyBalizaRequest
     ): com.antigravity.swart.data.remote.dto.EmptyBalizaDto
 
+    @GET("api/map/baliza-vacia/{id}")
+    suspend fun getBalizaVaciaDetail(@Path("id") id: Long): com.antigravity.swart.data.remote.dto.BalizaVaciaDetailDto
+
+    @PUT("api/map/baliza-vacia/{id}")
+    suspend fun updateBalizaVacia(
+        @Path("id") id: Long,
+        @Body body: com.antigravity.swart.data.remote.dto.UpdateBalizaVaciaRequest
+    ): Map<String, Boolean>
+
     @DELETE("api/map/baliza-vacia/{id}")
     suspend fun deleteEmptyBaliza(@Path("id") id: Long): Map<String, Boolean>
 
@@ -182,7 +191,10 @@ interface SwartApi {
     suspend fun respondPropuesta(
         @Path("id") propuestaId: Long,
         @Body request: com.antigravity.swart.data.remote.dto.PropuestaEstadoRequest
-    ): Map<String, Boolean>
+    ): Map<String, Long>
+
+    @GET("api/invitations/{userId}/unread-count")
+    suspend fun getUnreadCount(@Path("userId") userId: Long): Map<String, Long>
 
     @GET("api/map/balizas-gubernamentales")
     suspend fun getBalizasGubernamentales(): List<com.antigravity.swart.data.remote.dto.GovBalizaDto>

@@ -1,14 +1,17 @@
 package com.antigravity.swart.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.antigravity.swart.presentation.home.HomeScreen
 import com.antigravity.swart.presentation.detail.DetailScreen
 import com.antigravity.swart.presentation.artist.ArtistProfileScreen
 import com.antigravity.swart.presentation.matches.SwapScreen
 import com.antigravity.swart.presentation.map.MapScreen
+import com.antigravity.swart.presentation.map.BalizaVaciaDetailScreen
 import com.antigravity.swart.presentation.profile.UserProfileScreen
 import com.antigravity.swart.presentation.profile.ArtistsListScreen
 import com.antigravity.swart.presentation.auth.LoginScreen
@@ -20,8 +23,6 @@ import com.antigravity.swart.presentation.components.UserType
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 import com.antigravity.swart.presentation.exhibitions.EditExhibitionScreen
 import com.antigravity.swart.presentation.exhibitions.EditArtworkScreen
 import com.antigravity.swart.presentation.chat.ChatScreen
@@ -286,6 +287,9 @@ fun AppNavigation() {
                 },
                 onNavigateToArtistProfile = { artistId ->
                     navController.navigate("artist_profile/$artistId")
+                },
+                onNavigateToBalizaDetail = { balizaId ->
+                    navController.navigate("baliza_vacia_detail/$balizaId")
                 },
                 exhibitionIdToSelect = exhibitionId
             )
@@ -673,6 +677,22 @@ fun AppNavigation() {
                         launchSingleTop = true
                         restoreState = true
                     }
+                }
+            )
+        }
+
+        // ─── BALIZA VACÍA DETAIL ──────────────────────────────────────────────────
+        composable(
+            route = "baliza_vacia_detail/{balizaId}",
+            arguments = listOf(navArgument("balizaId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val balizaId = backStackEntry.arguments?.getLong("balizaId") ?: -1L
+            BalizaVaciaDetailScreen(
+                balizaId = balizaId,
+                onBack = { navController.popBackStack() },
+                onNavigateToProposal = { navController.navigate("mapa/artista?balizaId=$balizaId") },
+                onNavigateToArtistProfile = { artistId ->
+                    navController.navigate("artist_profile/$artistId")
                 }
             )
         }

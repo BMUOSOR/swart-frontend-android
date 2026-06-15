@@ -53,5 +53,8 @@ interface ExhibitionRepository {
     suspend fun getPropuestasByBaliza(balizaId: Long): Result<List<com.antigravity.swart.domain.model.PropuestaBaliza>>
     suspend fun getPropuestasByArtista(artistaId: Long): Result<List<com.antigravity.swart.domain.model.PropuestaBaliza>>
     suspend fun respondPropuesta(propuestaId: Long, estado: String): Result<Boolean>
+    suspend fun getBalizaVaciaDetail(id: Long): Result<com.antigravity.swart.data.remote.dto.BalizaVaciaDetailDto>
+    suspend fun updateBalizaVacia(id: Long, request: com.antigravity.swart.data.remote.dto.UpdateBalizaVaciaRequest): Result<Boolean>
+    suspend fun getUnreadCount(userId: Long): Result<Long>
 }
 

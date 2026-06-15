@@ -202,6 +202,7 @@ fun MapScreen(
     onNavigateToCreate: () -> Unit = {},
     onNavigateToCreateExhibition: (lat: Double, lon: Double, balizaId: Long) -> Unit = { _, _, _ -> },
     onNavigateToArtistProfile: (Long) -> Unit = {},
+    onNavigateToBalizaDetail: (Long) -> Unit = {},
     onLogout: () -> Unit = {},
     exhibitionIdToSelect: Long = -1L,
     viewModel: MapViewModel = hiltViewModel()
@@ -500,8 +501,10 @@ fun MapScreen(
                                     uiState.filteredPins.find { it.idExposicion.toString() == pinIdStr }
                                         ?.let { viewModel.onPinClick(it) }
                                 } else if (balizaIdStr != null) {
-                                    uiState.emptyBalizas.find { it.id.toString() == balizaIdStr }
-                                        ?.let { viewModel.onEmptyBalizaClick(it) }
+                                    val balizaId = balizaIdStr.toLongOrNull()
+                                    if (balizaId != null) {
+                                        onNavigateToBalizaDetail(balizaId)
+                                    }
                                 } else if (govIdStr != null) {
                                     viewModel.onGovBalizaClick(govIdStr.toLong())
                                 }
@@ -653,6 +656,7 @@ fun MapScreen(
             if (uiState.isProposalFormOpen) {
                 ProposalFormDialog(
                     propietarioId = uiState.selectedEmptyBaliza?.idPropietario ?: -1L,
+                    currentUserAvatarUrl = viewModel.getCurrentUserAvatarUrl(),
                     onSend = { t, d, s, e, c, p -> viewModel.sendProposal(t, d, s, e, c, p) },
                     onNavigateToArtistProfile = onNavigateToArtistProfile,
                     onDismiss = { viewModel.toggleProposalForm(false) }
@@ -1109,6 +1113,7 @@ fun AddressSearchDialog(
 @Composable
 fun ProposalFormDialog(
     propietarioId: Long,
+    currentUserAvatarUrl: String = "",
     onSend: (titulo: String, descrip: String, start: String, end: String, category: String, price: Double?) -> Unit,
     onNavigateToArtistProfile: (Long) -> Unit,
     onDismiss: () -> Unit
@@ -1189,7 +1194,7 @@ fun ProposalFormDialog(
                 ) {
                     Text("Proponer Exposición", color = TextWhite, fontSize = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                     
-                    // Avatar (Clickable to artist profile)
+                    // Avatar del artista actual (clickable va al perfil del propietario de la baliza)
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -1201,7 +1206,16 @@ fun ProposalFormDialog(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Person, contentDescription = "Perfil Propietario", tint = Color.White)
+                        if (currentUserAvatarUrl.isNotBlank()) {
+                            coil.compose.AsyncImage(
+                                model = currentUserAvatarUrl,
+                                contentDescription = "Mi perfil",
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White)
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(20.dp))

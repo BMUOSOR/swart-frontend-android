@@ -43,6 +43,7 @@ fun SwartBottomNav(
     userType: UserType,
     currentRoute: String,
     onNavigate: (String) -> Unit,
+    badges: Map<String, Long> = emptyMap(),
     onFabClick: () -> Unit = {}
 ) {
     // La factoría decide qué ítems construir según el rol.
@@ -65,6 +66,7 @@ fun SwartBottomNav(
                     selected  = currentRoute == item.route,
                     onClick   = { onNavigate(item.route) },
                     tint      = item.tint,
+                    badgeCount = badges[item.route] ?: 0L,
                     modifier  = Modifier.weight(1f)
                 )
             }
@@ -95,6 +97,7 @@ fun SwartBottomNav(
  * @param tint Color activo cuando [selected] es true.
  *             Viene preconfigurado desde [NavItemFactory] con el color del rol.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomNavItem(
     icon: ImageVector,
@@ -104,7 +107,8 @@ fun BottomNavItem(
     modifier: Modifier = Modifier,
     tint: Color = InteresadoGradientStart,
     // Parámetro legacy mantenido por compatibilidad con llamadas antiguas
-    selectedColor: Color = Color.Unspecified
+    selectedColor: Color = Color.Unspecified,
+    badgeCount: Long = 0L
 ) {
     // Si se pasa selectedColor (llamadas previas a la factoría), lo respeta;
     // si no, usa el tint que viene del BottomNavItem de la factoría.
@@ -120,8 +124,21 @@ fun BottomNavItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        IconButton(onClick = onClick, modifier = Modifier.size(32.dp)) {
-            Icon(icon, contentDescription = label, tint = iconTint)
+        BadgedBox(
+            badge = {
+                if (badgeCount > 0) {
+                    Badge(
+                        containerColor = Color(0xFFFF2D87),
+                        contentColor = Color.White
+                    ) {
+                        Text(text = if (badgeCount > 99) "99+" else badgeCount.toString())
+                    }
+                }
+            }
+        ) {
+            IconButton(onClick = onClick, modifier = Modifier.size(32.dp)) {
+                Icon(icon, contentDescription = label, tint = iconTint)
+            }
         }
         Text(
             text  = label,

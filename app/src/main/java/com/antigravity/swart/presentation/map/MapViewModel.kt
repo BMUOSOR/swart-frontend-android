@@ -355,6 +355,8 @@ class MapViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(successMessage = null)
     }
 
+    fun getCurrentUserAvatarUrl(): String = sessionManager.getImgUrl()
+
     // Gov Balizas
     fun onGovBalizaClick(id: Long) {
         _uiState.value = _uiState.value.copy(

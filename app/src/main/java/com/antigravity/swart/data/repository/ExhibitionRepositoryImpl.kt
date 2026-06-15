@@ -427,7 +427,33 @@ class ExhibitionRepositoryImpl(
     override suspend fun respondPropuesta(propuestaId: Long, estado: String): Result<Boolean> {
         return try {
             val response = api.respondPropuesta(propuestaId, com.antigravity.swart.data.remote.dto.PropuestaEstadoRequest(estado))
+            Result.success((response["success"] ?: 0L) > 0L)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getBalizaVaciaDetail(id: Long): Result<com.antigravity.swart.data.remote.dto.BalizaVaciaDetailDto> {
+        return try {
+            Result.success(api.getBalizaVaciaDetail(id))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateBalizaVacia(id: Long, request: com.antigravity.swart.data.remote.dto.UpdateBalizaVaciaRequest): Result<Boolean> {
+        return try {
+            val response = api.updateBalizaVacia(id, request)
             Result.success(response["success"] ?: false)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getUnreadCount(userId: Long): Result<Long> {
+        return try {
+            val response = api.getUnreadCount(userId)
+            Result.success(response["count"] ?: 0L)
         } catch (e: Exception) {
             Result.failure(e)
         }

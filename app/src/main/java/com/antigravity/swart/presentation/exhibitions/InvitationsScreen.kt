@@ -53,7 +53,9 @@ fun InvitationsScreen(
 ) {
     val isArtista = role == "artista"
     val invitations by viewModel.invitations.collectAsState()
+    val propuestasEspacios by viewModel.propuestasEspacios.collectAsState()
     val conversations by viewModel.conversations.collectAsState()
+    val unreadCount by viewModel.unreadCount.collectAsState()
     val isLoading   by viewModel.isLoading.collectAsState()
 
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -68,6 +70,7 @@ fun InvitationsScreen(
             SwartBottomNav(
                 userType = if (isArtista) UserType.ARTIST else UserType.GENERAL,
                 currentRoute = "mensajes",
+                badges = mapOf("mensajes" to unreadCount),
                 onNavigate = { route ->
                     when (route) {
                         "home"      -> onNavigateHome()
@@ -113,8 +116,8 @@ fun InvitationsScreen(
             Spacer(Modifier.size(42.dp))
         }
 
-        // ─── TABS (solo artista ve la pestaña de Invitaciones) ────────
-        val tabs = if (isArtista) listOf("Chats", "Invitaciones") else listOf("Chats")
+        // ─── TABS (solo artista ve la pestaña de Invitaciones y Espacios) ────────
+        val tabs = if (isArtista) listOf("Chats", "Invitaciones", "Espacios") else listOf("Chats")
         val tabAccent = if (isArtista) InvNeonPurple else InteresadoGradientStart
         TabRow(
             selectedTabIndex = selectedTabIndex,
@@ -255,7 +258,7 @@ fun InvitationsScreen(
                         }
                     }
                 }
-            } else if (isArtista) {
+            } else if (isArtista && selectedTabIndex == 1) {
                 // Invitaciones tab — solo artistas
                 if (invitations.isEmpty()) {
                     Box(
@@ -341,7 +344,7 @@ fun InvitationsScreen(
                                         )
                                     }
                                     Text(
-                                        if (invitation.tipo == "propuesta") "ha enviado una propuesta para tu baliza:" else "te invita a colaborar en",
+                                        "te invita a colaborar en",
                                         color = InvTextGray,
                                         fontSize = 12.sp
                                     )
@@ -364,7 +367,7 @@ fun InvitationsScreen(
                                             .size(40.dp)
                                             .clip(CircleShape)
                                             .background(Color(0xFF10B981).copy(alpha = 0.15f))
-                                            .clickable { viewModel.respondInvitation(invitation.idInvitacion, true, invitation.tipo) },
+                                            .clickable { viewModel.respondInvitation(invitation.idInvitacion, true, "invitacion") },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(Icons.Default.Check, contentDescription = "Aceptar", tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
@@ -374,7 +377,136 @@ fun InvitationsScreen(
                                             .size(40.dp)
                                             .clip(CircleShape)
                                             .background(Color(0xFFEF4444).copy(alpha = 0.15f))
-                                            .clickable { viewModel.respondInvitation(invitation.idInvitacion, false, invitation.tipo) },
+                                            .clickable { viewModel.respondInvitation(invitation.idInvitacion, false, "invitacion") },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Close, contentDescription = "Rechazar", tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (isArtista && selectedTabIndex == 2) {
+                // Espacios (Propuestas) tab — solo artistas
+                if (propuestasEspacios.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Place,
+                                contentDescription = null,
+                                tint = InvTextGray,
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Text(
+                                "No tienes propuestas de espacios",
+                                color = InvTextGray,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    propuestasEspacios.forEach { propuesta ->
+                        Card(
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = InvCardBg),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Expo thumbnail
+                                Box(
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(InvInputBg)
+                                ) {
+                                    if (propuesta.exposicionImgUrl != null) {
+                                        AsyncImage(
+                                            model = propuesta.exposicionImgUrl,
+                                            contentDescription = propuesta.tituloExposicion,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.Default.Image,
+                                            contentDescription = null,
+                                            tint = InvTextGray,
+                                            modifier = Modifier.size(32.dp).align(Alignment.Center)
+                                        )
+                                    }
+                                }
+
+                                // Info
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        // Sender avatar
+                                        AsyncImage(
+                                            model = propuesta.avatarArtistaSender,
+                                            contentDescription = propuesta.nombreArtistaSender,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.size(20.dp).clip(CircleShape).background(InvInputBg)
+                                        )
+                                        Text(
+                                            propuesta.nombreArtistaSender,
+                                            color = InvNeonPurple,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1
+                                        )
+                                    }
+                                    Text(
+                                        "ha enviado una propuesta para tu baliza:",
+                                        color = InvTextGray,
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        "\"${propuesta.tituloExposicion}\"",
+                                        color = InvTextLight,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 2
+                                    )
+                                }
+
+                                // Botones aceptar / rechazar
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF10B981).copy(alpha = 0.15f))
+                                            .clickable { viewModel.respondInvitation(propuesta.idInvitacion, true, "propuesta") },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Check, contentDescription = "Aceptar", tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFEF4444).copy(alpha = 0.15f))
+                                            .clickable { viewModel.respondInvitation(propuesta.idInvitacion, false, "propuesta") },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(Icons.Default.Close, contentDescription = "Rechazar", tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
