@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 
 // ─── Local palette ────────────────────────────────────────────────────────────
 private val BvNavy      = Color(0xFF0B0D17)
@@ -53,8 +54,15 @@ fun BalizaVaciaDetailScreen(
 
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearMessages()
+            if (it == "Cambios guardados") {
+                launch { snackbarHostState.showSnackbar(it) }
+                kotlinx.coroutines.delay(800)
+                onBack()
+                viewModel.clearMessages()
+            } else {
+                snackbarHostState.showSnackbar(it)
+                viewModel.clearMessages()
+            }
         }
     }
     LaunchedEffect(uiState.error) {

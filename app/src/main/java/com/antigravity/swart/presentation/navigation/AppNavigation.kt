@@ -689,7 +689,7 @@ fun AppNavigation() {
             val balizaId = backStackEntry.arguments?.getLong("balizaId") ?: -1L
             BalizaVaciaDetailScreen(
                 balizaId = balizaId,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.navigateUp() },
                 onNavigateToProposal = { navController.navigate("mapa/artista?balizaId=$balizaId") },
                 onNavigateToArtistProfile = { artistId ->
                     navController.navigate("artist_profile/$artistId")
