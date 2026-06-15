@@ -25,7 +25,8 @@ data class BalizaVaciaDetailUiState(
     val descripcion: String = "",
     val categoriasList: List<String> = emptyList(),
     val dimensiones: String = "",
-    val salas: String = ""
+    val salas: String = "",
+    val isProposalFormOpen: Boolean = false
 )
 
 @HiltViewModel
@@ -104,6 +105,35 @@ class BalizaVaciaDetailViewModel @Inject constructor(
 
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(successMessage = null, error = null)
+    }
+
+    fun toggleProposalForm(open: Boolean) {
+        _uiState.value = _uiState.value.copy(isProposalFormOpen = open)
+    }
+
+    fun sendProposal(titulo: String, descrip: String, start: String, end: String, category: String, price: Double?) {
+        viewModelScope.launch {
+            val req = com.antigravity.swart.data.remote.dto.PropuestaRequest(
+                idArtista = sessionManager.getUserId(),
+                titulo = titulo,
+                descrip = descrip,
+                fechaInicio = start,
+                fechaFin = end,
+                precio = price,
+                categoria = category
+            )
+            repository.createPropuestaBaliza(balizaId, req).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isProposalFormOpen = false,
+                        successMessage = "Propuesta enviada con éxito"
+                    )
+                },
+                onFailure = { e -> 
+                    _uiState.value = _uiState.value.copy(error = "Error al enviar propuesta: ${e.message}")
+                }
+            )
+        }
     }
 
     fun getCurrentUserAvatarUrl(): String = sessionManager.getImgUrl()

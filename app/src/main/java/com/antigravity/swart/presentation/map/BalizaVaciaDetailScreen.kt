@@ -394,7 +394,7 @@ fun BalizaVaciaDetailScreen(
                         if (!uiState.isPropietario) {
                             Spacer(Modifier.height(8.dp))
                             Button(
-                                onClick = onNavigateToProposal,
+                                onClick = { viewModel.toggleProposalForm(true) },
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
@@ -430,6 +430,16 @@ fun BalizaVaciaDetailScreen(
                     }
                 }
             }
+        }
+
+        if (uiState.isProposalFormOpen) {
+            ProposalFormDialog(
+                propietarioId = uiState.baliza?.idPropietario ?: -1L,
+                currentUserAvatarUrl = viewModel.getCurrentUserAvatarUrl(),
+                onSend = { t, d, s, e, c, p -> viewModel.sendProposal(t, d, s, e, c, p) },
+                onNavigateToArtistProfile = onNavigateToArtistProfile,
+                onDismiss = { viewModel.toggleProposalForm(false) }
+            )
         }
     }
 }
