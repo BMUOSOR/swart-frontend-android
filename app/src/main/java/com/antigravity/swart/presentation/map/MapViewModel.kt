@@ -41,6 +41,7 @@ data class MapUiState(
     val isCreatingEmptyBaliza: Boolean = false,
     // Propuestas
     val isProposalFormOpen: Boolean = false,
+    val successMessage: String? = null,
     // Gov balizas
     val govBalizas: List<GovBaliza> = emptyList(),
     val isGovPanelOpen: Boolean = false,
@@ -339,12 +340,19 @@ class MapViewModel @Inject constructor(
             )
             repository.createPropuestaBaliza(baliza.id, req).fold(
                 onSuccess = {
-                    toggleProposalForm(false)
-                    dismissEmptyBaliza()
+                    _uiState.value = _uiState.value.copy(
+                        isProposalFormOpen = false,
+                        selectedEmptyBaliza = null,
+                        successMessage = "Propuesta enviada con éxito"
+                    )
                 },
                 onFailure = { /* show error */ }
             )
         }
+    }
+
+    fun clearSuccessMessage() {
+        _uiState.value = _uiState.value.copy(successMessage = null)
     }
 
     // Gov Balizas

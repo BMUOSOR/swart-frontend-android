@@ -341,7 +341,7 @@ fun InvitationsScreen(
                                         )
                                     }
                                     Text(
-                                        "te invita a colaborar en",
+                                        if (invitation.tipo == "propuesta") "ha enviado una propuesta para tu baliza:" else "te invita a colaborar en",
                                         color = InvTextGray,
                                         fontSize = 12.sp
                                     )
@@ -364,7 +364,7 @@ fun InvitationsScreen(
                                             .size(40.dp)
                                             .clip(CircleShape)
                                             .background(Color(0xFF10B981).copy(alpha = 0.15f))
-                                            .clickable { viewModel.respondInvitation(invitation.idInvitacion, true) },
+                                            .clickable { viewModel.respondInvitation(invitation.idInvitacion, true, invitation.tipo) },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(Icons.Default.Check, contentDescription = "Aceptar", tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
@@ -374,7 +374,7 @@ fun InvitationsScreen(
                                             .size(40.dp)
                                             .clip(CircleShape)
                                             .background(Color(0xFFEF4444).copy(alpha = 0.15f))
-                                            .clickable { viewModel.respondInvitation(invitation.idInvitacion, false) },
+                                            .clickable { viewModel.respondInvitation(invitation.idInvitacion, false, invitation.tipo) },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(Icons.Default.Close, contentDescription = "Rechazar", tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))

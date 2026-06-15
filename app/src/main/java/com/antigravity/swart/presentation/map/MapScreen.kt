@@ -213,6 +213,7 @@ fun MapScreen(
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     var lastCenteredPinId by remember { mutableStateOf<Long?>(null) }
     var lastCenteredBalizaId by remember { mutableStateOf<Long?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var locationPermissionGranted by remember { mutableStateOf(false) }
 
@@ -270,6 +271,13 @@ fun MapScreen(
         if (exhibitionIdToSelect != -1L) viewModel.selectExhibition(exhibitionIdToSelect)
     }
 
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearSuccessMessage()
+        }
+    }
+
     LaunchedEffect(exhibitionIdToSelect, uiState.filteredPins) {
         if (exhibitionIdToSelect != -1L && !hasPromptedForNavigation && uiState.filteredPins.isNotEmpty()) {
             val targetPin = uiState.filteredPins.find { it.idExposicion == exhibitionIdToSelect }
@@ -283,6 +291,7 @@ fun MapScreen(
 
     Scaffold(
         containerColor = DarkBackground,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             SwartBottomNav(
                 userType = userType,

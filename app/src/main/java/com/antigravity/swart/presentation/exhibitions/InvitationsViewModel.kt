@@ -47,12 +47,15 @@ class InvitationsViewModel @Inject constructor(
         }
     }
 
-    fun respondInvitation(invitationId: Long, accept: Boolean) {
+    fun respondInvitation(id: Long, accept: Boolean, tipo: String = "invitacion") {
         viewModelScope.launch {
-            repository.respondInvitation(invitationId, accept).fold(
-                onSuccess = { loadData() },
-                onFailure = { }
-            )
+            if (tipo == "propuesta") {
+                val estado = if (accept) "aceptada" else "rechazada"
+                repository.respondPropuesta(id, estado)
+            } else {
+                repository.respondInvitation(id, accept)
+            }
+            loadData()
         }
     }
 }

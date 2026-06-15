@@ -8,7 +8,8 @@ data class InvitationDto(
     val idArtistaSender: Long,
     val nombreArtistaSender: String,
     val avatarArtistaSender: String?,
-    val estado: String
+    val estado: String,
+    val tipo: String = "invitacion"
 )
 
 data class MutualArtistDto(
