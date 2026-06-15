@@ -260,10 +260,11 @@ class MapViewModel @Inject constructor(
                         isAddressSearchOpen = false
                     )
                 },
-                onFailure = {
+                onFailure = { throwable ->
+                    android.util.Log.e("MapViewModel", "Error al crear baliza vacía", throwable)
                     _uiState.value = _uiState.value.copy(
                         isCreatingEmptyBaliza = false,
-                        addressSearchError = "Error al colocar la baliza. Comprueba tu sesión o conexión."
+                        addressSearchError = "Error: ${throwable.message ?: "Fallo desconocido"}"
                     )
                 }
             )
