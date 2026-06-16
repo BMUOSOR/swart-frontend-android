@@ -66,16 +66,6 @@ fun MyExhibitionsScreen(
 
     Scaffold(
         containerColor = DeepNavyBackground,
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToCreate,
-                containerColor = Color(0xFFEC4899),
-                contentColor = Color.White,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Nueva exposición")
-            }
-        },
         bottomBar = {
             SwartBottomNav(
                 userType = UserType.ARTIST,
@@ -88,7 +78,8 @@ fun MyExhibitionsScreen(
                         "perfil" -> onNavigateToProfile()
                         "mensajes" -> onNavigateToMensajes()
                     }
-                }
+                },
+                onFabClick = onNavigateToCreate
             )
         }
     ) { paddingValues ->

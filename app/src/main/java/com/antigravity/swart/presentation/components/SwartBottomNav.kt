@@ -51,24 +51,28 @@ fun SwartBottomNav(
     val navItems = remember(userType) { NavItemFactory.create(userType) }
 
     Box(modifier = Modifier.fillMaxWidth()) {
-        BottomAppBar(
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .shadow(16.dp),
-            containerColor = CardBackground,
-            contentColor = Color.White
+                .padding(top = if (userType == UserType.ARTIST) 28.dp else 0.dp)
         ) {
-            // La UI solo itera el resultado de la factoría, sin lógica de rol
-            navItems.forEach { item ->
-                BottomNavItem(
-                    icon      = item.icon,
-                    label     = item.label,
-                    selected  = currentRoute == item.route,
-                    onClick   = { onNavigate(item.route) },
-                    tint      = item.tint,
-                    badgeCount = badges[item.route] ?: 0L,
-                    modifier  = Modifier.weight(1f)
-                )
+            BottomAppBar(
+                modifier = Modifier.shadow(16.dp),
+                containerColor = CardBackground,
+                contentColor = Color.White
+            ) {
+                // La UI solo itera el resultado de la factoría, sin lógica de rol
+                navItems.forEach { item ->
+                    BottomNavItem(
+                        icon      = item.icon,
+                        label     = item.label,
+                        selected  = currentRoute == item.route,
+                        onClick   = { onNavigate(item.route) },
+                        tint      = item.tint,
+                        badgeCount = badges[item.route] ?: 0L,
+                        modifier  = Modifier.weight(1f)
+                    )
+                }
             }
         }
 
@@ -76,9 +80,7 @@ fun SwartBottomNav(
         if (userType == UserType.ARTIST) {
             FloatingActionButton(
                 onClick = onFabClick,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = (-24).dp),
+                modifier = Modifier.align(Alignment.TopCenter),
                 containerColor = ArtistaGradientStart,
                 contentColor = Color.White
             ) {

@@ -45,6 +45,7 @@ fun FavoritosScreen(
     onNavigateToDetail: (Long) -> Unit = {},
     onNavigateToChat: (Long) -> Unit = {},
     onNavigateToMensajes: () -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: FavoritosViewModel = hiltViewModel()
 ) {
@@ -80,7 +81,8 @@ fun FavoritosScreen(
                         "mensajes"  -> onNavigateToMensajes()
                         "perfil"    -> onLogout()
                     }
-                }
+                },
+                onFabClick = onNavigateToCreate
             )
         }
     ) { paddingValues ->

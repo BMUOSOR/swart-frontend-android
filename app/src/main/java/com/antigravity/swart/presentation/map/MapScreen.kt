@@ -10,6 +10,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -42,6 +43,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -88,8 +91,17 @@ fun createMarkerBitmap(context: Context, tag: String, scale: Float): Bitmap {
     val canvas = Canvas(bitmap)
     canvas.scale(scale, scale, size / 2f, size / 2f)
 
-    val startColor = if (tag.lowercase() == "escultura") 0xFFEC4899.toInt() else 0xFF6366F1.toInt()
-    val endColor   = if (tag.lowercase() == "escultura") 0xFF8B5CF6.toInt() else 0xFF3B82F6.toInt()
+    val tagLower = tag.lowercase()
+    val startColor = when (tagLower) {
+        "escultura" -> 0xFFEC4899.toInt()
+        "pintura" -> 0xFFF97316.toInt() // Naranja (Orange 500)
+        else -> 0xFF6366F1.toInt()
+    }
+    val endColor = when (tagLower) {
+        "escultura" -> 0xFF8B5CF6.toInt()
+        "pintura" -> 0xFFFDE68A.toInt() // Naranja claro/Amarillo (Amber 200)
+        else -> 0xFF3B82F6.toInt()
+    }
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     val gradient = LinearGradient(0f, 0f, size.toFloat(), size.toFloat(), startColor, endColor, Shader.TileMode.CLAMP)
 
@@ -306,7 +318,8 @@ fun MapScreen(
                         "favoritos" -> onNavigateToFavoritos()
                         "perfil"    -> onLogout()
                     }
-                }
+                },
+                onFabClick = onNavigateToCreate
             )
         }
     ) { paddingValues ->
@@ -1113,9 +1126,21 @@ fun AddressSearchDialog(
     }
 }
 
+private val BvNavy      = Color(0xFF0B0D17)
+private val BvCard      = Color(0xFF161925)
+private val BvInput     = Color(0xFF1E2235)
+private val BvNeonPink  = Color(0xFFFF2D87)
+private val BvNeonPurp  = Color(0xFFEC4899)
+private val BvTextGray  = Color(0xFF8B8FA8)
+private val BvTextLight = Color(0xFFE8E8F0)
+private val BvTextMid   = Color(0xFFB0B4CC)
+private val BvGreen     = Color(0xFF10B981)
+private val BvPurple    = Color(0xFF8B5CF6)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProposalFormDialog(
+
     propietarioId: Long,
     currentUserAvatarUrl: String = "",
     onSend: (titulo: String, descrip: String, start: String, end: String, category: String, price: Double?) -> Unit,
@@ -1124,15 +1149,16 @@ fun ProposalFormDialog(
 ) {
     var titulo by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("Pintura") }
-    
+
     val categorias = listOf("Pintura", "Escultura", "Fotografía", "Arte Digital", "Ilustración", "Otro")
 
-    // Date pickers
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
-    
+
     var fechaInicio by remember { mutableStateOf("") }
     var fechaFin by remember { mutableStateOf("") }
+
+    val bvGradient = Brush.linearGradient(listOf(BvNeonPink, BvPurple))
 
     if (showStartDatePicker) {
         val datePickerState = rememberDatePickerState()
@@ -1146,13 +1172,14 @@ fun ProposalFormDialog(
                         fechaInicio = format.format(date)
                     }
                     showStartDatePicker = false
-                }) { Text("Aceptar") }
+                }) { Text("Aceptar", color = BvNeonPink) }
             },
             dismissButton = {
-                TextButton(onClick = { showStartDatePicker = false }) { Text("Cancelar") }
-            }
+                TextButton(onClick = { showStartDatePicker = false }) { Text("Cancelar", color = BvTextGray) }
+            },
+            colors = DatePickerDefaults.colors(containerColor = BvCard)
         ) {
-            DatePicker(state = datePickerState)
+            DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = BvCard))
         }
     }
 
@@ -1168,42 +1195,62 @@ fun ProposalFormDialog(
                         fechaFin = format.format(date)
                     }
                     showEndDatePicker = false
-                }) { Text("Aceptar") }
+                }) { Text("Aceptar", color = BvNeonPink) }
             },
             dismissButton = {
-                TextButton(onClick = { showEndDatePicker = false }) { Text("Cancelar") }
-            }
+                TextButton(onClick = { showEndDatePicker = false }) { Text("Cancelar", color = BvTextGray) }
+            },
+            colors = DatePickerDefaults.colors(containerColor = BvCard)
         ) {
-            DatePicker(state = datePickerState)
+            DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = BvCard))
         }
     }
 
-    androidx.compose.ui.window.Dialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = CardBackground,
+            shape = RoundedCornerShape(24.dp),
+            color = BvNavy,
             modifier = Modifier
                 .fillMaxWidth(0.95f)
                 .padding(16.dp)
+                .border(1.dp, BvInput, RoundedCornerShape(24.dp))
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                // Header with Avatar
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp)
+            ) {
+                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Proponer Exposición", color = TextWhite, fontSize = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                    
-                    // Avatar del artista actual (clickable va al perfil del propietario de la baliza)
+                    Column {
+                        Text(
+                            "Nueva Exposición",
+                            color = BvTextLight,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Completa los detalles de tu propuesta",
+                            color = BvTextGray,
+                            fontSize = 13.sp
+                        )
+                    }
+
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color.Gray)
+                            .border(2.dp, Brush.linearGradient(listOf(BvNeonPink, BvPurple)), CircleShape)
+                            .padding(2.dp)
+                            .clip(CircleShape)
+                            .background(BvInput)
                             .clickable {
                                 onDismiss()
                                 onNavigateToArtistProfile(propietarioId)
@@ -1214,27 +1261,39 @@ fun ProposalFormDialog(
                             coil.compose.AsyncImage(
                                 model = currentUserAvatarUrl,
                                 contentDescription = "Mi perfil",
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().clip(CircleShape)
                             )
                         } else {
-                            Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White)
+                            Icon(Icons.Default.Person, contentDescription = "Perfil", tint = BvTextLight)
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(20.dp))
 
-                OutlinedTextField(
-                    value = titulo, onValueChange = { titulo = it },
-                    label = { Text("Título de la exposición") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = TextWhite, unfocusedTextColor = TextWhite)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Text("Categoría", color = TextGray, fontSize = 14.sp)
+                Text("TÍTULO", color = BvTextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                // Categories Pills
+                OutlinedTextField(
+                    value = titulo,
+                    onValueChange = { titulo = it },
+                    placeholder = { Text("Ej. Sombras Urbanas", color = BvTextGray.copy(alpha = 0.5f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = BvTextLight,
+                        unfocusedTextColor = BvTextLight,
+                        focusedContainerColor = BvInput,
+                        unfocusedContainerColor = BvInput,
+                        focusedBorderColor = BvNeonPink,
+                        unfocusedBorderColor = Color.Transparent,
+                        cursorColor = BvNeonPink
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("CATEGORÍA", color = BvTextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1245,86 +1304,135 @@ fun ProposalFormDialog(
                         val isSelected = categoria == cat
                         Surface(
                             shape = RoundedCornerShape(50),
-                            color = if (isSelected) InteresadoGradientStart else Color.Transparent,
-                            border = BorderStroke(1.dp, if (isSelected) InteresadoGradientStart else TextGray),
-                            modifier = Modifier.clickable { categoria = cat }
+                            color = if (isSelected) Color.Transparent else BvInput,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(if (isSelected) bvGradient else SolidColor(Color.Transparent))
+                                .clickable { categoria = cat }
                         ) {
                             Text(
                                 text = cat,
-                                color = if (isSelected) Color.White else TextGray,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                fontSize = 14.sp
+                                color = if (isSelected) Color.White else BvTextMid,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
+                                fontSize = 13.sp
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Fechas", color = TextGray, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("FECHAS", color = BvTextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(modifier = Modifier.weight(1f).clickable { showStartDatePicker = true }) {
-                        OutlinedTextField(
-                            value = fechaInicio, onValueChange = { },
-                            label = { Text("Inicio") },
-                            enabled = false,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledTextColor = TextWhite,
-                                disabledBorderColor = TextGray,
-                                disabledLabelColor = TextGray
-                            ),
-                            trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = TextGray) }
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f).clickable { showEndDatePicker = true }) {
-                        OutlinedTextField(
-                            value = fechaFin, onValueChange = { },
-                            label = { Text("Fin") },
-                            enabled = false,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledTextColor = TextWhite,
-                                disabledBorderColor = TextGray,
-                                disabledLabelColor = TextGray
-                            ),
-                            trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = TextGray) }
-                        )
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    DateField(
+                        label = "Inicio",
+                        value = fechaInicio,
+                        modifier = Modifier.weight(1f),
+                        onClick = { showStartDatePicker = true }
+                    )
+                    DateField(
+                        label = "Fin",
+                        value = fechaFin,
+                        modifier = Modifier.weight(1f),
+                        onClick = { showEndDatePicker = true }
+                    )
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Propuesta (PDF)", color = TextGray, fontSize = 14.sp)
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("PROPUESTA (PDF)", color = BvTextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                // PDF Upload Placeholder
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp)
-                        .background(Color(0xFF2A2A2A), RoundedCornerShape(8.dp))
-                        .border(1.dp, Color(0xFF4A4A4A), RoundedCornerShape(8.dp))
+                        .height(96.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(BvInput)
+                        .border(
+                            width = 1.5.dp,
+                            brush = Brush.linearGradient(
+                                listOf(BvNeonPink.copy(alpha = 0.4f), BvPurple.copy(alpha = 0.4f))
+                            ),
+                            shape = RoundedCornerShape(14.dp)
+                        )
                         .clickable { /* placeholder action */ },
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(androidx.compose.material.icons.Icons.Default.Add, contentDescription = null, tint = TextGray, modifier = Modifier.size(32.dp))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Sube tu propuesta (PDF)", color = TextGray, fontSize = 14.sp)
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(bvGradient),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Sube tu propuesta", color = BvTextMid, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text("PDF · máx. 10MB", color = BvTextGray, fontSize = 11.sp)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                    TextButton(onClick = onDismiss) { Text("Cancelar", color = TextGray) }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = { onSend(titulo, "Propuesta generada", fechaInicio, fechaFin, categoria, null) },
-                        colors = ButtonDefaults.buttonColors(containerColor = InteresadoGradientStart)
+                Spacer(modifier = Modifier.height(28.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Cancelar", color = BvTextGray, fontWeight = FontWeight.Medium) }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(bvGradient)
+                            .clickable {
+                                onSend(titulo, "Propuesta generada", fechaInicio, fechaFin, categoria, null)
+                            }
+                            .padding(vertical = 14.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("Enviar Propuesta", color = Color.White)
+                        Text("Enviar Propuesta", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DateField(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(BvInput)
+            .clickable { onClick() }
+            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        Column {
+            Text(label, color = BvTextGray, fontSize = 11.sp)
+            Spacer(modifier = Modifier.height(2.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = value.ifBlank { "Elegir fecha" },
+                    color = if (value.isBlank()) BvTextGray.copy(alpha = 0.6f) else BvTextLight,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(Icons.Default.DateRange, contentDescription = null, tint = BvNeonPink, modifier = Modifier.size(18.dp))
             }
         }
     }

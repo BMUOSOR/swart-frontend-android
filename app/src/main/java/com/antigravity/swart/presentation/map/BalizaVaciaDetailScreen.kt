@@ -416,7 +416,7 @@ fun BalizaVaciaDetailScreen(
 
                         // ── CTA: PROPONER EXPOSICIÓN (solo visitantes) ──────
                         if (!uiState.isPropietario) {
-                            GradientButton(onClick = onNavigateToProposal) {
+                            GradientButton(onClick = { viewModel.toggleProposalForm(true) }) {
                                 Icon(Icons.Default.Send, null, tint = Color.White)
                                 Spacer(Modifier.width(10.dp))
                                 Text(
