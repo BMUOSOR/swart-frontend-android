@@ -310,6 +310,9 @@ fun MapScreen(
             )
         }
     ) { paddingValues ->
+        val currentOnNavigateToBalizaDetail by rememberUpdatedState(onNavigateToBalizaDetail)
+        val currentViewModel by rememberUpdatedState(viewModel)
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -347,9 +350,38 @@ fun MapScreen(
                                 bearing(0.0)
                             }
                         )
+                    // Click handler (initialized once)
+                    mv.gestures.addOnMapClickListener { clickPoint ->
+                        val screenPoint = mv.mapboxMap.pixelForCoordinate(clickPoint)
+                        mv.mapboxMap.queryRenderedFeatures(
+                            com.mapbox.maps.RenderedQueryGeometry(com.mapbox.maps.ScreenCoordinate(screenPoint.x, screenPoint.y)),
+                            com.mapbox.maps.RenderedQueryOptions(
+                                listOf("layer-pins", "layer-balizas", "layer-gov"), null
+                            )
+                        ) { result ->
+                            result.value?.firstOrNull()?.queriedFeature?.feature?.let { feature ->
+                                val pinIdStr    = feature.getStringProperty("pinId")
+                                val balizaIdStr = feature.getStringProperty("balizaId")
+                                val govIdStr    = feature.getStringProperty("govId")
+                                if (pinIdStr != null) {
+                                    viewModel.uiState.value.filteredPins.find { it.idExposicion.toString() == pinIdStr }
+                                        ?.let { viewModel.onPinClick(it) }
+                                } else if (balizaIdStr != null) {
+                                    val balizaId = balizaIdStr.toLongOrNull()
+                                    if (balizaId != null) {
+                                        currentOnNavigateToBalizaDetail(balizaId)
+                                    }
+                                } else if (govIdStr != null) {
+                                    viewModel.onGovBalizaClick(govIdStr.toLong())
+                                }
+                                Unit
+                            }
+                        }
+                        false
                     }
-                },
-                update = { mv ->
+                }
+            },
+            update = { mv ->
                     mapViewRef = mv
                     val mapboxMap = mv.mapboxMap
                     val style = mapboxMap.getStyle() ?: return@AndroidView
@@ -484,35 +516,7 @@ fun MapScreen(
                         )
                     }
 
-                    // Click handler
-                    mv.gestures.addOnMapClickListener { clickPoint ->
-                        val screenPoint = mapboxMap.pixelForCoordinate(clickPoint)
-                        mapboxMap.queryRenderedFeatures(
-                            com.mapbox.maps.RenderedQueryGeometry(com.mapbox.maps.ScreenCoordinate(screenPoint.x, screenPoint.y)),
-                            com.mapbox.maps.RenderedQueryOptions(
-                                listOf("layer-pins", "layer-balizas", "layer-gov"), null
-                            )
-                        ) { result ->
-                            result.value?.firstOrNull()?.queriedFeature?.feature?.let { feature ->
-                                val pinIdStr    = feature.getStringProperty("pinId")
-                                val balizaIdStr = feature.getStringProperty("balizaId")
-                                val govIdStr    = feature.getStringProperty("govId")
-                                if (pinIdStr != null) {
-                                    uiState.filteredPins.find { it.idExposicion.toString() == pinIdStr }
-                                        ?.let { viewModel.onPinClick(it) }
-                                } else if (balizaIdStr != null) {
-                                    val balizaId = balizaIdStr.toLongOrNull()
-                                    if (balizaId != null) {
-                                        onNavigateToBalizaDetail(balizaId)
-                                    }
-                                } else if (govIdStr != null) {
-                                    viewModel.onGovBalizaClick(govIdStr.toLong())
-                                }
-                                Unit
-                            }
-                        }
-                        false
-                    }
+                    // (Click handler was moved to factory block to prevent duplicates)
 
                     // ── Fly to selected pin ───────────────────────────────
                     uiState.selectedPin?.let { pin ->
@@ -580,8 +584,8 @@ fun MapScreen(
                     ) {
                         ExhibitionMapCard(
                             pin = pin,
-                            isClickable = !isArtist,
-                            onClick = { if (!isArtist) onNavigateToDetail(pin.idExposicion) }
+                            isClickable = true,
+                            onClick = { onNavigateToDetail(pin.idExposicion) }
                         )
                     }
                 }
