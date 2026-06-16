@@ -33,6 +33,7 @@ data class BalizaVaciaDetailUiState(
     val descripcion: String = "",
     val categoriasList: List<String> = emptyList(),
     val dimensiones: String = "",
+    val plantas: String = "",
     val fotosList: List<String> = emptyList(),
     val isProposalFormOpen: Boolean = false
 )
@@ -81,6 +82,7 @@ class BalizaVaciaDetailViewModel @Inject constructor(
                         descripcion = dto.descripcion ?: "",
                         categoriasList = cats,
                         dimensiones = dto.dimensiones ?: "",
+                        plantas = dto.plantas ?: "",
                         fotosList = parsedFotos
                     )
                 },
@@ -94,6 +96,7 @@ class BalizaVaciaDetailViewModel @Inject constructor(
     fun onTituloChange(v: String) { _uiState.value = _uiState.value.copy(titulo = v) }
     fun onDescripcionChange(v: String) { _uiState.value = _uiState.value.copy(descripcion = v) }
     fun onDimensionesChange(v: String) { _uiState.value = _uiState.value.copy(dimensiones = v) }
+    fun onPlantasChange(v: String) { _uiState.value = _uiState.value.copy(plantas = v) }
 
     fun toggleCategoria(cat: String) {
         val current = _uiState.value.categoriasList.toMutableList()
@@ -110,6 +113,7 @@ class BalizaVaciaDetailViewModel @Inject constructor(
                 descripcion = state.descripcion.ifBlank { null },
                 categorias = state.categoriasList.joinToString(",").ifBlank { null },
                 dimensiones = state.dimensiones.ifBlank { null },
+                plantas = state.plantas.ifBlank { null },
                 fotos = JSONArray(state.fotosList).toString()
             )
             repository.updateBalizaVacia(balizaId, req).fold(

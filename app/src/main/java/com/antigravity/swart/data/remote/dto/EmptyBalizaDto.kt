@@ -30,6 +30,7 @@ data class BalizaVaciaDetailDto(
     val descripcion: String?,
     val categorias: String?,       // CSV: "Pintura,Escultura"
     val dimensiones: String?,
+    val plantas: String?,
     val salas: String?,            // JSON array
     val fotos: String?             // JSON array of URLs
 )
@@ -39,6 +40,7 @@ data class UpdateBalizaVaciaRequest(
     val descripcion: String? = null,
     val categorias: String? = null,
     val dimensiones: String? = null,
+    val plantas: String? = null,
     val salas: String? = null,
     val fotos: String? = null
 )

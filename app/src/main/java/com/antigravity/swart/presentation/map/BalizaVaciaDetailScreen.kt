@@ -32,6 +32,8 @@ import com.antigravity.swart.presentation.exhibitions.uriToMultipartBodyPart
 private val BvNavy      = Color(0xFF0B0D17)
 private val BvCard      = Color(0xFF161925)
 private val BvInput     = Color(0xFF1E2235)
+private val BvNeonPink  = Color(0xFFFF2D87)
+private val BvNeonPurp  = Color(0xFFEC4899)
 private val BvTextGray  = Color(0xFF8B8FA8)
 private val BvTextLight = Color(0xFFE8E8F0)
 private val BvTextMid   = Color(0xFFB0B4CC)
@@ -254,13 +256,13 @@ fun BalizaVaciaDetailScreen(
                         // Stat cards
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             StatCard(
-                                value = baliza.dimensiones ?: "—",
+                                value = baliza.dimensiones?.let { "$it m²" } ?: "—",
                                 label = "Superficie",
                                 isAccent = true,
                                 modifier = Modifier.weight(1f)
                             )
                             StatCard(
-                                value = "3",
+                                value = baliza.plantas ?: "—",
                                 label = "Plantas",
                                 modifier = Modifier.weight(1f)
                             )
@@ -356,13 +358,23 @@ fun BalizaVaciaDetailScreen(
                                     colors = outlinedFieldColors()
                                 )
 
-                                // Dimensiones
+                                // Metros (Superficie)
                                 OutlinedTextField(
                                     value = uiState.dimensiones,
                                     onValueChange = viewModel::onDimensionesChange,
-                                    label = { Text("Ej: 150m², 3 plantas", color = BvTextGray) },
+                                    label = { Text("Metros cuadrados (m²)", color = BvTextGray) },
                                     modifier = Modifier.fillMaxWidth(),
                                     leadingIcon = { Icon(Icons.Default.Straighten, null, tint = BvTextGray) },
+                                    colors = outlinedFieldColors()
+                                )
+
+                                // Plantas
+                                OutlinedTextField(
+                                    value = uiState.plantas,
+                                    onValueChange = viewModel::onPlantasChange,
+                                    label = { Text("Número de plantas", color = BvTextGray) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    leadingIcon = { Icon(Icons.Default.Layers, null, tint = BvTextGray) },
                                     colors = outlinedFieldColors()
                                 )
 
