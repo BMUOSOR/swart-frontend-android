@@ -110,7 +110,7 @@ fun RegisterScreen(
             contentDescription = "Logo",
             modifier = Modifier.size(164.dp)
         )
-        
+
 
         Text(
             text = "Crear Cuenta",
