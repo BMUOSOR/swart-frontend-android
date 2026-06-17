@@ -603,7 +603,7 @@ private fun SpaceRequestCard(
                         modifier = Modifier.size(20.dp).clip(CircleShape).background(InvInputBg))
                     Text(propuesta.nombreArtistaSender, color = InvNeonPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
-                Text("ha enviado una propuesta para tu baliza:", color = InvTextGray, fontSize = 12.sp)
+                Text("ha enviado una propuesta:", color = InvTextGray, fontSize = 12.sp)
                 Text("\"${propuesta.tituloExposicion}\"", color = InvTextLight, fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold, maxLines = 2)
                 // Chips de categoría y fechas
@@ -702,7 +702,16 @@ private fun ProposalDetailSheet(
                         Column {
                             Text(propuesta.nombreArtistaSender, color = InvTextLight,
                                 fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                            Text("Propuesta de exposición", color = InvTextGray, fontSize = 12.sp)
+                            if (!propuesta.nombreEspacio.isNullOrBlank()) {
+                                Text(
+                                    "Espacio: ${propuesta.nombreEspacio}",
+                                    color = InvNeonPurple,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            } else {
+                                Text("Propuesta de exposición", color = InvTextGray, fontSize = 12.sp)
+                            }
                         }
                     }
                     IconButton(onClick = onDismiss,
@@ -756,6 +765,20 @@ private fun ProposalDetailSheet(
                 }
 
                 Spacer(Modifier.height(20.dp))
+
+                // ── Espacio disponible ────────────────────────────────────────
+                if (!propuesta.nombreEspacio.isNullOrBlank()) {
+                    DetailLabel("ESPACIO DISPONIBLE")
+                    Spacer(Modifier.height(8.dp))
+                    DetailInfoChip(
+                        icon = Icons.Default.Place,
+                        label = "Espacio",
+                        value = propuesta.nombreEspacio,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
+
                 HorizontalDivider(color = InvBorder)
                 Spacer(Modifier.height(20.dp))
 

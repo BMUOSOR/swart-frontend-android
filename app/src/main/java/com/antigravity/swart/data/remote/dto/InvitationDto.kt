@@ -16,7 +16,8 @@ data class InvitationDto(
     val fechaFin: String? = null,
     val precio: Double? = null,
     val categoria: String? = null,
-    val idUsuarioSender: Long? = null
+    val idUsuarioSender: Long? = null,
+    val nombreEspacio: String? = null    // título de la baliza vacía
 )
 
 data class MutualArtistDto(
