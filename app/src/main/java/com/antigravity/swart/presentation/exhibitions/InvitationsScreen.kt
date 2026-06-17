@@ -34,6 +34,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.Image
 import com.antigravity.swart.presentation.map.createMarkerBitmap
+import com.antigravity.swart.data.remote.dto.InvitationDto
 import com.antigravity.swart.presentation.components.SwartBottomNav
 import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.components.UserType
@@ -72,6 +73,7 @@ fun InvitationsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedProposalForDetail by remember { mutableStateOf<InvitationDto?>(null) }
 
     val tabAccent = if (isArtista) InvNeonPurple else InteresadoGradientStart
     val tabAccentGradient = Brush.horizontalGradient(listOf(InvNeonPink, tabAccent))
@@ -170,13 +172,21 @@ fun InvitationsScreen(
                                 senderAvatarOf = { it.avatarArtistaSender },
                                 senderNameOf = { it.nombreArtistaSender },
                                 titleOf = { it.tituloExposicion },
-                                onRespond = { id, accept -> viewModel.respondInvitation(id, accept, "propuesta") }
+                                onRespond = { id, accept -> viewModel.respondInvitation(id, accept, "propuesta") },
+                                onProposalClick = { selectedProposalForDetail = it }
                             )
                         }
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
+            }
+
+            selectedProposalForDetail?.let { proposal ->
+                ProposalDetailDialog(
+                    proposal = proposal,
+                    onDismiss = { selectedProposalForDetail = null }
+                )
             }
         }
     }
@@ -417,7 +427,8 @@ private fun <T> SpacesTab(
     senderAvatarOf: (T) -> String?,
     senderNameOf: (T) -> String,
     titleOf: (T) -> String,
-    onRespond: (Long, Boolean) -> Unit
+    onRespond: (Long, Boolean) -> Unit,
+    onProposalClick: (T) -> Unit
 ) {
     if (propuestas.isEmpty()) {
         EmptyState(
@@ -432,10 +443,11 @@ private fun <T> SpacesTab(
             thumbnailUrl = thumbnailOf(propuesta),
             senderAvatarUrl = senderAvatarOf(propuesta),
             senderName = senderNameOf(propuesta),
-            captionLine = "ha enviado una propuesta para tu baliza:",
+            captionLine = "ha enviado una propuesta:",
             title = titleOf(propuesta),
             onAccept = { onRespond(idOf(propuesta), true) },
-            onReject = { onRespond(idOf(propuesta), false) }
+            onReject = { onRespond(idOf(propuesta), false) },
+            onThumbnailClick = { onProposalClick(propuesta) }
         )
     }
 }
@@ -452,7 +464,8 @@ private fun RequestCard(
     captionLine: String,
     title: String,
     onAccept: () -> Unit,
-    onReject: () -> Unit
+    onReject: () -> Unit,
+    onThumbnailClick: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -477,6 +490,10 @@ private fun RequestCard(
                     .size(72.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(InvInputBg)
+                    .then(
+                        if (onThumbnailClick != null) Modifier.clickable { onThumbnailClick() }
+                        else Modifier
+                    )
             ) {
                 if (thumbnailUrl != null) {
                     if (thumbnailUrl.startsWith("http")) {
@@ -599,4 +616,128 @@ fun formatTime(dateTimeStr: String): String {
     } catch (e: Exception) {
         dateTimeStr
     }
+}
+
+@Composable
+fun ProposalDetailDialog(
+    proposal: InvitationDto,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = InvNeonPurple)
+            ) {
+                Text("Cerrar", fontWeight = FontWeight.Bold)
+            }
+        },
+        title = {
+            Text(
+                text = "Detalle de Propuesta",
+                color = InvTextLight,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Título de la exposición", color = InvTextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(proposal.tituloExposicion, color = InvTextLight, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AsyncImage(
+                        model = proposal.avatarArtistaSender,
+                        contentDescription = proposal.nombreArtistaSender,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(InvInputBg)
+                    )
+                    Column {
+                        Text("Artista", color = InvTextGray, fontSize = 11.sp)
+                        Text(proposal.nombreArtistaSender, color = InvNeonPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val firstTag = remember(proposal.exposicionImgUrl) {
+                        val tag = proposal.exposicionImgUrl?.split(",")?.firstOrNull()?.trim()
+                        if (tag.isNullOrBlank()) "Pintura" else tag
+                    }
+                    val bitmap = remember(firstTag) {
+                        createMarkerBitmap(context, firstTag, 1f)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(InvInputBg),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = firstTag,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                    Column {
+                        Text("Categoría", color = InvTextGray, fontSize = 11.sp)
+                        Text(firstTag, color = InvTextLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Fechas", color = InvTextGray, fontSize = 11.sp)
+                        val start = proposal.fechaInicio ?: "N/D"
+                        val end = proposal.fechaFin ?: "N/D"
+                        Text("$start al $end", color = InvTextLight, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Precio", color = InvTextGray, fontSize = 11.sp)
+                        val priceText = if (proposal.precio == null || proposal.precio == 0.0) "Gratis" else "${proposal.precio} €"
+                        Text(priceText, color = InvSuccess, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Descripción", color = InvTextGray, fontSize = 11.sp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(InvInputBg)
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = proposal.descrip ?: "Sin descripción.",
+                            color = InvTextLight,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+        },
+        containerColor = InvCardBg,
+        textContentColor = InvTextLight,
+        titleContentColor = InvTextLight,
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.border(1.dp, InvBorder, RoundedCornerShape(24.dp))
+    )
 }

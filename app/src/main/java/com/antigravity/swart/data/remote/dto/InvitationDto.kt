@@ -9,7 +9,11 @@ data class InvitationDto(
     val nombreArtistaSender: String,
     val avatarArtistaSender: String?,
     val estado: String,
-    val tipo: String = "invitacion"
+    val tipo: String = "invitacion",
+    val descrip: String? = null,
+    val fechaInicio: String? = null,
+    val fechaFin: String? = null,
+    val precio: Double? = null
 )
 
 data class MutualArtistDto(
