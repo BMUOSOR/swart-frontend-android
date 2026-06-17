@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.antigravity.swart.domain.model.Message
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.theme.ArtistaGradientStart
 import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
@@ -145,8 +146,7 @@ fun ChatScreen(
                     .fillMaxWidth()
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        color = ChatNeonPurple,
+                    SwartLoadingIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else if (messages.isEmpty()) {

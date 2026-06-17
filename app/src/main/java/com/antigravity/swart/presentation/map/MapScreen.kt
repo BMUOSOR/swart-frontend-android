@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.antigravity.swart.domain.model.MapPin
 import com.antigravity.swart.presentation.components.SwartBottomNav
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.components.UserType
 import com.antigravity.swart.presentation.theme.*
 import com.mapbox.geojson.Feature
@@ -682,7 +683,7 @@ fun MapScreen(
 
 
             if (uiState.isLoading) {
-                CircularProgressIndicator(color = InteresadoGradientStart, modifier = Modifier.align(Alignment.Center))
+                SwartLoadingIndicator(modifier = Modifier.align(Alignment.Center))
             }
 
             // ── Filter Bottom Sheet ───────────────────────────────────────

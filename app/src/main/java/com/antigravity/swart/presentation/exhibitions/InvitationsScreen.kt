@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.antigravity.swart.presentation.components.SwartBottomNav
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.components.UserType
 import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -153,7 +154,7 @@ fun InvitationsScreen(
                 modifier = Modifier.fillMaxWidth().height(200.dp),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = InvNeonPurple)
+                SwartLoadingIndicator()
             }
         } else {
             if (selectedTabIndex == 0) {

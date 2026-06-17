@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.antigravity.swart.data.remote.dto.ArtistFollowDto
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,8 +103,7 @@ fun ArtistsListScreen(
                 .padding(horizontal = 16.dp)
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator(
-                    color = Color(0xFF8B5CF6),
+                SwartLoadingIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else if (uiState.error != null) {

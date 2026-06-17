@@ -33,6 +33,7 @@ import coil.request.ImageRequest
 import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.model.DiscoverArtwork
 import com.antigravity.swart.presentation.components.SwartBottomNav
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.components.UserType
 import com.antigravity.swart.presentation.theme.*
 
@@ -124,7 +125,7 @@ fun FavoritosScreen(
             when {
                 uiState.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color.Red)
+                        SwartLoadingIndicator()
                     }
                 }
 

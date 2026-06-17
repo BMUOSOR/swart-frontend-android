@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.antigravity.swart.presentation.components.SwartBottomNav
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.components.UserType
 import com.antigravity.swart.presentation.home.HomeViewModel
 import com.antigravity.swart.presentation.theme.DarkBackground
@@ -75,7 +76,7 @@ fun DetailScreen(
     ) { paddingValues ->
         if (exhibition == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = ArtistaGradientStart)
+                SwartLoadingIndicator()
             }
             return@Scaffold
         }

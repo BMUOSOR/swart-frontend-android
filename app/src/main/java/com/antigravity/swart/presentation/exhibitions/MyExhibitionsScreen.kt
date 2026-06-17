@@ -32,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.antigravity.swart.domain.model.Exhibition
 import com.antigravity.swart.presentation.components.SwartBottomNav
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.components.UserType
 import java.time.LocalDate
 
@@ -125,7 +126,7 @@ fun MyExhibitionsScreen(
                             .height(300.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = LilaAccent)
+                        SwartLoadingIndicator()
                     }
                 }
                 is MyExhibitionsUiState.Error -> {

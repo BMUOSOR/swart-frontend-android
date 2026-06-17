@@ -27,6 +27,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import com.antigravity.swart.presentation.exhibitions.uriToMultipartBodyPart
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 
 // ─── Paleta ───────────────────────────────────────────────────────────────────
 private val BvNavy      = Color(0xFF0B0D17)
@@ -104,7 +105,7 @@ fun BalizaVaciaDetailScreen(
         when {
             uiState.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = BvNeonPurp)
+                    SwartLoadingIndicator()
                 }
             }
             uiState.baliza == null -> {

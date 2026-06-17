@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antigravity.swart.presentation.components.SwartBottomNav
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.components.UserType
 import com.antigravity.swart.presentation.home.components.ExhibitionMasonryGrid
 import com.antigravity.swart.presentation.home.components.HomeTopBar
@@ -114,8 +115,7 @@ fun HomeScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
                     uiState.isLoading -> {
-                        CircularProgressIndicator(
-                            color = accentColor,
+                        SwartLoadingIndicator(
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }

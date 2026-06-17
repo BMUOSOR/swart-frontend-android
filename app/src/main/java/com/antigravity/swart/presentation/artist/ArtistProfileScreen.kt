@@ -33,6 +33,7 @@ import coil.request.ImageRequest
 import com.antigravity.swart.domain.model.ArtistProfile
 import com.antigravity.swart.domain.model.ArtworkForSale
 import com.antigravity.swart.domain.model.Exhibition
+import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -68,7 +69,7 @@ fun ArtistProfileScreen(
         ) {
             when (val state = uiState) {
                 is ArtistProfileUiState.Loading -> {
-                    CircularProgressIndicator(color = PremiumPink)
+                    SwartLoadingIndicator()
                 }
                 is ArtistProfileUiState.Error -> {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
