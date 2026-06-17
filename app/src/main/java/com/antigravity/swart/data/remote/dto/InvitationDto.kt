@@ -10,10 +10,13 @@ data class InvitationDto(
     val avatarArtistaSender: String?,
     val estado: String,
     val tipo: String = "invitacion",
+    // Campos de detalle de propuesta (null para invitaciones normales)
     val descrip: String? = null,
     val fechaInicio: String? = null,
     val fechaFin: String? = null,
-    val precio: Double? = null
+    val precio: Double? = null,
+    val categoria: String? = null,
+    val idUsuarioSender: Long? = null
 )
 
 data class MutualArtistDto(

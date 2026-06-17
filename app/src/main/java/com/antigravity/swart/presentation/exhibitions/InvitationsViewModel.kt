@@ -73,4 +73,14 @@ class InvitationsViewModel @Inject constructor(
             loadData()
         }
     }
+
+    fun startChatWithSender(senderUserId: Long, onChatCreated: (Long) -> Unit) {
+        viewModelScope.launch {
+            val myId = sessionManager.getUserId()
+            repository.startChat(senderId = myId, receiverId = senderUserId).fold(
+                onSuccess = { chatId -> onChatCreated(chatId) },
+                onFailure = { }
+            )
+        }
+    }
 }

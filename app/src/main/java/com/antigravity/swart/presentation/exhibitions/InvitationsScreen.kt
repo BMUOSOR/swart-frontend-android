@@ -4,9 +4,11 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -29,15 +33,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.foundation.Image
-import com.antigravity.swart.presentation.map.createMarkerBitmap
 import com.antigravity.swart.data.remote.dto.InvitationDto
 import com.antigravity.swart.presentation.components.SwartBottomNav
 import com.antigravity.swart.presentation.components.SwartLoadingIndicator
 import com.antigravity.swart.presentation.components.UserType
+import com.antigravity.swart.presentation.map.createMarkerBitmap
 import com.antigravity.swart.presentation.theme.InteresadoGradientStart
 
 private val InvNavyBg     = Color(0xFF0B0D17)
@@ -73,7 +77,6 @@ fun InvitationsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     var selectedTabIndex by remember { mutableStateOf(0) }
-    var selectedProposalForDetail by remember { mutableStateOf<InvitationDto?>(null) }
 
     val tabAccent = if (isArtista) InvNeonPurple else InteresadoGradientStart
     val tabAccentGradient = Brush.horizontalGradient(listOf(InvNeonPink, tabAccent))
@@ -167,26 +170,18 @@ fun InvitationsScreen(
                             )
                             isArtista && tabIndex == 2 -> SpacesTab(
                                 propuestas = propuestasEspacios,
-                                idOf = { it.idInvitacion },
-                                thumbnailOf = { it.exposicionImgUrl },
-                                senderAvatarOf = { it.avatarArtistaSender },
-                                senderNameOf = { it.nombreArtistaSender },
-                                titleOf = { it.tituloExposicion },
                                 onRespond = { id, accept -> viewModel.respondInvitation(id, accept, "propuesta") },
-                                onProposalClick = { selectedProposalForDetail = it }
+                                onChatWithSender = { senderUserId ->
+                                    viewModel.startChatWithSender(senderUserId) { chatId ->
+                                        onNavigateToChat(chatId)
+                                    }
+                                }
                             )
                         }
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
-            }
-
-            selectedProposalForDetail?.let { proposal ->
-                ProposalDetailDialog(
-                    proposal = proposal,
-                    onDismiss = { selectedProposalForDetail = null }
-                )
             }
         }
     }
@@ -420,16 +415,13 @@ private fun <T> InvitationsTab(
 }
 
 @Composable
-private fun <T> SpacesTab(
-    propuestas: List<T>,
-    idOf: (T) -> Long,
-    thumbnailOf: (T) -> String?,
-    senderAvatarOf: (T) -> String?,
-    senderNameOf: (T) -> String,
-    titleOf: (T) -> String,
+private fun SpacesTab(
+    propuestas: List<InvitationDto>,
     onRespond: (Long, Boolean) -> Unit,
-    onProposalClick: (T) -> Unit
+    onChatWithSender: (Long) -> Unit
 ) {
+    var selectedPropuesta by remember { mutableStateOf<InvitationDto?>(null) }
+
     if (propuestas.isEmpty()) {
         EmptyState(
             icon = Icons.Default.Place,
@@ -438,23 +430,39 @@ private fun <T> SpacesTab(
         )
         return
     }
+
     propuestas.forEach { propuesta ->
-        RequestCard(
-            thumbnailUrl = thumbnailOf(propuesta),
-            senderAvatarUrl = senderAvatarOf(propuesta),
-            senderName = senderNameOf(propuesta),
-            captionLine = "ha enviado una propuesta:",
-            title = titleOf(propuesta),
-            onAccept = { onRespond(idOf(propuesta), true) },
-            onReject = { onRespond(idOf(propuesta), false) },
-            onThumbnailClick = { onProposalClick(propuesta) }
+        SpaceRequestCard(
+            propuesta = propuesta,
+            onAccept = { onRespond(propuesta.idInvitacion, true) },
+            onReject = { onRespond(propuesta.idInvitacion, false) },
+            onClick = { selectedPropuesta = propuesta }
+        )
+    }
+
+    selectedPropuesta?.let { p ->
+        ProposalDetailSheet(
+            propuesta = p,
+            onAccept = {
+                onRespond(p.idInvitacion, true)
+                selectedPropuesta = null
+            },
+            onReject = {
+                onRespond(p.idInvitacion, false)
+                selectedPropuesta = null
+            },
+            onChat = {
+                val userId = p.idUsuarioSender ?: p.idArtistaSender
+                onChatWithSender(userId)
+                selectedPropuesta = null
+            },
+            onDismiss = { selectedPropuesta = null }
         )
     }
 }
 
 /**
- * Tarjeta compartida por la pestaña de Invitaciones y la de Espacios:
- * miniatura, remitente, descripción y acciones de aceptar/rechazar.
+ * Tarjeta para la pestaña Invitaciones (sin click global, sólo aceptar/rechazar).
  */
 @Composable
 private fun RequestCard(
@@ -464,8 +472,7 @@ private fun RequestCard(
     captionLine: String,
     title: String,
     onAccept: () -> Unit,
-    onReject: () -> Unit,
-    onThumbnailClick: (() -> Unit)? = null
+    onReject: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -490,10 +497,6 @@ private fun RequestCard(
                     .size(72.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(InvInputBg)
-                    .then(
-                        if (onThumbnailClick != null) Modifier.clickable { onThumbnailClick() }
-                        else Modifier
-                    )
             ) {
                 if (thumbnailUrl != null) {
                     if (thumbnailUrl.startsWith("http")) {
@@ -506,25 +509,87 @@ private fun RequestCard(
                     } else {
                         val context = androidx.compose.ui.platform.LocalContext.current
                         val firstTag = remember(thumbnailUrl) {
-                            val tag = thumbnailUrl.split(",").firstOrNull()?.trim()
-                            if (tag.isNullOrBlank()) "Pintura" else tag
+                            thumbnailUrl.split(",").firstOrNull()?.trim()?.ifBlank { null } ?: "Pintura"
                         }
-                        val bitmap = remember(firstTag) {
-                            createMarkerBitmap(context, firstTag, 1f)
-                        }
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = thumbnailUrl,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        val bitmap = remember(firstTag) { createMarkerBitmap(context, firstTag, 1f) }
+                        Image(bitmap = bitmap.asImageBitmap(), contentDescription = firstTag, modifier = Modifier.fillMaxSize())
                     }
                 } else {
-                    Icon(
-                        Icons.Default.Image,
-                        contentDescription = null,
-                        tint = InvTextGray,
-                        modifier = Modifier.size(32.dp).align(Alignment.Center)
-                    )
+                    Icon(Icons.Default.Image, null, tint = InvTextGray, modifier = Modifier.size(32.dp).align(Alignment.Center))
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    AsyncImage(model = senderAvatarUrl, contentDescription = senderName, contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(20.dp).clip(CircleShape).background(InvInputBg))
+                    Text(senderName, color = InvNeonPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+                Text(captionLine, color = InvTextGray, fontSize = 12.sp)
+                Text("\"$title\"", color = InvTextLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 2)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                RoundActionButton(Icons.Default.Check, "Aceptar", InvSuccess, onAccept)
+                RoundActionButton(Icons.Default.Close, "Rechazar", InvDanger, onReject)
+            }
+        }
+    }
+}
+
+/**
+ * Tarjeta para la pestaña Espacios: toda la tarjeta es clicable (abre el detalle)
+ * y además tiene botones de Aceptar y Rechazar propios.
+ */
+@Composable
+private fun SpaceRequestCard(
+    propuesta: InvitationDto,
+    onAccept: () -> Unit,
+    onReject: () -> Unit,
+    onClick: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val firstTag = remember(propuesta.exposicionImgUrl) {
+        propuesta.exposicionImgUrl
+            ?.split(",")?.firstOrNull()?.trim()?.ifBlank { null } ?: "Pintura"
+    }
+    val bitmap = remember(firstTag) { createMarkerBitmap(context, firstTag, 1f) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(18.dp),
+                ambientColor = InvNeonPurple.copy(alpha = 0.15f),
+                spotColor = InvNeonPurple.copy(alpha = 0.15f))
+            .clip(RoundedCornerShape(18.dp))
+            .background(InvCardBg)
+            .border(1.dp, InvBorder, RoundedCornerShape(18.dp))
+            .clickable { onClick() }
+            .padding(14.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Miniatura — icono de categoría
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(InvInputBg)
+            ) {
+                Image(bitmap = bitmap.asImageBitmap(), contentDescription = firstTag, modifier = Modifier.fillMaxSize())
+                // Indicador "Ver detalle" en esquina
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(22.dp)
+                        .clip(RoundedCornerShape(topStart = 8.dp))
+                        .background(InvNeonPurple.copy(alpha = 0.85f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Visibility, null, tint = Color.White, modifier = Modifier.size(13.dp))
                 }
             }
 
@@ -533,46 +598,303 @@ private fun RequestCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    AsyncImage(
-                        model = senderAvatarUrl,
-                        contentDescription = senderName,
+                    AsyncImage(model = propuesta.avatarArtistaSender, contentDescription = propuesta.nombreArtistaSender,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(20.dp).clip(CircleShape).background(InvInputBg)
-                    )
-                    Text(
-                        senderName,
-                        color = InvNeonPurple,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
+                        modifier = Modifier.size(20.dp).clip(CircleShape).background(InvInputBg))
+                    Text(propuesta.nombreArtistaSender, color = InvNeonPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
-                Text(captionLine, color = InvTextGray, fontSize = 12.sp)
-                Text(
-                    "\"$title\"",
-                    color = InvTextLight,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2
-                )
+                Text("ha enviado una propuesta para tu baliza:", color = InvTextGray, fontSize = 12.sp)
+                Text("\"${propuesta.tituloExposicion}\"", color = InvTextLight, fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold, maxLines = 2)
+                // Chips de categoría y fechas
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (!propuesta.categoria.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = InvNeonPurple.copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, InvNeonPurple.copy(alpha = 0.3f))
+                        ) {
+                            Text(propuesta.categoria, color = InvNeonPurple, fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                        }
+                    }
+                    if (!propuesta.precio.toString().isBlank() && propuesta.precio != null) {
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = InvSuccess.copy(alpha = 0.10f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, InvSuccess.copy(alpha = 0.25f))
+                        ) {
+                            Text("${propuesta.precio.toInt()}€", color = InvSuccess, fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                        }
+                    }
+                }
             }
 
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                RoundActionButton(Icons.Default.Check, "Aceptar", InvSuccess) { onAccept() }
+                RoundActionButton(Icons.Default.Close, "Rechazar", InvDanger) { onReject() }
+            }
+        }
+    }
+}
+
+/**
+ * Sheet de detalle completo de una propuesta de espacio.
+ * Muestra todos los campos que el artista rellenó + botones Chat / Aceptar / Rechazar.
+ */
+@Composable
+private fun ProposalDetailSheet(
+    propuesta: InvitationDto,
+    onAccept: () -> Unit,
+    onReject: () -> Unit,
+    onChat: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val firstTag = remember(propuesta.exposicionImgUrl) {
+        propuesta.exposicionImgUrl
+            ?.split(",")?.firstOrNull()?.trim()?.ifBlank { null } ?: "Pintura"
+    }
+    val bitmap = remember(firstTag) { createMarkerBitmap(context, firstTag, 1f) }
+    val gradient = Brush.linearGradient(listOf(InvNeonPink, Color(0xFF8B5CF6)))
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = InvNavyBg,
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .border(1.dp, InvBorder, RoundedCornerShape(24.dp))
+        ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                RoundActionButton(
-                    icon = Icons.Default.Check,
-                    contentDescription = "Aceptar",
-                    color = InvSuccess,
-                    onClick = onAccept
+                // ── Cabecera: avatar + nombre + cerrar ─────────────────────────
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, gradient, CircleShape)
+                                .padding(2.dp)
+                                .clip(CircleShape)
+                                .background(InvInputBg)
+                        ) {
+                            AsyncImage(model = propuesta.avatarArtistaSender,
+                                contentDescription = propuesta.nombreArtistaSender,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().clip(CircleShape))
+                        }
+                        Column {
+                            Text(propuesta.nombreArtistaSender, color = InvTextLight,
+                                fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text("Propuesta de exposición", color = InvTextGray, fontSize = 12.sp)
+                        }
+                    }
+                    IconButton(onClick = onDismiss,
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(InvInputBg)
+                    ) {
+                        Icon(Icons.Default.Close, "Cerrar", tint = InvTextGray, modifier = Modifier.size(18.dp))
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Icono de baliza grande ─────────────────────────────────────
+                Box(
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(InvInputBg)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Image(bitmap = bitmap.asImageBitmap(), contentDescription = firstTag,
+                        modifier = Modifier.fillMaxSize())
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── Título ─────────────────────────────────────────────────────
+                Text(
+                    text = propuesta.tituloExposicion,
+                    color = InvTextLight,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                RoundActionButton(
-                    icon = Icons.Default.Close,
-                    contentDescription = "Rechazar",
-                    color = InvDanger,
-                    onClick = onReject
-                )
+
+                Spacer(Modifier.height(6.dp))
+
+                // ── Chip de categoría ──────────────────────────────────────────
+                if (!propuesta.categoria.isNullOrBlank()) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = InvNeonPurple.copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, InvNeonPurple.copy(alpha = 0.3f))
+                        ) {
+                            Text(propuesta.categoria, color = InvNeonPurple,
+                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp))
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+                HorizontalDivider(color = InvBorder)
+                Spacer(Modifier.height(20.dp))
+
+                // ── Descripción ────────────────────────────────────────────────
+                if (!propuesta.descrip.isNullOrBlank()) {
+                    DetailLabel("DESCRIPCIÓN")
+                    Spacer(Modifier.height(6.dp))
+                    Text(propuesta.descrip, color = InvTextLight, fontSize = 14.sp, lineHeight = 21.sp)
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                // ── Fechas ─────────────────────────────────────────────────────
+                if (!propuesta.fechaInicio.isNullOrBlank() || !propuesta.fechaFin.isNullOrBlank()) {
+                    DetailLabel("FECHAS")
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (!propuesta.fechaInicio.isNullOrBlank()) {
+                            DetailInfoChip(
+                                icon = Icons.Default.CalendarToday,
+                                label = "Inicio",
+                                value = propuesta.fechaInicio,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (!propuesta.fechaFin.isNullOrBlank()) {
+                            DetailInfoChip(
+                                icon = Icons.Default.EventAvailable,
+                                label = "Fin",
+                                value = propuesta.fechaFin,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                // ── Precio ─────────────────────────────────────────────────────
+                if (propuesta.precio != null) {
+                    DetailLabel("PRECIO SOLICITADO")
+                    Spacer(Modifier.height(8.dp))
+                    DetailInfoChip(
+                        icon = Icons.Default.Euro,
+                        label = "Precio",
+                        value = "${propuesta.precio.toInt()} €",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(color = InvBorder)
+                Spacer(Modifier.height(20.dp))
+
+                // ── Acciones ───────────────────────────────────────────────────
+                // Chat
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFF3B82F6))))
+                        .clickable { onChat() }
+                        .padding(vertical = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Chat, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Text("Hablar con el artista", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    // Rechazar
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .border(1.dp, InvDanger.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                            .background(InvDanger.copy(alpha = 0.10f))
+                            .clickable { onReject() }
+                            .padding(vertical = 14.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Close, null, tint = InvDanger, modifier = Modifier.size(16.dp))
+                            Text("Rechazar", color = InvDanger, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        }
+                    }
+                    // Aceptar
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Brush.horizontalGradient(listOf(InvNeonPink, Color(0xFF8B5CF6))))
+                            .clickable { onAccept() }
+                            .padding(vertical = 14.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Text("Aceptar", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(4.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailLabel(text: String) {
+    Text(text, color = InvTextGray, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+}
+
+@Composable
+private fun DetailInfoChip(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = InvInputBg,
+        border = androidx.compose.foundation.BorderStroke(1.dp, InvBorder)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(icon, null, tint = InvNeonPurple, modifier = Modifier.size(16.dp))
+            Column {
+                Text(label, color = InvTextGray, fontSize = 10.sp)
+                Text(value, color = InvTextLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -616,128 +938,4 @@ fun formatTime(dateTimeStr: String): String {
     } catch (e: Exception) {
         dateTimeStr
     }
-}
-
-@Composable
-fun ProposalDetailDialog(
-    proposal: InvitationDto,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(contentColor = InvNeonPurple)
-            ) {
-                Text("Cerrar", fontWeight = FontWeight.Bold)
-            }
-        },
-        title = {
-            Text(
-                text = "Detalle de Propuesta",
-                color = InvTextLight,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Título de la exposición", color = InvTextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    Text(proposal.tituloExposicion, color = InvTextLight, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    AsyncImage(
-                        model = proposal.avatarArtistaSender,
-                        contentDescription = proposal.nombreArtistaSender,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(36.dp).clip(CircleShape).background(InvInputBg)
-                    )
-                    Column {
-                        Text("Artista", color = InvTextGray, fontSize = 11.sp)
-                        Text(proposal.nombreArtistaSender, color = InvNeonPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    val context = androidx.compose.ui.platform.LocalContext.current
-                    val firstTag = remember(proposal.exposicionImgUrl) {
-                        val tag = proposal.exposicionImgUrl?.split(",")?.firstOrNull()?.trim()
-                        if (tag.isNullOrBlank()) "Pintura" else tag
-                    }
-                    val bitmap = remember(firstTag) {
-                        createMarkerBitmap(context, firstTag, 1f)
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(InvInputBg),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = firstTag,
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                    Column {
-                        Text("Categoría", color = InvTextGray, fontSize = 11.sp)
-                        Text(firstTag, color = InvTextLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Fechas", color = InvTextGray, fontSize = 11.sp)
-                        val start = proposal.fechaInicio ?: "N/D"
-                        val end = proposal.fechaFin ?: "N/D"
-                        Text("$start al $end", color = InvTextLight, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Precio", color = InvTextGray, fontSize = 11.sp)
-                        val priceText = if (proposal.precio == null || proposal.precio == 0.0) "Gratis" else "${proposal.precio} €"
-                        Text(priceText, color = InvSuccess, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Descripción", color = InvTextGray, fontSize = 11.sp)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(InvInputBg)
-                            .padding(12.dp)
-                    ) {
-                        Text(
-                            text = proposal.descrip ?: "Sin descripción.",
-                            color = InvTextLight,
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp
-                        )
-                    }
-                }
-            }
-        },
-        containerColor = InvCardBg,
-        textContentColor = InvTextLight,
-        titleContentColor = InvTextLight,
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.border(1.dp, InvBorder, RoundedCornerShape(24.dp))
-    )
 }
