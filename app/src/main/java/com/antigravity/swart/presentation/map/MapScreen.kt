@@ -329,7 +329,6 @@ fun MapScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             // ----------------------------------------------------------------
             // Mapbox MapView — 3D Dusk (Dust) Style
@@ -565,7 +564,7 @@ fun MapScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(top = paddingValues.calculateTopPadding() + 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
                     .align(Alignment.TopCenter),
                 horizontalAlignment = Alignment.End
             ) {
@@ -592,7 +591,7 @@ fun MapScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
+                            .padding(bottom = paddingValues.calculateBottomPadding() + 16.dp, start = 16.dp, end = 16.dp)
                             .align(Alignment.BottomCenter)
                     ) {
                         ExhibitionMapCard(
@@ -608,7 +607,7 @@ fun MapScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
+                            .padding(bottom = paddingValues.calculateBottomPadding() + 16.dp, start = 16.dp, end = 16.dp)
                             .align(Alignment.BottomCenter)
                     ) {
                         val isOwner = baliza.idPropietario == uiState.currentUserId
@@ -646,6 +645,7 @@ fun MapScreen(
                         modifier = Modifier
                             .fillMaxWidth(0.85f)
                             .fillMaxHeight()
+                            .padding(top = paddingValues.calculateTopPadding(), bottom = paddingValues.calculateBottomPadding())
                             .background(CardBackground)
                             .align(Alignment.CenterStart)
                     ) {

@@ -461,6 +461,8 @@ private fun CompactTagSection(
                             labelColor = CATextGray
                         ),
                         border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
                             selectedBorderColor = CANeonPurple,
                             borderColor = Color.Transparent
                         )

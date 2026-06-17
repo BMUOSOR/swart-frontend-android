@@ -101,17 +101,16 @@ fun RegisterScreen(
             .fillMaxSize()
             .background(DarkBackground)
             .padding(horizontal = 24.dp)
-            .padding(top = 64.dp, bottom = 40.dp),
+            .padding(top = 4.dp, bottom = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Logo
         Image(
-            painter = painterResource(id = R.drawable.dise_o_de_la_ui_logotipo__1_),
+            painter = painterResource(id = R.drawable.dise_o_de_la_ui_logotipo__bien_),
             contentDescription = "Logo",
-            modifier = Modifier.size(64.dp)
+            modifier = Modifier.size(164.dp)
         )
-
-        Spacer(modifier = Modifier.height(24.dp))
+        
 
         Text(
             text = "Crear Cuenta",

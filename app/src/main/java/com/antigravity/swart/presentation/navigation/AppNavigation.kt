@@ -27,12 +27,23 @@ import com.antigravity.swart.presentation.exhibitions.EditExhibitionScreen
 import com.antigravity.swart.presentation.exhibitions.EditArtworkScreen
 import com.antigravity.swart.presentation.chat.ChatScreen
 import com.antigravity.swart.presentation.favorites.FavoritosScreen
+import com.antigravity.swart.presentation.splash.SplashScreen
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "auth") {
+    NavHost(navController = navController, startDestination = "splash") {
+        composable("splash") {
+            SplashScreen(
+                onAnimationFinished = {
+                    navController.navigate("auth") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            )
+        }
+        
         navigation(startDestination = "login", route = "auth") {
             composable("login") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {

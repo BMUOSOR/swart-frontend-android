@@ -80,7 +80,7 @@ fun SwartBottomNav(
         if (userType == UserType.ARTIST) {
             FloatingActionButton(
                 onClick = onFabClick,
-                modifier = Modifier.align(Alignment.TopCenter),
+                modifier = Modifier.align(Alignment.TopCenter).offset(y = (-12).dp),
                 containerColor = ArtistaGradientStart,
                 contentColor = Color.White
             ) {

@@ -468,6 +468,8 @@ fun CreateExhibitionScreen(
                                 labelColor = CETextGray
                             ),
                             border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
                                 selectedBorderColor = CENeonPurple,
                                 borderColor = Color.Transparent
                             )

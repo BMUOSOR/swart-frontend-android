@@ -72,20 +72,19 @@ fun LoginScreen(
             .fillMaxSize()
             .background(DarkBackground)
             .padding(horizontal = 24.dp)
-            .padding(top = 34.dp, bottom = 40.dp),
+            .padding(top = 4.dp, bottom = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Logo
         Image(
-            painter = painterResource(id = R.drawable.dise_o_de_la_ui_logotipo__1_),
+            painter = painterResource(id = R.drawable.dise_o_de_la_ui_logotipo__bien_),
             contentDescription = "Logo",
-            modifier = Modifier.size(160.dp)
+            modifier = Modifier.size(200.dp)
         )
 
-        Spacer(modifier = Modifier.height(0.2.dp))
 
         Text(
-            text = "Bienvenid@ a SWART",
+            text = "Bienvenid@",
             color = TextWhite,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
