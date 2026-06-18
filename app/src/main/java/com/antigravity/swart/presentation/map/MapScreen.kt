@@ -414,8 +414,12 @@ fun MapScreen(
 
                     // ── Register exhibition bitmaps in style ──────────────
                     uiState.filteredPins.forEach { pin ->
-                        val factor = if (range > 0f) ((pin.match - effectiveMin) / range).coerceIn(0f, 1f) else 0.5f
-                        val scale  = 0.5f + factor * 0.7f
+                        val scale = if (isArtist) {
+                            1.0f
+                        } else {
+                            val factor = if (range > 0f) ((pin.match - effectiveMin) / range).coerceIn(0f, 1f) else 0.5f
+                            0.5f + factor * 0.7f
+                        }
                         val bmp    = createMarkerBitmap(context, pin.mainTag, scale)
                         val imgId  = "marker-${pin.idExposicion}"
                         if (style.getStyleImage(imgId) == null) {
@@ -598,6 +602,7 @@ fun MapScreen(
                         ExhibitionMapCard(
                             pin = pin,
                             isClickable = true,
+                            showMatch = !isArtist,
                             onClick = { onNavigateToDetail(pin.idExposicion) }
                         )
                     }
@@ -938,7 +943,7 @@ fun FilterChipItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
 // Map info cards
 // --------------------------------------------------------------------------
 @Composable
-fun ExhibitionMapCard(pin: MapPin, isClickable: Boolean = true, onClick: () -> Unit = {}) {
+fun ExhibitionMapCard(pin: MapPin, isClickable: Boolean = true, showMatch: Boolean = true, onClick: () -> Unit = {}) {
     Surface(
         modifier = Modifier.fillMaxWidth().then(if (isClickable) Modifier.clickable { onClick() } else Modifier),
         shape = RoundedCornerShape(24.dp),
@@ -952,8 +957,12 @@ fun ExhibitionMapCard(pin: MapPin, isClickable: Boolean = true, onClick: () -> U
                 Text(pin.titulo, color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
                 Text(pin.galeria, color = TextGray, fontSize = 13.sp, maxLines = 1)
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                    Text("${pin.match}% match", color = InteresadoGradientStart, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                    Text(" · ${pin.distancia}", color = TextGray, fontSize = 12.sp)
+                    if (showMatch) {
+                        Text("${pin.match}% match", color = InteresadoGradientStart, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        Text(" · ${pin.distancia}", color = TextGray, fontSize = 12.sp)
+                    } else {
+                        Text(pin.distancia, color = TextGray, fontSize = 12.sp)
+                    }
                 }
             }
             val (icon, gradient) = when (pin.mainTag.lowercase()) {

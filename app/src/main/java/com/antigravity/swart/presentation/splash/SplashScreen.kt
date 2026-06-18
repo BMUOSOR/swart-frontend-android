@@ -23,7 +23,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
     // Fade out animation that triggers when alpha state changes to 0f
     val alphaAnim by animateFloatAsState(
         targetValue = alpha,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = tween(durationMillis = 300),
         finishedListener = {
             onAnimationFinished()
         },
