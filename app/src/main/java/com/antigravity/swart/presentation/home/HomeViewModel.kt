@@ -10,13 +10,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class HomeUiState(
     val isLoading: Boolean = false,
-    val exhibitions: List<Exhibition> = emptyList(), // Lista filtrada
+    val exhibitions: List<Exhibition> = emptyList(),
     val error: String? = null
 )
 
@@ -26,76 +27,82 @@ class HomeViewModel @Inject constructor(
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
-    private val _isLoading = MutableStateFlow(false)
-    private val _error = MutableStateFlow<String?>(null)
+    private val _isLoading      = MutableStateFlow(false)
+    private val _error          = MutableStateFlow<String?>(null)
     private val _allExhibitions = MutableStateFlow<List<Exhibition>>(emptyList())
-    
-    val searchQuery = MutableStateFlow("")
-    val userAvatar = MutableStateFlow("")
-    
-    val selectedTag = MutableStateFlow("Todos")
-    val filterStartDate = MutableStateFlow("")
-    val filterEndDate = MutableStateFlow("")
-    val filterArtistName = MutableStateFlow("")
-    val filterArtworkTag = MutableStateFlow("")
 
+    val searchQuery     = MutableStateFlow("")
+    val userAvatar      = MutableStateFlow("")
+    val selectedTag     = MutableStateFlow("Todos")
+    val filterStartDate = MutableStateFlow("")
+    val filterEndDate   = MutableStateFlow("")
+    val filterArtistName = MutableStateFlow("")
+
+    // ── Sugerencias de artistas ───────────────────────────────────────────────
+    // Filtra en tiempo real los nombres únicos de artistas que coincidan con
+    // lo que el usuario lleva escrito en el campo de artista del bottom sheet.
+    val artistSuggestions: StateFlow<List<String>> = combine(
+        _allExhibitions, filterArtistName
+    ) { exhibitions, query ->
+        if (query.isBlank()) emptyList()
+        else exhibitions
+            .map { it.artistName }
+            .distinct()
+            .filter { it.contains(query, ignoreCase = true) }
+            .sortedWith(compareBy(
+                // Primero los que empiezan por el query, luego los que lo contienen
+                { !it.startsWith(query, ignoreCase = true) },
+                { it.lowercase() }
+            ))
+            .take(5)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // ── Estado principal ──────────────────────────────────────────────────────
     val uiState: StateFlow<HomeUiState> = combine(
-        _isLoading, _allExhibitions, searchQuery, selectedTag, filterStartDate, filterEndDate, filterArtistName, filterArtworkTag, _error
+        _isLoading, _allExhibitions, searchQuery,
+        selectedTag, filterStartDate, filterEndDate, filterArtistName, _error
     ) { flowsArray ->
-        val isLoading = flowsArray[0] as Boolean
+        val isLoading      = flowsArray[0] as Boolean
         @Suppress("UNCHECKED_CAST")
         val allExhibitions = flowsArray[1] as List<Exhibition>
-        val query = flowsArray[2] as String
-        val tag = flowsArray[3] as String
-        val startD = flowsArray[4] as String
-        val endD = flowsArray[5] as String
-        val artistN = flowsArray[6] as String
-        val artworkT = flowsArray[7] as String
-        val error = flowsArray[8] as String?
+        val query          = flowsArray[2] as String
+        val tag            = flowsArray[3] as String
+        val startD         = flowsArray[4] as String
+        val endD           = flowsArray[5] as String
+        val artistN        = flowsArray[6] as String
+        val error          = flowsArray[7] as String?
 
         var filtered = allExhibitions
-        
+
         if (query.isNotBlank()) {
             filtered = filtered.filter {
                 it.title.contains(query, ignoreCase = true) ||
-                it.artistName.contains(query, ignoreCase = true)
+                        it.artistName.contains(query, ignoreCase = true)
             }
         }
-        
         if (tag != "Todos") {
             filtered = filtered.filter { exhibition ->
                 exhibition.tags.any { it.equals(tag, ignoreCase = true) }
             }
         }
-        
         if (artistN.isNotBlank()) {
             filtered = filtered.filter {
                 it.artistName.contains(artistN, ignoreCase = true)
             }
         }
-        
-        // Fecha inicio: mostrar exposiciones cuya fechaFin >= startD
         if (startD.isNotBlank()) {
             filtered = filtered.filter {
                 val expoEnd = it.fechaFin ?: return@filter false
                 expoEnd >= startD
             }
         }
-
-        // Fecha fin: mostrar exposiciones cuya fechaInicio <= endD
         if (endD.isNotBlank()) {
             filtered = filtered.filter {
                 val expoStart = it.fechaInicio ?: return@filter false
                 expoStart <= endD
             }
         }
-        
-        if (artworkT.isNotBlank()) {
-            filtered = filtered.filter { exhibition ->
-                exhibition.tags.any { it.contains(artworkT, ignoreCase = true) }
-            }
-        }
-        
+
         HomeUiState(isLoading, filtered, error)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 
@@ -122,23 +129,20 @@ class HomeViewModel @Inject constructor(
             )
         }
     }
-    
-    fun onSearchQueryChanged(newQuery: String) {
-        searchQuery.value = newQuery
+
+    fun onSearchQueryChanged(newQuery: String) { searchQuery.value = newQuery }
+
+    fun applyFilters(startDate: String, endDate: String, artistName: String, tag: String) {
+        filterStartDate.value  = startDate
+        filterEndDate.value    = endDate
+        filterArtistName.value = artistName
+        selectedTag.value      = tag
     }
 
-    fun applyFilters(startDate: String, endDate: String, artistName: String, tag: String, artworkTag: String) {
-        filterStartDate.value = startDate
-        filterEndDate.value = endDate
-        filterArtistName.value = artistName
-        selectedTag.value = tag
-        filterArtworkTag.value = artworkTag
-    }
+    // Se llama en tiempo real desde el bottom sheet al teclear en el campo artista
+    fun onArtistQueryChanged(query: String) { filterArtistName.value = query }
 
     fun incrementView(exhibitionId: Long) {
-        viewModelScope.launch {
-            repository.incrementExhibitionView(exhibitionId)
-        }
+        viewModelScope.launch { repository.incrementExhibitionView(exhibitionId) }
     }
-
 }

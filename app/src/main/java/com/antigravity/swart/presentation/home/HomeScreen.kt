@@ -42,7 +42,7 @@ fun HomeScreen(
     val filterEndDate by viewModel.filterEndDate.collectAsState()
     val filterArtistName by viewModel.filterArtistName.collectAsState()
     val selectedTag by viewModel.selectedTag.collectAsState()
-    val filterArtworkTag by viewModel.filterArtworkTag.collectAsState()
+    val artistSuggestions by viewModel.artistSuggestions.collectAsState()
 
     val accentColor = if (userType == UserType.ARTIST) ArtistaGradientStart else InteresadoGradientStart
 
@@ -102,11 +102,12 @@ fun HomeScreen(
                     initialEndDate = filterEndDate,
                     initialArtistName = filterArtistName,
                     initialSelectedTag = selectedTag,
-                    initialArtworkTag = filterArtworkTag,
+                    artistSuggestions = artistSuggestions,
                     accentColor = accentColor,
                     onDismissRequest = { showFilterSheet = false },
-                    onApplyFilters = { startDate, endDate, artistName, tag, artworkTag ->
-                        viewModel.applyFilters(startDate, endDate, artistName, tag, artworkTag)
+                    onArtistQueryChanged = { viewModel.onArtistQueryChanged(it) },
+                    onApplyFilters = { startDate, endDate, artistName, tag ->
+                        viewModel.applyFilters(startDate, endDate, artistName, tag)
                         showFilterSheet = false
                     }
                 )
