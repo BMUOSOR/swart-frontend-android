@@ -31,6 +31,7 @@ import com.antigravity.swart.presentation.theme.TextWhite
 fun HomeTopBar(
     avatarUrl: String,
     accentColor: Color = InteresadoGradientStart,
+    showFavorites: Boolean = true,
     onNavigateToFavoritos: () -> Unit = {},
     onNavigateToPerfil: () -> Unit = {}
 ) {
@@ -81,18 +82,20 @@ fun HomeTopBar(
         }
 
         // Icono favoritos (der) → navega a favoritos
-        IconButton(
-            onClick = onNavigateToFavoritos,
-            modifier = Modifier
-                .size(40.dp)
-                .background(CardBackground, CircleShape)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "Favoritos",
-                tint = accentColor,
-                modifier = Modifier.size(20.dp)
-            )
+        if (showFavorites) {
+            IconButton(
+                onClick = onNavigateToFavoritos,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(CardBackground, CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Favoritos",
+                    tint = accentColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

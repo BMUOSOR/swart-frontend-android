@@ -80,6 +80,7 @@ fun HomeScreen(
             HomeTopBar(
                 avatarUrl = userAvatar,
                 accentColor = accentColor,
+                showFavorites = userType != UserType.ARTIST,
                 onNavigateToFavoritos = onNavigateToFavoritos,
                 onNavigateToPerfil = onLogout
             )
