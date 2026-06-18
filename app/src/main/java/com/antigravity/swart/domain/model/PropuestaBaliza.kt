@@ -11,5 +11,6 @@ data class PropuestaBaliza(
     val precio: Double?,
     val categoria: String?,
     val estado: String,
-    val fechaCreacion: String
+    val fechaCreacion: String,
+    val archivoPdf: String? = null
 )

@@ -2,6 +2,8 @@ package com.antigravity.swart.presentation.map
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
+import android.net.Uri
 import com.antigravity.swart.core.SessionManager
 import com.antigravity.swart.domain.model.MapPin
 import com.antigravity.swart.domain.model.GovBaliza
@@ -9,9 +11,13 @@ import com.antigravity.swart.domain.model.PropuestaBaliza
 import com.antigravity.swart.domain.model.GeocodingResult
 import com.antigravity.swart.domain.repository.ExhibitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 
 data class AddressSuggestion(val displayName: String, val lat: Double, val lon: Double)
@@ -52,7 +58,8 @@ data class MapUiState(
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val repository: ExhibitionRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MapUiState(currentUserId = sessionManager.getUserId()))
@@ -326,9 +333,22 @@ class MapViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isProposalFormOpen = open)
     }
 
-    fun sendProposal(titulo: String, descrip: String, start: String, end: String, category: String, price: Double?) {
+    fun sendProposal(titulo: String, descrip: String, start: String, end: String, category: String, price: Double?, pdfUri: Uri? = null) {
         val baliza = _uiState.value.selectedEmptyBaliza ?: return
         viewModelScope.launch {
+            // 1. Si hay PDF, subirlo primero
+            val pdfUrl: String? = if (pdfUri != null) {
+                try {
+                    val bytes = appContext.contentResolver.openInputStream(pdfUri)?.readBytes()
+                    if (bytes != null) {
+                        val requestBody = bytes.toRequestBody("application/pdf".toMediaTypeOrNull())
+                        val part = MultipartBody.Part.createFormData("file", "propuesta.pdf", requestBody)
+                        repository.uploadImage(part).getOrNull()
+                    } else null
+                } catch (e: Exception) { null }
+            } else null
+
+            // 2. Crear la propuesta con la URL del PDF (si existe)
             val req = com.antigravity.swart.data.remote.dto.PropuestaRequest(
                 idArtista = sessionManager.getUserId(),
                 titulo = titulo,
@@ -336,7 +356,8 @@ class MapViewModel @Inject constructor(
                 fechaInicio = start,
                 fechaFin = end,
                 precio = price,
-                categoria = category
+                categoria = category,
+                archivoPdf = pdfUrl
             )
             repository.createPropuestaBaliza(baliza.id, req).fold(
                 onSuccess = {

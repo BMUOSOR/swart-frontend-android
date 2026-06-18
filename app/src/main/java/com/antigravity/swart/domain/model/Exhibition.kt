@@ -26,7 +26,8 @@ data class Exhibition(
     val score: Double?,
     val tags: List<String>,
     val visitantes: Long = 0,
-    val favoritosCount: Int = 0
+    val favoritosCount: Int = 0,
+    val idBalizaVacia: Long? = null  // id de la BalizaVacia de origen (si viene de propuesta)
 )
 
 data class Artwork(

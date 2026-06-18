@@ -44,6 +44,7 @@ fun PropuestaDto.toDomain(): PropuestaBaliza {
         precio = precio,
         categoria = categoria,
         estado = estado,
-        fechaCreacion = fechaCreacion
+        fechaCreacion = fechaCreacion,
+        archivoPdf = archivoPdf
     )
 }

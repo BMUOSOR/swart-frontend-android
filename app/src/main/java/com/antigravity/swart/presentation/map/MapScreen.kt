@@ -680,7 +680,7 @@ fun MapScreen(
                 ProposalFormDialog(
                     propietarioId = uiState.selectedEmptyBaliza?.idPropietario ?: -1L,
                     currentUserAvatarUrl = viewModel.getCurrentUserAvatarUrl(),
-                    onSend = { t, d, s, e, c, p -> viewModel.sendProposal(t, d, s, e, c, p) },
+                    onSend = { t, d, s, e, c, p, uri -> viewModel.sendProposal(t, d, s, e, c, p, uri) },
                     onNavigateToArtistProfile = onNavigateToArtistProfile,
                     onDismiss = { viewModel.toggleProposalForm(false) }
                 )
@@ -1153,12 +1153,24 @@ fun ProposalFormDialog(
 
     propietarioId: Long,
     currentUserAvatarUrl: String = "",
-    onSend: (titulo: String, descrip: String, start: String, end: String, category: String, price: Double?) -> Unit,
+    onSend: (titulo: String, descrip: String, start: String, end: String, category: String, price: Double?, pdfUri: android.net.Uri?) -> Unit,
     onNavigateToArtistProfile: (Long) -> Unit,
     onDismiss: () -> Unit
 ) {
     var titulo by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("Pintura") }
+
+    var pdfUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var pdfFileName by remember { mutableStateOf<String?>(null) }
+
+    val pdfPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            pdfUri = uri
+            pdfFileName = uri.lastPathSegment?.substringAfterLast("/") ?: "propuesta.pdf"
+        }
+    }
 
     val categorias = listOf("Pintura", "Escultura", "Fotografía", "Arte Digital", "Ilustración", "Otro")
 
@@ -1356,7 +1368,7 @@ fun ProposalFormDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(96.dp)
+                        .height(if (pdfFileName != null) 56.dp else 96.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(BvInput)
                         .border(
@@ -1366,22 +1378,50 @@ fun ProposalFormDialog(
                             ),
                             shape = RoundedCornerShape(14.dp)
                         )
-                        .clickable { /* placeholder action */ },
+                        .clickable { pdfPickerLauncher.launch("application/pdf") },
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
+                    if (pdfFileName != null) {
+                        Row(
                             modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(bvGradient),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.AttachFile, contentDescription = null, tint = Color(0xFF1ABC9C), modifier = Modifier.size(18.dp))
+                            Text(
+                                text = pdfFileName ?: "",
+                                color = BvTextLight,
+                                fontSize = 13.sp,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Eliminar PDF",
+                                tint = BvTextGray,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clickable { pdfUri = null; pdfFileName = null }
+                            )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Sube tu propuesta", color = BvTextMid, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text("PDF · máx. 10MB", color = BvTextGray, fontSize = 11.sp)
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(bvGradient),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Sube tu propuesta", color = BvTextMid, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text("PDF · máx. 10MB", color = BvTextGray, fontSize = 11.sp)
+                        }
                     }
                 }
 
@@ -1401,7 +1441,7 @@ fun ProposalFormDialog(
                             .clip(RoundedCornerShape(14.dp))
                             .background(bvGradient)
                             .clickable {
-                                onSend(titulo, "Propuesta generada", fechaInicio, fechaFin, categoria, null)
+                                onSend(titulo, "Propuesta generada", fechaInicio, fechaFin, categoria, null, pdfUri)
                             }
                             .padding(vertical = 14.dp),
                         contentAlignment = Alignment.Center

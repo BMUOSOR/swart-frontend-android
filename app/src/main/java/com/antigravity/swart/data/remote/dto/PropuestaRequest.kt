@@ -7,7 +7,8 @@ data class PropuestaRequest(
     val fechaInicio: String? = null,
     val fechaFin: String? = null,
     val precio: Double? = null,
-    val categoria: String? = null
+    val categoria: String? = null,
+    val archivoPdf: String? = null   // URL del PDF en Supabase Storage (opcional)
 )
 
 data class PropuestaEstadoRequest(

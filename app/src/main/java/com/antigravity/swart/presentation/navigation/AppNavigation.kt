@@ -152,6 +152,9 @@ fun AppNavigation() {
                 onNavigateToMap = { id ->
                     navController.navigate("mapa/$role?exhibitionId=$id")
                 },
+                onNavigateToBalizaVacia = { balizaId ->
+                    navController.navigate("baliza_vacia_detail/$balizaId")
+                },
                 onNavigate = { target ->
                     val route = when (target) {
                         "descubrir" -> "swap"

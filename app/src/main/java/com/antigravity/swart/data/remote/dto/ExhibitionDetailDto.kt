@@ -15,7 +15,8 @@ data class ExhibitionDetailDto(
     val obras: List<ArtworkDto>,
     val tags: List<String>,
     val esColaborativa: Boolean = false,
-    val artistas: List<ArtistFeedDto> = emptyList()
+    val artistas: List<ArtistFeedDto> = emptyList(),
+    val idBalizaVacia: Long? = null
 )
 
 data class UpdateExhibitionRequest(

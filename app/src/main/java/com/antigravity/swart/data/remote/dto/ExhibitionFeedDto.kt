@@ -26,5 +26,6 @@ data class ExhibitionFeedDto(
     val precio: Double?,
     val score: Double?,
     val visitantes: Long = 0,
-    val favoritosCount: Int = 0
+    val favoritosCount: Int = 0,
+    val idBalizaVacia: Long? = null
 )

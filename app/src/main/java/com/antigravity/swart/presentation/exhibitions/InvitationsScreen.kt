@@ -828,6 +828,36 @@ private fun ProposalDetailSheet(
                     Spacer(Modifier.height(16.dp))
                 }
 
+                // ── PDF adjunto ────────────────────────────────────────────
+                if (!propuesta.archivoPdf.isNullOrBlank()) {
+                    Spacer(Modifier.height(16.dp))
+                    DetailLabel("PROPUESTA ADJUNTA")
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(InvInputBg)
+                            .border(1.dp, InvNeonPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                            .clickable {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                    data = android.net.Uri.parse(propuesta.archivoPdf)
+                                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                }
+                                context.startActivity(intent)
+                            }
+                            .padding(horizontal = 14.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(Icons.Default.AttachFile, null, tint = InvNeonPurple, modifier = Modifier.size(18.dp))
+                            Text("Ver propuesta en PDF", color = InvNeonPurple, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+
                 Spacer(Modifier.height(8.dp))
                 HorizontalDivider(color = InvBorder)
                 Spacer(Modifier.height(20.dp))

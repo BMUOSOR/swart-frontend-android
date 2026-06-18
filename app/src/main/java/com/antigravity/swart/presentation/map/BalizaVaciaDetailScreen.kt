@@ -439,7 +439,7 @@ fun BalizaVaciaDetailScreen(
             ProposalFormDialog(
                 propietarioId = uiState.baliza?.idPropietario ?: -1L,
                 currentUserAvatarUrl = viewModel.getCurrentUserAvatarUrl(),
-                onSend = { t, d, s, e, c, p -> viewModel.sendProposal(t, d, s, e, c, p) },
+                onSend = { t, d, s, e, c, p, uri -> viewModel.sendProposal(t, d, s, e, c, p, uri) },
                 onNavigateToArtistProfile = onNavigateToArtistProfile,
                 onDismiss = { viewModel.toggleProposalForm(false) }
             )

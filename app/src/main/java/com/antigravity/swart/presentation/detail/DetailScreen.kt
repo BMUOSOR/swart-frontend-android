@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
@@ -48,6 +49,7 @@ fun DetailScreen(
     onNavigateToArtistProfile: (Long) -> Unit,
     onNavigateToMap: (Long) -> Unit,
     onNavigate: (String) -> Unit,
+    onNavigateToBalizaVacia: (Long) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel() // Reuse home VM for simplicity if it has data
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -256,12 +258,36 @@ fun DetailScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // Place Name
-                Text(
-                    text = exhibition.nombreLugar ?: "Lugar desconocido",
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // Place Name - clickable if exhibition came from an empty beacon
+                if (exhibition.idBalizaVacia != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onNavigateToBalizaVacia(exhibition.idBalizaVacia!!) }
+                            .padding(vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = exhibition.nombreLugar ?: "Lugar desconocido",
+                            color = Color(0xFF1ABC9C),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Ver espacio",
+                            tint = Color(0xFF1ABC9C),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else {
+                    Text(
+                        text = exhibition.nombreLugar ?: "Lugar desconocido",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 

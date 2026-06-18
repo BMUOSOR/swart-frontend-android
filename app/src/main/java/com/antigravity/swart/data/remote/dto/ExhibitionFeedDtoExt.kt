@@ -27,6 +27,7 @@ fun ExhibitionFeedDto.toDomain(): Exhibition {
         score = score,
         tags = tags,
         visitantes = visitantes,
-        favoritosCount = favoritosCount
+        favoritosCount = favoritosCount,
+        idBalizaVacia = idBalizaVacia
     )
 }
