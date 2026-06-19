@@ -389,17 +389,6 @@ fun UserProfileScreen(
                                 isLast = false,
                                 onClick = onNavigateToObras
                             )
-                            SettingMenuItem(
-                                icon = Icons.Filled.Notifications,
-                                title = "Notificaciones",
-                                isLast = true,
-                                onClick = {
-                                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                    }
-                                    context.startActivity(intent)
-                                }
-                            )
                         } else {
                             SettingMenuItem(
                                 icon = Icons.Filled.Favorite,
@@ -407,24 +396,25 @@ fun UserProfileScreen(
                                 isLast = false,
                                 onClick = onNavigateToFavorites
                             )
-                            SettingMenuItem(
-                                icon = Icons.Filled.People,
-                                title = "Artistas Seguidos",
-                                isLast = false,
-                                onClick = onNavigateToArtistas
-                            )
-                            SettingMenuItem(
-                                icon = Icons.Filled.Notifications,
-                                title = "Notificaciones",
-                                isLast = true,
-                                onClick = {
-                                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                    }
-                                    context.startActivity(intent)
-                                }
-                            )
                         }
+
+                        SettingMenuItem(
+                            icon = Icons.Filled.People,
+                            title = "Artistas Seguidos",
+                            isLast = false,
+                            onClick = onNavigateToArtistas
+                        )
+                        SettingMenuItem(
+                            icon = Icons.Filled.Notifications,
+                            title = "Notificaciones",
+                            isLast = true,
+                            onClick = {
+                                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                }
+                                context.startActivity(intent)
+                            }
+                        )
                     }
                 }
             }

@@ -55,6 +55,7 @@ fun ArtistProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isFollowing by viewModel.isFollowing.collectAsState()
     val isSavingProfile by viewModel.isSavingProfile.collectAsState()
+    val context = LocalContext.current
 
     var showEditProfileDialog by remember { mutableStateOf(false) }
 
@@ -93,7 +94,12 @@ fun ArtistProfileScreen(
                         isOwnProfile = viewModel.isOwnProfile,
                         onBack = onBack,
                         onNavigateToDetail = onNavigateToDetail,
-                        onFollowToggle = { viewModel.toggleFollow() },
+                        onFollowToggle = {
+                            if (!isFollowing) {
+                                android.widget.Toast.makeText(context, "Siguiendo a ${state.profile.nombre}", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                            viewModel.toggleFollow()
+                        },
                         onEditProfileClick = { showEditProfileDialog = true },
                         onInquiryClick = { work ->
                             selectedWorkForInquiry = work
@@ -357,7 +363,7 @@ fun ArtistProfileContent(
                     ) {
                         Icon(
                             imageVector = if (isFollowing) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Favorito",
+                            contentDescription = if (isFollowing) "Dejar de seguir" else "Seguir artista",
                             tint = if (isFollowing) PremiumPink else Color.White
                         )
                     }
